@@ -48,12 +48,12 @@ export default function EventPage({ params }) {
           }
         } else {
           // Event not found, use placeholder data
-          setEvent(placeholderEvent);
+          // setEvent(placeholderEvent);
         }
       } catch (error) {
         console.error("Error fetching event:", error);
         // Use placeholder data on error
-        setEvent(placeholderEvent);
+        // setEvent(placeholderEvent);
       } finally {
         setLoading(false);
       }

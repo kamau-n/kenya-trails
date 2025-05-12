@@ -225,10 +225,18 @@ export default function OrganizerEventsPage() {
                     </div>
                   </div>
                 </CardContent>
+
                 <CardFooter className="flex justify-between">
                   <Button asChild variant="outline">
                     <Link href={`/events/${event.id}`}>View</Link>
                   </Button>
+
+                  <Button asChild className="bg-green-600 hover:bg-green-700">
+                    <Link href={`/organize/events/${event.id}/promote`}>
+                      Promote Event
+                    </Link>
+                  </Button>
+
                   <Button asChild>
                     <Link href={`/organize/events/${event.id}/bookings`}>
                       Manage Bookings

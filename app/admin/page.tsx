@@ -107,6 +107,20 @@ export default function AdminDashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Promotion Management</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Manage promotion packages and view promotion statistics.
+            </p>
+            <Button asChild>
+              <Link href="/admin/promotions">Manage Promotions</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

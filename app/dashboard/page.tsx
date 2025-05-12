@@ -1,35 +1,49 @@
-"use client"
+"use client";
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { useAuth } from "@/components/auth-provider" // Updated import path
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, CreditCard, CheckCircle, AlertCircle, Users } from "lucide-react"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/components/auth-provider"; // Updated import path
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calendar,
+  MapPin,
+  CreditCard,
+  CheckCircle,
+  AlertCircle,
+  Users,
+} from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 
 export default function DashboardPage() {
-  const auth = useAuth()
-  const user = auth?.user
-  const authLoading = auth?.loading || false
+  const auth = useAuth();
+  const user = auth?.user;
+  const authLoading = auth?.loading || false;
 
-  const [bookings, setBookings] = useState([])
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [bookings, setBookings] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading) return;
 
     if (!user) {
-      router.push("/login?redirect=/dashboard")
-      return
+      router.push("/login?redirect=/dashboard");
+      return;
     }
 
     const fetchUserData = async () => {
@@ -38,44 +52,44 @@ export default function DashboardPage() {
         const bookingsQuery = query(
           collection(db, "bookings"),
           where("userId", "==", user.uid),
-          orderBy("bookingDate", "desc"),
-        )
+          orderBy("bookingDate", "desc")
+        );
 
-        const bookingsSnapshot = await getDocs(bookingsQuery)
+        const bookingsSnapshot = await getDocs(bookingsQuery);
         const bookingsData = bookingsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           bookingDate: doc.data().bookingDate?.toDate() || new Date(),
-        }))
+        }));
 
-        setBookings(bookingsData)
+        setBookings(bookingsData);
 
         // If user is an organizer, fetch their events
         if (user.userType === "organizer") {
           const eventsQuery = query(
             collection(db, "events"),
             where("organizerId", "==", user.uid),
-            orderBy("date", "desc"),
-          )
+            orderBy("date", "desc")
+          );
 
-          const eventsSnapshot = await getDocs(eventsQuery)
+          const eventsSnapshot = await getDocs(eventsQuery);
           const eventsData = eventsSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
             date: doc.data().date?.toDate() || new Date(),
-          }))
+          }));
 
-          setEvents(eventsData)
+          setEvents(eventsData);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error)
+        console.error("Error fetching user data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUserData()
-  }, [user, authLoading, router])
+    fetchUserData();
+  }, [user, authLoading, router]);
 
   // Placeholder data for initial render
   const placeholderBookings = [
@@ -103,50 +117,29 @@ export default function DashboardPage() {
       bookingDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
       status: "confirmed",
     },
-  ]
+  ];
 
-  const placeholderEvents = [
-    {
-      id: "event1",
-      title: "Mt. Kenya Hiking Adventure",
-      location: "Mt. Kenya National Park",
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      totalSpaces: 20,
-      availableSpaces: 8,
-      price: 15000,
-    },
-    {
-      id: "event2",
-      title: "Maasai Mara Safari Weekend",
-      location: "Maasai Mara National Reserve",
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      totalSpaces: 15,
-      availableSpaces: 5,
-      price: 25000,
-    },
-  ]
-
-  const displayBookings = bookings.length > 0 ? bookings : placeholderBookings
-  const displayEvents = events.length > 0 ? events : placeholderEvents
+  const displayBookings = bookings.length > 0 ? bookings : placeholderBookings;
+  const displayEvents = events;
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   if (authLoading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p>Loading...</p>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null // Router will redirect
+    return null; // Router will redirect
   }
 
   return (
@@ -154,7 +147,9 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">My Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user.displayName || user.email}</p>
+          <p className="text-gray-600">
+            Welcome back, {user.displayName || user.email}
+          </p>
         </div>
 
         {user.userType === "organizer" && (
@@ -167,7 +162,9 @@ export default function DashboardPage() {
       <Tabs defaultValue="bookings">
         <TabsList className="mb-8">
           <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-          {user.userType === "organizer" && <TabsTrigger value="events">My Events</TabsTrigger>}
+          {user.userType === "organizer" && (
+            <TabsTrigger value="events">My Events</TabsTrigger>
+          )}
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
 
@@ -177,7 +174,9 @@ export default function DashboardPage() {
               <p className="text-center py-12">Loading your bookings...</p>
             ) : displayBookings.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-lg text-gray-600 mb-4">You haven't made any bookings yet.</p>
+                <p className="text-lg text-gray-600 mb-4">
+                  You haven't made any bookings yet.
+                </p>
                 <Button asChild className="bg-green-600 hover:bg-green-700">
                   <Link href="/events">Explore Events</Link>
                 </Button>
@@ -189,22 +188,23 @@ export default function DashboardPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle>{booking.eventTitle}</CardTitle>
-                        <CardDescription>Booked on {formatDate(booking.bookingDate)}</CardDescription>
+                        <CardDescription>
+                          Booked on {formatDate(booking.bookingDate)}
+                        </CardDescription>
                       </div>
                       <Badge
                         className={
                           booking.paymentStatus === "paid"
                             ? "bg-green-600"
                             : booking.paymentStatus === "partial"
-                              ? "bg-yellow-600"
-                              : "bg-red-600"
-                        }
-                      >
+                            ? "bg-yellow-600"
+                            : "bg-red-600"
+                        }>
                         {booking.paymentStatus === "paid"
                           ? "Paid"
                           : booking.paymentStatus === "partial"
-                            ? "Partially Paid"
-                            : "Unpaid"}
+                          ? "Partially Paid"
+                          : "Unpaid"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -217,19 +217,27 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center text-gray-700">
                           <Users className="h-4 w-4 mr-2" />
-                          <span>Number of People: {booking.numberOfPeople}</span>
+                          <span>
+                            Number of People: {booking.numberOfPeople}
+                          </span>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center text-gray-700">
                           <CreditCard className="h-4 w-4 mr-2" />
-                          <span>Total Amount: KSh {booking.totalAmount?.toLocaleString()}</span>
+                          <span>
+                            Total Amount: KSh{" "}
+                            {booking.totalAmount?.toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex items-center text-gray-700">
                           {booking.amountDue > 0 ? (
                             <>
                               <AlertCircle className="h-4 w-4 mr-2 text-yellow-600" />
-                              <span>Amount Due: KSh {booking.amountDue?.toLocaleString()}</span>
+                              <span>
+                                Amount Due: KSh{" "}
+                                {booking.amountDue?.toLocaleString()}
+                              </span>
                             </>
                           ) : (
                             <>
@@ -244,11 +252,17 @@ export default function DashboardPage() {
                   <CardFooter>
                     <div className="flex justify-between w-full">
                       <Button asChild variant="outline">
-                        <Link href={`/events/${booking.eventId}`}>View Event</Link>
+                        <Link href={`/events/${booking.eventId}`}>
+                          View Event
+                        </Link>
                       </Button>
                       {booking.amountDue > 0 && (
-                        <Button asChild className="bg-green-600 hover:bg-green-700">
-                          <Link href={`/bookings/${booking.id}/payment`}>Complete Payment</Link>
+                        <Button
+                          asChild
+                          className="bg-green-600 hover:bg-green-700">
+                          <Link href={`/bookings/${booking.id}/payment`}>
+                            Complete Payment
+                          </Link>
                         </Button>
                       )}
                     </div>
@@ -263,10 +277,14 @@ export default function DashboardPage() {
           <TabsContent value="events">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loading ? (
-                <p className="text-center py-12 col-span-full">Loading your events...</p>
+                <p className="text-center py-12 col-span-full">
+                  Loading your events...
+                </p>
               ) : displayEvents.length === 0 ? (
                 <div className="text-center py-12 col-span-full">
-                  <p className="text-lg text-gray-600 mb-4">You haven't created any events yet.</p>
+                  <p className="text-lg text-gray-600 mb-4">
+                    You haven't created any events yet.
+                  </p>
                   <Button asChild className="bg-green-600 hover:bg-green-700">
                     <Link href="/organize/create">Create Your First Event</Link>
                   </Button>
@@ -276,7 +294,10 @@ export default function DashboardPage() {
                   <Card key={event.id} className="overflow-hidden">
                     <div className="h-40 overflow-hidden">
                       <img
-                        src={event.imageUrl || "/placeholder.svg?height=300&width=500"}
+                        src={
+                          event.imageUrl ||
+                          "/placeholder.svg?height=300&width=500"
+                        }
                         alt={event.title}
                         className="w-full h-full object-cover"
                       />
@@ -297,10 +318,13 @@ export default function DashboardPage() {
                         <div className="flex items-center text-gray-700">
                           <Users className="h-4 w-4 mr-2" />
                           <span>
-                            {event.availableSpaces} / {event.totalSpaces} spots left
+                            {event.availableSpaces} / {event.totalSpaces} spots
+                            left
                           </span>
                         </div>
-                        <div className="font-bold text-green-600">KSh {event.price?.toLocaleString()}</div>
+                        <div className="font-bold text-green-600">
+                          KSh {event.price?.toLocaleString()}
+                        </div>
                       </div>
                     </CardContent>
                     <CardFooter>
@@ -309,7 +333,9 @@ export default function DashboardPage() {
                           <Link href={`/events/${event.id}`}>View</Link>
                         </Button>
                         <Button asChild>
-                          <Link href={`/organize/events/${event.id}/bookings`}>Manage Bookings</Link>
+                          <Link href={`/organize/events/${event.id}/bookings`}>
+                            Manage Bookings
+                          </Link>
                         </Button>
                       </div>
                     </CardFooter>
@@ -340,7 +366,15 @@ export default function DashboardPage() {
 
               <div>
                 <Label htmlFor="userType">Account Type</Label>
-                <Input id="userType" value={user.userType === "organizer" ? "Event Organizer" : "Traveler"} disabled />
+                <Input
+                  id="userType"
+                  value={
+                    user.userType === "organizer"
+                      ? "Event Organizer"
+                      : "Traveler"
+                  }
+                  disabled
+                />
               </div>
 
               <div className="pt-4">
@@ -353,5 +387,5 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
