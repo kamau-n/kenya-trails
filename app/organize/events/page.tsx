@@ -1,121 +1,100 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { useAuth } from "@/components/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, MapPin, Users, Search, Plus } from "lucide-react"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar, MapPin, Users, Search, Plus } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { event } from "@/app/types/types";
 
 export default function OrganizerEventsPage() {
-  const auth = useAuth()
-  const user = auth?.user
-  const authLoading = auth?.loading || false
-  const router = useRouter()
+  const auth = useAuth();
+  const user = auth?.user;
+  const authLoading = auth?.loading || false;
+  const router = useRouter();
 
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("date-desc")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [events, setEvents] = useState<event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("date-desc");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading) return;
 
     if (!user) {
-      router.push("/login?redirect=/organize/events")
-      return
+      router.push("/login?redirect=/organize/events");
+      return;
     }
 
     if (user.userType !== "organizer") {
-      router.push("/organize")
-      return
+      router.push("/organize");
+      return;
     }
 
     const fetchEvents = async () => {
+      console.log("this is the user who has organized the events", user);
       try {
         const eventsQuery = query(
           collection(db, "events"),
           where("organizerId", "==", user.uid),
-          orderBy("date", sortBy.endsWith("desc") ? "desc" : "asc"),
-        )
+          orderBy("date", sortBy.endsWith("desc") ? "desc" : "asc")
+        );
 
-        const eventsSnapshot = await getDocs(eventsQuery)
+        const eventsSnapshot = await getDocs(eventsQuery);
         const eventsData = eventsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           date: doc.data().date?.toDate() || new Date(),
-        }))
+        }));
 
-        setEvents(eventsData)
+        setEvents(eventsData);
       } catch (error) {
-        console.error("Error fetching events:", error)
+        console.error("Error fetching events:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchEvents()
-  }, [user, authLoading, router, sortBy])
+    fetchEvents();
+  }, [user, authLoading, router, sortBy]);
 
   // Placeholder events for initial render
-  const placeholderEvents = [
-    {
-      id: "event1",
-      title: "Mt. Kenya Hiking Adventure",
-      location: "Mt. Kenya National Park",
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      totalSpaces: 20,
-      availableSpaces: 8,
-      price: 15000,
-      status: "upcoming",
-      imageUrl: "/placeholder.svg?height=300&width=500",
-    },
-    {
-      id: "event2",
-      title: "Maasai Mara Safari Weekend",
-      location: "Maasai Mara National Reserve",
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      totalSpaces: 15,
-      availableSpaces: 5,
-      price: 25000,
-      status: "upcoming",
-      imageUrl: "/placeholder.svg?height=300&width=500",
-    },
-    {
-      id: "event3",
-      title: "Lake Naivasha Weekend Retreat",
-      location: "Lake Naivasha",
-      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      totalSpaces: 20,
-      availableSpaces: 0,
-      price: 12000,
-      status: "completed",
-      imageUrl: "/placeholder.svg?height=300&width=500",
-    },
-  ]
 
-  const displayEvents = events.length > 0 ? events : placeholderEvents
+  const displayEvents = events;
 
   // Filter events based on search term and status
   const filteredEvents = displayEvents.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase())
+      event.location.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const now = new Date()
-    const eventStatus = event.date > now ? "upcoming" : "completed"
+    const now = new Date();
+    const eventStatus = event.date > now ? "upcoming" : "completed";
 
-    const matchesStatus = statusFilter === "all" || eventStatus === statusFilter
+    const matchesStatus =
+      statusFilter === "all" || eventStatus === statusFilter;
 
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+  });
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -123,19 +102,19 @@ export default function OrganizerEventsPage() {
       day: "numeric",
       month: "short",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   if (authLoading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p>Loading...</p>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null // Router will redirect
+    return null; // Router will redirect
   }
 
   return (
@@ -191,7 +170,9 @@ export default function OrganizerEventsPage() {
         </div>
       ) : filteredEvents.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-lg text-gray-600 mb-4">No events found matching your criteria.</p>
+          <p className="text-lg text-gray-600 mb-4">
+            No events found matching your criteria.
+          </p>
           <Button asChild className="bg-green-600 hover:bg-green-700">
             <Link href="/organize/create">Create New Event</Link>
           </Button>
@@ -199,17 +180,24 @@ export default function OrganizerEventsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => {
-            const isUpcoming = new Date(event.date) > new Date()
+            const isUpcoming = new Date(event.date) > new Date();
 
             return (
-              <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card
+                key={event.id}
+                className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={event.imageUrl || "/placeholder.svg?height=300&width=500"}
+                    src={
+                      event.imageUrl || "/placeholder.svg?height=300&width=500"
+                    }
                     alt={event.title}
                     className="w-full h-full object-cover"
                   />
-                  <Badge className={`absolute top-3 right-3 ${isUpcoming ? "bg-green-600" : "bg-gray-600"}`}>
+                  <Badge
+                    className={`absolute top-3 right-3 ${
+                      isUpcoming ? "bg-green-600" : "bg-gray-600"
+                    }`}>
                     {isUpcoming ? "Upcoming" : "Completed"}
                   </Badge>
                 </div>
@@ -232,7 +220,9 @@ export default function OrganizerEventsPage() {
                         {event.availableSpaces} / {event.totalSpaces} spots left
                       </span>
                     </div>
-                    <div className="font-bold text-green-600">KSh {event.price?.toLocaleString()}</div>
+                    <div className="font-bold text-green-600">
+                      KSh {event.price?.toLocaleString()}
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -240,14 +230,16 @@ export default function OrganizerEventsPage() {
                     <Link href={`/events/${event.id}`}>View</Link>
                   </Button>
                   <Button asChild>
-                    <Link href={`/organize/events/${event.id}/bookings`}>Manage Bookings</Link>
+                    <Link href={`/organize/events/${event.id}/bookings`}>
+                      Manage Bookings
+                    </Link>
                   </Button>
                 </CardFooter>
               </Card>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

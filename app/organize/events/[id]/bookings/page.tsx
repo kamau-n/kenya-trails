@@ -1,171 +1,152 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, Users, CreditCard, Search, CheckCircle, AlertCircle } from "lucide-react"
-import { db } from "@/lib/firebase"
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calendar,
+  Users,
+  CreditCard,
+  Search,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { db } from "@/lib/firebase";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 
 export default function EventBookingsPage({ params }) {
-  const { id } = params
-  const { user, loading: authLoading } = useAuth()
-  const [event, setEvent] = useState(null)
-  const [bookings, setBookings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedBooking, setSelectedBooking] = useState(null)
-  const [paymentAmount, setPaymentAmount] = useState("")
-  const [updateSuccess, setUpdateSuccess] = useState(false)
-  const [updateError, setUpdateError] = useState("")
-  const router = useRouter()
+  const { id } = params;
+  const { user, loading: authLoading } = useAuth();
+  const [event, setEvent] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateError, setUpdateError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading) return;
 
     if (!user) {
-      router.push("/login?redirect=/organize/events")
-      return
+      router.push("/login?redirect=/organize/events");
+      return;
     }
 
     const fetchEventData = async () => {
       try {
         // Fetch event details
-        const eventDoc = await getDoc(doc(db, "events", id))
+        const eventDoc = await getDoc(doc(db, "events", id));
 
         if (eventDoc.exists()) {
           const eventData = {
             id: eventDoc.id,
             ...eventDoc.data(),
             date: eventDoc.data().date?.toDate() || new Date(),
-          }
+          };
 
           // Verify that the current user is the organizer
           if (eventData.organizerId !== user.uid) {
-            router.push("/organize/events")
-            return
+            router.push("/organize/events");
+            return;
           }
 
-          setEvent(eventData)
+          setEvent(eventData);
 
           // Fetch bookings for this event
-          const bookingsQuery = query(collection(db, "bookings"), where("eventId", "==", id))
+          const bookingsQuery = query(
+            collection(db, "bookings"),
+            where("eventId", "==", id)
+          );
 
-          const bookingsSnapshot = await getDocs(bookingsQuery)
+          const bookingsSnapshot = await getDocs(bookingsQuery);
           const bookingsData = bookingsSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
             bookingDate: doc.data().bookingDate?.toDate() || new Date(),
-          }))
+          }));
 
-          setBookings(bookingsData)
+          setBookings(bookingsData);
         } else {
-          router.push("/organize/events")
+          router.push("/organize/events");
         }
       } catch (error) {
-        console.error("Error fetching event data:", error)
+        console.error("Error fetching event data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchEventData()
-  }, [id, user, authLoading, router])
+    fetchEventData();
+  }, [id, user, authLoading, router]);
 
-  // Placeholder data for initial render
-  const placeholderEvent = {
-    id,
-    title: "Mt. Kenya Hiking Adventure",
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    totalSpaces: 20,
-    availableSpaces: 8,
-    price: 15000,
-  }
-
-  const placeholderBookings = [
-    {
-      id: "booking1",
-      userId: "user1",
-      userName: "John Doe",
-      userEmail: "john@example.com",
-      numberOfPeople: 2,
-      totalAmount: 30000,
-      amountPaid: 10000,
-      amountDue: 20000,
-      paymentStatus: "partial",
-      bookingDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      status: "confirmed",
-    },
-    {
-      id: "booking2",
-      userId: "user2",
-      userName: "Jane Smith",
-      userEmail: "jane@example.com",
-      numberOfPeople: 1,
-      totalAmount: 15000,
-      amountPaid: 15000,
-      amountDue: 0,
-      paymentStatus: "paid",
-      bookingDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      status: "confirmed",
-    },
-  ]
-
-  const displayEvent = event || placeholderEvent
-  const displayBookings = bookings.length > 0 ? bookings : placeholderBookings
+  const displayEvent = event;
+  const displayBookings = bookings;
 
   // Filter bookings based on search term
   const filteredBookings = displayBookings.filter(
     (booking) =>
       booking.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.id?.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      booking.id?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const handleSelectBooking = (booking) => {
-    setSelectedBooking(booking)
-    setPaymentAmount("")
-    setUpdateSuccess(false)
-    setUpdateError("")
-  }
+    setSelectedBooking(booking);
+    setPaymentAmount("");
+    setUpdateSuccess(false);
+    setUpdateError("");
+  };
 
   const handleUpdatePayment = async () => {
-    if (!selectedBooking) return
+    if (!selectedBooking) return;
 
-    const amount = Number(paymentAmount)
+    const amount = Number(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
-      setUpdateError("Please enter a valid payment amount")
-      return
+      setUpdateError("Please enter a valid payment amount");
+      return;
     }
 
     if (amount > selectedBooking.amountDue) {
-      setUpdateError(`Maximum amount due is KSh ${selectedBooking.amountDue.toLocaleString()}`)
-      return
+      setUpdateError(
+        `Maximum amount due is KSh ${selectedBooking.amountDue.toLocaleString()}`
+      );
+      return;
     }
 
     try {
-      const newAmountPaid = selectedBooking.amountPaid + amount
-      const newAmountDue = selectedBooking.totalAmount - newAmountPaid
-      const newPaymentStatus = newAmountDue <= 0 ? "paid" : "partial"
+      const newAmountPaid = selectedBooking.amountPaid + amount;
+      const newAmountDue = selectedBooking.totalAmount - newAmountPaid;
+      const newPaymentStatus = newAmountDue <= 0 ? "paid" : "partial";
 
       await updateDoc(doc(db, "bookings", selectedBooking.id), {
         amountPaid: newAmountPaid,
         amountDue: newAmountDue,
         paymentStatus: newPaymentStatus,
-      })
+      });
 
       // Update local state
       setBookings(
@@ -177,35 +158,35 @@ export default function EventBookingsPage({ params }) {
                 amountDue: newAmountDue,
                 paymentStatus: newPaymentStatus,
               }
-            : booking,
-        ),
-      )
+            : booking
+        )
+      );
 
       setSelectedBooking({
         ...selectedBooking,
         amountPaid: newAmountPaid,
         amountDue: newAmountDue,
         paymentStatus: newPaymentStatus,
-      })
+      });
 
-      setUpdateSuccess(true)
-      setPaymentAmount("")
+      setUpdateSuccess(true);
+      setPaymentAmount("");
     } catch (error) {
-      console.error("Error updating payment:", error)
-      setUpdateError("Failed to update payment. Please try again.")
+      console.error("Error updating payment:", error);
+      setUpdateError("Failed to update payment. Please try again.");
     }
-  }
+  };
 
   if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p>Loading...</p>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null // Router will redirect
+    return null; // Router will redirect
   }
 
   return (
@@ -236,7 +217,8 @@ export default function EventBookingsPage({ params }) {
                 <div className="flex items-center text-gray-700">
                   <Users className="h-4 w-4 mr-2" />
                   <span>
-                    Spaces: {displayEvent.availableSpaces} / {displayEvent.totalSpaces} available
+                    Spaces: {displayEvent.availableSpaces} /{" "}
+                    {displayEvent.totalSpaces} available
                   </span>
                 </div>
                 <div className="flex items-center text-gray-700">
@@ -250,24 +232,35 @@ export default function EventBookingsPage({ params }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-100 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">Total Bookings</p>
-                    <p className="text-xl font-bold">{displayBookings.length}</p>
+                    <p className="text-xl font-bold">
+                      {displayBookings.length}
+                    </p>
                   </div>
                   <div className="bg-gray-100 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">People Booked</p>
                     <p className="text-xl font-bold">
-                      {displayBookings.reduce((sum, booking) => sum + booking.numberOfPeople, 0)}
+                      {displayBookings.reduce(
+                        (sum, booking) => sum + booking.numberOfPeople,
+                        0
+                      )}
                     </p>
                   </div>
                   <div className="bg-green-100 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">Total Revenue</p>
                     <p className="text-xl font-bold text-green-700">
-                      KSh {displayBookings.reduce((sum, booking) => sum + booking.amountPaid, 0).toLocaleString()}
+                      KSh{" "}
+                      {displayBookings
+                        .reduce((sum, booking) => sum + booking.amountPaid, 0)
+                        .toLocaleString()}
                     </p>
                   </div>
                   <div className="bg-yellow-100 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">Pending Payments</p>
                     <p className="text-xl font-bold text-yellow-700">
-                      KSh {displayBookings.reduce((sum, booking) => sum + booking.amountDue, 0).toLocaleString()}
+                      KSh{" "}
+                      {displayBookings
+                        .reduce((sum, booking) => sum + booking.amountDue, 0)
+                        .toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -295,18 +288,24 @@ export default function EventBookingsPage({ params }) {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Total Amount</p>
-                      <p className="font-medium">KSh {selectedBooking.totalAmount.toLocaleString()}</p>
+                      <p className="font-medium">
+                        KSh {selectedBooking.totalAmount.toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Amount Due</p>
-                      <p className="font-medium">KSh {selectedBooking.amountDue.toLocaleString()}</p>
+                      <p className="font-medium">
+                        KSh {selectedBooking.amountDue.toLocaleString()}
+                      </p>
                     </div>
                   </div>
 
                   {selectedBooking.amountDue > 0 ? (
                     <>
                       <div>
-                        <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                          htmlFor="paymentAmount"
+                          className="block text-sm font-medium text-gray-700 mb-1">
                           Record Payment (KSh)
                         </label>
                         <Input
@@ -337,8 +336,7 @@ export default function EventBookingsPage({ params }) {
                       <Button
                         onClick={handleUpdatePayment}
                         className="w-full bg-green-600 hover:bg-green-700"
-                        disabled={!paymentAmount || Number(paymentAmount) <= 0}
-                      >
+                        disabled={!paymentAmount || Number(paymentAmount) <= 0}>
                         Update Payment
                       </Button>
                     </>
@@ -385,12 +383,13 @@ export default function EventBookingsPage({ params }) {
                           ? "border-green-500 bg-green-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => handleSelectBooking(booking)}
-                    >
+                      onClick={() => handleSelectBooking(booking)}>
                       <div className="flex flex-col md:flex-row justify-between mb-2">
                         <div>
                           <h3 className="font-medium">{booking.userName}</h3>
-                          <p className="text-sm text-gray-600">{booking.userEmail}</p>
+                          <p className="text-sm text-gray-600">
+                            {booking.userEmail}
+                          </p>
                         </div>
                         <div className="flex items-center mt-2 md:mt-0">
                           <Badge
@@ -398,15 +397,14 @@ export default function EventBookingsPage({ params }) {
                               booking.paymentStatus === "paid"
                                 ? "bg-green-600"
                                 : booking.paymentStatus === "partial"
-                                  ? "bg-yellow-600"
-                                  : "bg-red-600"
-                            }
-                          >
+                                ? "bg-yellow-600"
+                                : "bg-red-600"
+                            }>
                             {booking.paymentStatus === "paid"
                               ? "Paid"
                               : booking.paymentStatus === "partial"
-                                ? "Partially Paid"
-                                : "Unpaid"}
+                              ? "Partially Paid"
+                              : "Unpaid"}
                           </Badge>
                         </div>
                       </div>
@@ -438,5 +436,5 @@ export default function EventBookingsPage({ params }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
