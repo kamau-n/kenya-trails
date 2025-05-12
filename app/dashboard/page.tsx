@@ -337,6 +337,17 @@ export default function DashboardPage() {
                             Manage Bookings
                           </Link>
                         </Button>
+                        <Button asChild>
+                          <Link href={`/events/${event.id}/edit`}>
+                            Edit Booking
+                          </Link>
+                        </Button>
+
+                        <Button asChild>
+                          <Link href={`/organize/events/${event.id}/promote`}>
+                            Promote Event
+                          </Link>
+                        </Button>
                       </div>
                     </CardFooter>
                   </Card>

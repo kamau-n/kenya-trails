@@ -14,6 +14,7 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalEvents: 0,
     activeEvents: 0,
+    totalPackages: 0,
   });
 
   useEffect(() => {
@@ -30,10 +31,14 @@ export default function AdminDashboard() {
           (doc) => new Date(doc.data().date?.seconds * 1000) > new Date()
         ).length;
 
+        const packagesSnapshot = await getDocs(collection(db, "promotions"));
+        const packagesCount = packagesSnapshot.size;
+
         setStats({
           totalUsers: usersCount,
           totalEvents: eventsCount,
           activeEvents: activeEventsCount,
+          totalPackages: packagesCount,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -75,6 +80,16 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeEvents}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Packages</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalPackages}</div>
           </CardContent>
         </Card>
       </div>

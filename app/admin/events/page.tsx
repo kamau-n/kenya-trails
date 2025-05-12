@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
-import { Search, Edit, Trash2 } from "lucide-react";
+import { Search, Edit, Trash2, Download } from "lucide-react";
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
@@ -54,6 +54,45 @@ export default function EventsPage() {
     }
   };
 
+  const downloadEvents = () => {
+    // Convert events to CSV format
+    const headers = [
+      "Title",
+      "Location",
+      "Date",
+      "Price",
+      "Available Spaces",
+      "Total Spaces",
+      "Status",
+    ];
+    const csvData = events.map((event) => [
+      event.title,
+      event.location,
+      new Date(event.date).toLocaleDateString(),
+      event.price,
+      event.availableSpaces,
+      event.totalSpaces,
+      new Date(event.date) > new Date() ? "Upcoming" : "Past",
+    ]);
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) => row.join(",")),
+    ].join("\n");
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `events-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const filteredEvents = events.filter(
     (event) =>
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,6 +121,13 @@ export default function EventsPage() {
               className="pl-10"
             />
           </div>
+          <Button
+            onClick={downloadEvents}
+            variant="outline"
+            className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export Events
+          </Button>
         </div>
       </div>
 
@@ -122,7 +168,9 @@ export default function EventsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => router.push(`/events/${event.id}`)}>
+                    onClick={() =>
+                      router.push(`/admin/events/${event.id}/edit`)
+                    }>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
