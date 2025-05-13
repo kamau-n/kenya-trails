@@ -200,7 +200,11 @@ export default function EventPage({ params }) {
                 </div>
               </div>
 
-              <div>
+              <div
+                onClick={() => {
+                  console.log("this is the organizer", organizer);
+                  router.push(`/organizer/${event.organizerId}`);
+                }}>
                 <h3 className="text-xl font-semibold mb-3">Organizer</h3>
                 <div className="flex items-start">
                   <User className="h-5 w-5 text-gray-600 mr-2 mt-0.5" />

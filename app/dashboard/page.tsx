@@ -170,6 +170,10 @@ export default function DashboardPage() {
           {user.userType === "organizer" && (
             <TabsTrigger value="events">My Events</TabsTrigger>
           )}
+
+          {user.userType === "organizer" && (
+            <TabsTrigger value="org-bio">Organizer Bio</TabsTrigger>
+          )}
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
 
