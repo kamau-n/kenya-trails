@@ -21,7 +21,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <link rel="icon" href="/favicon.svg" />
+      </head>
+
       <body className={inter.className}>
         {/* Google AdSense Script */}
         <script
