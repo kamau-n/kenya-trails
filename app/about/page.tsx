@@ -9,7 +9,7 @@ export default function About() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/bg.jpeg"
+          src="/bg.jpg"
           alt="Kenya Landscape"
           className="w-full h-full object-cover"
         />

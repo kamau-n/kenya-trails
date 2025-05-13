@@ -105,7 +105,7 @@ export default function OrganizePage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/bg.jpeg"
+            src="/bg.jpg"
             alt="/placeholder.svg?height=800&width=1600"
             className="w-full h-full object-cover"
           />
