@@ -50,7 +50,7 @@ export default function DashboardPage() {
     if (authLoading) return;
 
     if (!user) {
-      router.push("/login?redirect=/dashboard");
+      router.push("/login");
       return;
     }
 
@@ -152,6 +152,14 @@ export default function DashboardPage() {
         {user.userType === "organizer" && (
           <Button asChild className="bg-green-600 hover:bg-green-700">
             <Link href="/organize/create">Create New Event</Link>
+          </Button>
+        )}
+
+        {user.userType === "traveler" && (
+          <Button asChild className="mt-4 bg-green-600 hover:bg-green-700">
+            <Link href="/dashboard/convert-to-organizer">
+              Become an Organizer
+            </Link>
           </Button>
         )}
       </div>

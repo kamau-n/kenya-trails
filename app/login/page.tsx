@@ -55,6 +55,7 @@ export default function Login() {
         return;
       }
 
+      console.log("am redirecting to dashboard");
       router.push("/dashboard");
     } catch (error) {
       console.error("Error during login:", error);
@@ -78,7 +79,7 @@ export default function Login() {
         return;
       }
 
-      router.push(redirectPath || "/dashboard");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error during Google sign in:", error);
       setError("Failed to sign in with Google.");
@@ -154,7 +155,7 @@ export default function Login() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
                   <Link
-                    href="/forgot-password"
+                    href="/forgot"
                     className="text-sm text-green-600 hover:underline">
                     Forgot password?
                   </Link>

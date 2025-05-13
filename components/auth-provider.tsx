@@ -9,6 +9,7 @@ import {
   updateProfile,
   signInWithPopup,
   sendEmailVerification,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured, googleProvider } from "@/lib/firebase";
@@ -158,6 +159,20 @@ export function AuthProvider({ children }) {
 
     try {
       await firebaseSignOut(auth);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    if (demoMode) {
+      throw new Error(
+        "Firebase is not configured. Please add your Firebase credentials to use authentication features."
+      );
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
     } catch (error) {
       throw error;
     }
