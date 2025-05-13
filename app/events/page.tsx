@@ -49,12 +49,10 @@ export default function EventsPage() {
         const eventsRef = collection(db, "events");
         let q = query(eventsRef, where("date", ">=", now));
 
-        // Apply category filter if selected
         if (selectedCategory && selectedCategory !== "all") {
           q = query(q, where("category", "==", selectedCategory));
         }
 
-        // Apply sorting
         if (sortBy === "date-asc") {
           q = query(q, orderBy("date", "asc"));
         } else if (sortBy === "date-desc") {
@@ -80,59 +78,10 @@ export default function EventsPage() {
       }
     };
 
-    // Update the fetchEvents function in app/events/page.tsx to include promoted events first
-
-    // const fetchEvents = async () => {
-    //   try {
-    //     const now = new Date();
-    //     const eventsRef = collection(db, "events");
-    //     let q = query(
-    //       eventsRef,
-    //       where("date", ">=", now)
-    //       // orderBy("isPromoted", "desc") // Show promoted events first
-    //       // orderBy("date", "asc")
-    //     );
-
-    //     // Apply category filter if selected
-    //     if (selectedCategory && selectedCategory !== "all") {
-    //       q = query(q, where("category", "==", selectedCategory));
-    //     }
-
-    //     // Apply sorting
-    //     if (sortBy === "date-asc") {
-    //       q = query(q, orderBy("date", "asc"));
-    //     } else if (sortBy === "date-desc") {
-    //       q = query(q, orderBy("date", "desc"));
-    //     } else if (sortBy === "price-asc") {
-    //       q = query(q, orderBy("price", "asc"));
-    //     } else if (sortBy === "price-desc") {
-    //       q = query(q, orderBy("price", "desc"));
-    //     }
-
-    //     const querySnapshot = await getDocs(q);
-    //     const eventsData = querySnapshot.docs.map((doc) => ({
-    //       id: doc.id,
-    //       ...doc.data(),
-    //       date: doc.data().date?.toDate() || new Date(),
-    //     }));
-
-    //     setEvents(eventsData);
-    //   } catch (error) {
-    //     console.error("Error fetching events:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-
     fetchEvents();
   }, [selectedCategory, sortBy]);
 
-  // Placeholder events for initial render
-
-  const displayEvents = events;
-
-  // Filter events based on search term
-  const filteredEvents = displayEvents.filter(
+  const filteredEvents = events.filter(
     (event) =>
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -304,7 +253,14 @@ export default function EventsPage() {
               {filteredEvents.map((event) => (
                 <Card
                   key={event.id}
-                  className="overflow-hidden hover:shadow-lg transition-shadow">
+                  className="overflow-hidden hover:shadow-lg transition-shadow relative">
+                  {/* Test mode banner */}
+                  {event.data_mode === "test" && (
+                    <div className="absolute top-0 left-0 w-full bg-yellow-500 text-white text-center text-xs font-semibold py-1 z-10">
+                      THIS IS A TEST EVENT
+                    </div>
+                  )}
+
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={
