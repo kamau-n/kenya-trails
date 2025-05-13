@@ -114,12 +114,15 @@ export default function Navbar() {
                       <span>My Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/organize/create" className="cursor-pointer">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      <span>Create Event</span>
-                    </Link>
-                  </DropdownMenuItem>
+
+                  {user.userType === "organizer" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/organize/create" className="cursor-pointer">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <span>Create Event</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {user.role === "admin" && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" className="cursor-pointer">
