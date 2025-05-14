@@ -24,12 +24,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head />
       <body className={inter.className}>
         {/* Google AdSense Script */}
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1595924632810821"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+          crossorigin="anonymous"></script>
 
         <ThemeProvider attribute="class" defaultTheme="light">
           <AuthProvider>
