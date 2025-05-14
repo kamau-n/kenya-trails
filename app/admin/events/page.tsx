@@ -168,9 +168,7 @@ export default function EventsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() =>
-                      router.push(`/admin/events/${event.id}/edit`)
-                    }>
+                    onClick={() => router.push(`/events/${event.id}/edit`)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
