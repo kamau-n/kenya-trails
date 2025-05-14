@@ -343,11 +343,11 @@ export default function DashboardPage() {
                           </Link>
                         </Button>
 
-                        <Button asChild>
+                        {/* <Button asChild>
                           <Link href={`/organize/events/${event.id}/promote`}>
                             Promote Event
                           </Link>
-                        </Button>
+                        </Button> */}
                       </div>
                     </CardFooter>
                   </Card>
