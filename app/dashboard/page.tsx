@@ -26,7 +26,15 @@ import {
   Users,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 export default function DashboardPage() {
   const auth = useAuth();
@@ -45,6 +53,21 @@ export default function DashboardPage() {
       router.push("/login?redirect=/dashboard");
       return;
     }
+
+    const handleDeleteEvent = async (eventId) => {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this event?"
+      );
+      if (!confirmed) return;
+
+      try {
+        await deleteDoc(doc(db, "events", eventId));
+        setEvents((prev) => prev.filter((event) => event.id !== eventId));
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        alert("Failed to delete the event. Please try again.");
+      }
+    };
 
     const fetchUserData = async () => {
       try {
@@ -328,7 +351,7 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <div className="flex justify-between w-full">
+                      <div className="flex flex-wrap gap-2 justify-between w-full">
                         <Button asChild variant="outline">
                           <Link href={`/events/${event.id}`}>View</Link>
                         </Button>
@@ -342,12 +365,11 @@ export default function DashboardPage() {
                             Edit Booking
                           </Link>
                         </Button>
-
-                        {/* <Button asChild>
-                          <Link href={`/organize/events/${event.id}/promote`}>
-                            Promote Event
-                          </Link>
-                        </Button> */}
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleDeleteEvent(event.id)}>
+                          Delete
+                        </Button>
                       </div>
                     </CardFooter>
                   </Card>

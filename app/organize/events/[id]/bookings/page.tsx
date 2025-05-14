@@ -27,10 +27,53 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
+import { event } from "@/app/types/types";
+
+const generateCSV = (bookings, eventName) => {
+  const header = [
+    "Booking ID",
+    "User Name",
+    "User Email",
+    "Booking Date",
+    "Number of People",
+    "Total Amount",
+    "Amount Paid",
+    "Amount Due",
+    "Payment Status",
+  ];
+
+  const rows = bookings.map((b: any) => [
+    b.id,
+    b.userName,
+    b.userEmail,
+    new Date(b.bookingDate).toLocaleDateString("en-KE"),
+    b.numberOfPeople,
+    b.totalAmount,
+    b.amountPaid,
+    b.amountDue,
+    b.paymentStatus,
+  ]);
+
+  const csvContent = [header, ...rows]
+    .map((row) => row.map((val) => `"${val}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", eventName + "_" + "bookings.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url); // Clean up
+};
+
 export default function EventBookingsPage({ params }) {
   const { id } = params;
   const { user, loading: authLoading } = useAuth();
-  const [event, setEvent] = useState(null);
+  const [event, setEvent] = useState<event>();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,7 +97,7 @@ export default function EventBookingsPage({ params }) {
         const eventDoc = await getDoc(doc(db, "events", id));
 
         if (eventDoc.exists()) {
-          const eventData = {
+          const eventData: Partial<event> = {
             id: eventDoc.id,
             ...eventDoc.data(),
             date: eventDoc.data().date?.toDate() || new Date(),
@@ -366,6 +409,11 @@ export default function EventBookingsPage({ params }) {
                     className="pl-10"
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  onClick={() => generateCSV(bookings, event?.title)}>
+                  Download All Bookings
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
