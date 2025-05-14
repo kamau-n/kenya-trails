@@ -341,6 +341,11 @@ export default function DashboardPage() {
                         <Button asChild variant="outline">
                           <Link href={`/events/${event.id}`}>View</Link>
                         </Button>
+                        <Button asChild variant="outline">
+                          <Link href={`/events/${event.id}/promote`}>
+                            Promote
+                          </Link>
+                        </Button>
                         <Button asChild>
                           <Link href={`/organize/events/${event.id}/bookings`}>
                             Manage Bookings

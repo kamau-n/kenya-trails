@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/firebase";
+import { Elements } from "@stripe/react-stripe-js";
+
 import {
   collection,
   getDocs,
@@ -15,6 +17,8 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import PaymentForm from "@/components/pay-form";
+import { getStripe } from "@/lib/stripe";
 
 export default function PromoteEventPage({ params }) {
   const { id } = params;
@@ -22,7 +26,7 @@ export default function PromoteEventPage({ params }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState(null);
+  const [clientSecret, setClientSecret] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -51,35 +55,35 @@ export default function PromoteEventPage({ params }) {
     }
   };
 
-  const handlePromote = async () => {
-    if (!selectedPromotion || !paymentMethod) return;
-
+  const handlePromotionSelect = async (promotion) => {
+    setSelectedPromotion(promotion);
     try {
-      // Create promotion record
-      const promotionData = {
-        eventId: id,
-        promotionId: selectedPromotion.id,
-        organizerId: event.organizerId,
-        startDate: serverTimestamp(),
-        endDate: new Date(
-          Date.now() + selectedPromotion.duration * 24 * 60 * 60 * 1000
-        ),
-        status: "active",
-        paymentMethod,
-        amount: selectedPromotion.price,
-      };
-
-      await addDoc(collection(db, "event_promotions"), promotionData);
-
-      // Update event with promotion status
-      await updateDoc(doc(db, "events", id), {
-        isPromoted: true,
-        promotionEndDate: promotionData.endDate,
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: promotion.price,
+          eventId: id,
+          promotionId: promotion.id,
+          userId: event.organizerId,
+        }),
       });
 
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    try {
+      // Payment success is handled by the webhook
       router.push("/organize/events");
     } catch (error) {
-      console.error("Error promoting event:", error);
+      console.error("Error handling payment success:", error);
     }
   };
 
@@ -105,7 +109,7 @@ export default function PromoteEventPage({ params }) {
                     ? "border-green-600 shadow-lg"
                     : "hover:border-gray-400"
                 }`}
-                onClick={() => setSelectedPromotion(promotion)}>
+                onClick={() => handlePromotionSelect(promotion)}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -115,7 +119,7 @@ export default function PromoteEventPage({ params }) {
                       </p>
                     </div>
                     <Badge variant="secondary" className="text-lg">
-                      KSh {promotion.price}
+                      ${promotion.price}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -136,54 +140,28 @@ export default function PromoteEventPage({ params }) {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
-          <div className="grid gap-4">
-            <Card
-              className={`cursor-pointer transition-all ${
-                paymentMethod === "mpesa"
-                  ? "border-green-600 shadow-lg"
-                  : "hover:border-gray-400"
-              }`}
-              onClick={() => setPaymentMethod("mpesa")}>
-              <CardContent className="flex items-center gap-4 p-4">
-                <img src="/mpesa-logo.png" alt="M-Pesa" className="h-8" />
-                <div>
-                  <h3 className="font-medium">Pay with M-Pesa</h3>
-                  <p className="text-sm text-gray-600">
-                    Pay directly using your M-Pesa mobile money
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className={`cursor-pointer transition-all ${
-                paymentMethod === "card"
-                  ? "border-green-600 shadow-lg"
-                  : "hover:border-gray-400"
-              }`}
-              onClick={() => setPaymentMethod("card")}>
-              <CardContent className="flex items-center gap-4 p-4">
-                <img src="/card-logo.png" alt="Card Payment" className="h-8" />
-                <div>
-                  <h3 className="font-medium">Pay with Card</h3>
-                  <p className="text-sm text-gray-600">
-                    Pay using your credit or debit card
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="mt-8">
-              <Button
-                onClick={handlePromote}
-                disabled={!selectedPromotion || !paymentMethod}
-                className="w-full bg-green-600 hover:bg-green-700">
-                Promote Event for KSh{" "}
-                {selectedPromotion ? selectedPromotion.price : "0"}
-              </Button>
+          {selectedPromotion && clientSecret && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+              <Card>
+                <CardContent className="pt-6">
+                  <Elements
+                    stripe={getStripe()}
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: "stripe",
+                      },
+                    }}>
+                    <PaymentForm
+                      amount={selectedPromotion.price}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  </Elements>
+                </CardContent>
+              </Card>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

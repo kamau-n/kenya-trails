@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Users, Calendar, Package } from "lucide-react";
+import { Menu, Users, Calendar, Package, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,6 +125,14 @@ export default function AdminDashboard() {
           variant={pathname === "/admin/promotions" ? "secondary" : "ghost"}
           className="w-full justify-start">
           <Package className="mr-2 h-4 w-4" /> Promotions
+        </Button>
+      </Link>
+
+      <Link href="/admin/payments">
+        <Button
+          variant={pathname === "/admin/users" ? "secondary" : "ghost"}
+          className="w-full justify-start">
+          <DollarSign className="mr-2 h-4 w-4" /> Payments
         </Button>
       </Link>
     </div>
