@@ -135,7 +135,7 @@ importers:
         specifier: ^19
         version: 19.0.0(react@19.0.0)
       react-google-adsense:
-        specifier: ^0.0.5
+        specifier: 0.0.5
         version: 0.0.5
       react-hook-form:
         specifier: ^7.54.1
