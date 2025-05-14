@@ -35,7 +35,7 @@ export default function Hero() {
             asChild
             size="lg"
             variant="outline"
-            className="border-white text-white hover:bg-white hover:text-green-800 text-lg">
+            className="border-white text-black hover:bg-white hover:text-green-800 text-lg">
             <Link href="/organize">Create Your Event</Link>
           </Button>
         </div>

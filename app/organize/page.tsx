@@ -393,8 +393,9 @@ export default function OrganizePage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                It's free to create and list your events on Kenya Trails. We
-                charge a small commission (10%) only when you receive a booking.
+                It's free to create and list your events on Kenya Trails.
+                {/* We
+                charge a small commission (10%) only when you receive a booking. */}
               </p>
             </CardContent>
           </Card>

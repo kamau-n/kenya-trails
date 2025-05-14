@@ -8,6 +8,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   signInWithPopup,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured, googleProvider } from "@/lib/firebase";
@@ -67,14 +68,17 @@ export function AuthProvider({ children }) {
         password
       );
 
-      // Update profile with display name
+      // Update profile
       await updateProfile(userCredential.user, { displayName });
 
-      // Create user document in Firestore
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
+
+      // Store user info in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         email,
         displayName,
-        userType: "traveler", // Default user type
+        userType: "traveler", // default role
         createdAt: new Date(),
       });
 
@@ -97,6 +101,15 @@ export function AuthProvider({ children }) {
         email,
         password
       );
+
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        await firebaseSignOut(auth);
+        throw new Error(
+          "Email not verified. Please check your inbox for a verification link."
+        );
+      }
+
       return userCredential.user;
     } catch (error) {
       throw error;
@@ -114,15 +127,20 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
+      // (Optional) Enforce email verification
+      if (!user.emailVerified) {
+        await firebaseSignOut(auth);
+        throw new Error("Your Google account email is not verified.");
+      }
+
       // Check if user document exists
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
       if (!userDoc.exists()) {
-        // Create new user document if it doesn't exist
         await setDoc(doc(db, "users", user.uid), {
           email: user.email,
           displayName: user.displayName,
-          userType: "traveler", // Default user type
+          userType: "traveler",
           createdAt: new Date(),
         });
       }

@@ -115,34 +115,8 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   // Placeholder data for initial render
-  const placeholderBookings = [
-    {
-      id: "booking1",
-      eventId: "event1",
-      eventTitle: "Mt. Kenya Hiking Adventure",
-      numberOfPeople: 2,
-      totalAmount: 30000,
-      amountPaid: 10000,
-      amountDue: 20000,
-      paymentStatus: "partial",
-      bookingDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      status: "confirmed",
-    },
-    {
-      id: "booking2",
-      eventId: "event2",
-      eventTitle: "Maasai Mara Safari Weekend",
-      numberOfPeople: 1,
-      totalAmount: 25000,
-      amountPaid: 25000,
-      amountDue: 0,
-      paymentStatus: "paid",
-      bookingDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      status: "confirmed",
-    },
-  ];
 
-  const displayBookings = bookings.length > 0 ? bookings : placeholderBookings;
+  const displayBookings = bookings;
   const displayEvents = events;
 
   const formatDate = (date) => {
@@ -279,15 +253,15 @@ export default function DashboardPage() {
                           View Event
                         </Link>
                       </Button>
-                      {booking.amountDue > 0 && (
+                      {/* {booking.amountDue > 0 && (
                         <Button
                           asChild
                           className="bg-green-600 hover:bg-green-700">
                           <Link href={`/bookings/${booking.id}/payment`}>
                             Complete Payment
                           </Link>
-                        </Button>
-                      )}
+                        </Button> */}
+                      {/* )} */}
                     </div>
                   </CardFooter>
                 </Card>
@@ -411,8 +385,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="pt-4">
-                <Button asChild className="w-full md:w-auto">
-                  <Link href="/profile/edit">Edit Profile</Link>
+                <Button asChild className="w-full md:w-auto" disabled>
+                  {/* <Link href="/profile/edit">Edit Profile</Link> */}
                 </Button>
               </div>
             </CardContent>

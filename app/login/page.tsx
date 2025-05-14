@@ -46,8 +46,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await auth?.signIn(email, password);
-      router.push(redirectPath || "/dashboard");
+      const userCredential = await auth?.signIn(email, password);
+      const user = userCredential?.user;
+
+      if (user && !user.emailVerified) {
+        await auth?.signOut(); // force logout
+        setError("Please verify your email before logging in.");
+        return;
+      }
+
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error during login:", error);
       setError("Failed to log in. Please check your credentials.");
@@ -61,7 +69,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await auth?.signInWithGoogle();
+      const result = await auth?.signInWithGoogle();
+      const user = result?.user;
+
+      if (user && !user.emailVerified) {
+        await auth?.signOut();
+        setError("Please verify your email before logging in.");
+        return;
+      }
+
       router.push(redirectPath || "/dashboard");
     } catch (error) {
       console.error("Error during Google sign in:", error);
