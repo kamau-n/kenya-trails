@@ -23,13 +23,15 @@ export async function POST(req: Request) {
     if (event.event === "charge.success") {
       const reference = event.data.reference;
 
-      console.log("am updating the event and also the payment");
+      console.log("am updating the event and also the payment",reference);
       
 
       // Update payment status in Firebase
       const paymentsRef = collection(db, "payments");
       const q = query(paymentsRef, where("id", "==", reference));
       const querySnapshot = await getDocs(q);
+
+      console.log(querySnapshot)
 
       if (!querySnapshot.empty) {
         console.log("am updating the following transaction",querySnapshot.docs[0])
