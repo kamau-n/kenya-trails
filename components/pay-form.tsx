@@ -1,60 +1,66 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useStripe,
-  useElements,
-  PaymentElement,
-} from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getPaystack } from "@/lib/paystack";
 
 export default function PaymentForm({ amount, onSuccess }) {
-  const stripe = useStripe();
-  const elements = useElements();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handlePayment = async () => {
     setError("");
     setLoading(true);
 
-    if (!stripe || !elements) {
-      return;
-    }
+    try {
+      const paystack = await getPaystack();
 
-    const { error: submitError } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/payment/success`,
-      },
-    });
+      // Create payment intent
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount }),
+      });
 
-    if (submitError) {
-      setError(submitError.message || "Payment failed");
+      const { reference } = await response.json();
+
+      // Initialize Paystack payment
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        amount: amount * 100, // Convert to kobo
+        email: "customer@email.com", // Get from user context
+        reference,
+        onSuccess: () => {
+          onSuccess();
+        },
+        onCancel: () => {
+          setError("Payment was cancelled");
+          setLoading(false);
+        },
+      });
+    } catch (error) {
+      setError("Payment failed. Please try again.");
       setLoading(false);
-    } else {
-      onSuccess();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <PaymentElement />
-
       <Button
-        type="submit"
+        onClick={handlePayment}
         className="w-full bg-green-600 hover:bg-green-700"
-        disabled={!stripe || loading}>
-        {loading ? "Processing..." : `Pay $${amount}`}
+        disabled={loading}>
+        {loading ? "Processing..." : `Pay ₦${amount.toLocaleString()}`}
       </Button>
-    </form>
+    </div>
   );
 }

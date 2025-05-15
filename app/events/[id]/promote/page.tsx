@@ -6,19 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/firebase";
-import { Elements } from "@stripe/react-stripe-js";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { PaystackButton } from "react-paystack";
 
-import {
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import PaymentForm from "@/components/pay-form";
-import { getStripe } from "@/lib/stripe";
+const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
 export default function PromoteEventPage({ params }) {
   const { id } = params;
@@ -26,7 +17,7 @@ export default function PromoteEventPage({ params }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
-  const [clientSecret, setClientSecret] = useState("");
+  const [email, setEmail] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -35,13 +26,11 @@ export default function PromoteEventPage({ params }) {
 
   const fetchData = async () => {
     try {
-      // Fetch event details
       const eventDoc = await getDoc(doc(db, "events", id));
       if (eventDoc.exists()) {
         setEvent({ id: eventDoc.id, ...eventDoc.data() });
       }
 
-      // Fetch promotion packages
       const promotionsSnapshot = await getDocs(collection(db, "promotions"));
       const promotionsData = promotionsSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -55,36 +44,17 @@ export default function PromoteEventPage({ params }) {
     }
   };
 
-  const handlePromotionSelect = async (promotion) => {
+  const handlePromotionSelect = (promotion) => {
     setSelectedPromotion(promotion);
-    try {
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: promotion.price,
-          eventId: id,
-          promotionId: promotion.id,
-          userId: event.organizerId,
-        }),
-      });
-
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
-    } catch (error) {
-      console.error("Error creating payment intent:", error);
-    }
   };
 
-  const handlePaymentSuccess = async () => {
-    try {
-      // Payment success is handled by the webhook
-      router.push("/organize/events");
-    } catch (error) {
-      console.error("Error handling payment success:", error);
-    }
+  const handlePaymentSuccess = async (reference) => {
+    console.log("Payment successful:", reference);
+    router.push("/success");
+  };
+
+  const handlePaymentClose = () => {
+    console.log("Payment popup closed");
   };
 
   if (loading) {
@@ -119,7 +89,7 @@ export default function PromoteEventPage({ params }) {
                       </p>
                     </div>
                     <Badge variant="secondary" className="text-lg">
-                      ${promotion.price}
+                      KES {promotion.price}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -140,24 +110,52 @@ export default function PromoteEventPage({ params }) {
         </div>
 
         <div>
-          {selectedPromotion && clientSecret && (
+          {selectedPromotion && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
               <Card>
-                <CardContent className="pt-6">
-                  <Elements
-                    stripe={getStripe()}
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: "stripe",
-                      },
-                    }}>
-                    <PaymentForm
-                      amount={selectedPromotion.price}
-                      onSuccess={handlePaymentSuccess}
+                <CardContent className="pt-6 space-y-4">
+                  <p className="text-gray-700">
+                    You are about to pay{" "}
+                    <span className="font-semibold">
+                      KES {selectedPromotion.price}
+                    </span>{" "}
+                    for the <strong>{selectedPromotion.name}</strong> package.
+                  </p>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700">
+                      Organizer Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="mt-1 w-full p-2 border border-gray-300 rounded"
                     />
-                  </Elements>
+                  </div>
+
+                  {email && (
+                    <PaystackButton
+                      publicKey={paystackPublicKey}
+                      email={email}
+                      amount={selectedPromotion.price * 100}
+                      currency="KES"
+                      metadata={{
+                        eventId: id,
+                        promotionId: selectedPromotion.id,
+                        organizerId: event?.organizerId,
+                      }}
+                      text="Pay with Paystack"
+                      onSuccess={handlePaymentSuccess}
+                      onClose={handlePaymentClose}
+                      className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+                    />
+                  )}
                 </CardContent>
               </Card>
             </div>

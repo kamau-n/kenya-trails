@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -10,36 +9,20 @@ import {
   doc,
 } from "firebase/firestore";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(req: Request) {
-  console.log(
-    "this is the callback url for money intent payment and its body is below"
-  );
-  console.log(req);
   try {
-    const body = await req.text();
-    const signature = req.headers.get("stripe-signature")!;
+    const event = await req.json();
 
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
+    // Verify Paystack signature here
+    const hash = req.headers.get("x-paystack-signature");
+    // Add signature verification logic
 
-    if (event.type === "payment_intent.succeeded") {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    if (event.event === "charge.success") {
+      const reference = event.data.reference;
 
       // Update payment status in Firebase
       const paymentsRef = collection(db, "payments");
-      const q = query(
-        paymentsRef,
-        where("paymentIntentId", "==", paymentIntent.id)
-      );
+      const q = query(paymentsRef, where("id", "==", reference));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -50,7 +33,7 @@ export async function POST(req: Request) {
         });
 
         // Update event promotion status
-        const { eventId, promotionId } = paymentIntent.metadata;
+        const { eventId, promotionId } = paymentDoc.data();
         await updateDoc(doc(db, "events", eventId), {
           isPromoted: true,
           promotionId,
