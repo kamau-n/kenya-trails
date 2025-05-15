@@ -1,27 +1,37 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { CalendarIcon, Plus, Trash2, Upload } from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
-import { db, storage } from "@/lib/firebase"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { CalendarIcon, Plus, Trash2, Upload } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { db, storage } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function CreateEventPage() {
-  const { user } = useAuth()
-  const router = useRouter()
+  const { user } = useAuth();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -41,135 +51,143 @@ export default function CreateEventPage() {
     requirements: [""],
     paymentMethods: [],
     paymentDeadline: null,
-  })
+    paymentManagement: "manual",
+    accountDetails: {
+      bankName: "",
+      accountNumber: "",
+      accountName: "",
+    },
+    platformFee: 5,
+  });
 
-  const [images, setImages] = useState([])
-  const [itinerary, setItinerary] = useState([{ day: "Day 1", title: "", description: "" }])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
+  const [images, setImages] = useState([]);
+  const [itinerary, setItinerary] = useState([
+    { day: "Day 1", title: "", description: "" },
+  ]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleNumberChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value ? Number.parseInt(value) : "" }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value ? Number.parseInt(value) : "",
+    }));
+  };
 
   const handleDateChange = (name, date) => {
-    setFormData((prev) => ({ ...prev, [name]: date }))
-  }
+    setFormData((prev) => ({ ...prev, [name]: date }));
+  };
 
   const handleArrayChange = (name, index, value) => {
     setFormData((prev) => {
-      const newArray = [...prev[name]]
-      newArray[index] = value
-      return { ...prev, [name]: newArray }
-    })
-  }
+      const newArray = [...prev[name]];
+      newArray[index] = value;
+      return { ...prev, [name]: newArray };
+    });
+  };
 
   const addArrayItem = (name) => {
     setFormData((prev) => ({
       ...prev,
       [name]: [...prev[name], ""],
-    }))
-  }
+    }));
+  };
 
   const removeArrayItem = (name, index) => {
     setFormData((prev) => {
-      const newArray = [...prev[name]]
-      newArray.splice(index, 1)
-      return { ...prev, [name]: newArray }
-    })
-  }
+      const newArray = [...prev[name]];
+      newArray.splice(index, 1);
+      return { ...prev, [name]: newArray };
+    });
+  };
 
   const handleItineraryChange = (index, field, value) => {
-    const newItinerary = [...itinerary]
-    newItinerary[index] = { ...newItinerary[index], [field]: value }
-    setItinerary(newItinerary)
-  }
+    const newItinerary = [...itinerary];
+    newItinerary[index] = { ...newItinerary[index], [field]: value };
+    setItinerary(newItinerary);
+  };
 
   const addItineraryDay = () => {
-    setItinerary([...itinerary, { day: `Day ${itinerary.length + 1}`, title: "", description: "" }])
-  }
+    setItinerary([
+      ...itinerary,
+      { day: `Day ${itinerary.length + 1}`, title: "", description: "" },
+    ]);
+  };
 
   const removeItineraryDay = (index) => {
-    const newItinerary = [...itinerary]
-    newItinerary.splice(index, 1)
-    // Update day numbers
+    const newItinerary = [...itinerary];
+    newItinerary.splice(index, 1);
     newItinerary.forEach((item, i) => {
-      item.day = `Day ${i + 1}`
-    })
-    setItinerary(newItinerary)
-  }
+      item.day = `Day ${i + 1}`;
+    });
+    setItinerary(newItinerary);
+  };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files)
+    const files = Array.from(e.target.files);
     if (files.length > 0) {
-      setImages((prev) => [...prev, ...files])
+      setImages((prev) => [...prev, ...files]);
     }
-  }
+  };
 
   const removeImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-  }
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handlePaymentMethodChange = (method) => {
     setFormData((prev) => {
-      const methods = [...prev.paymentMethods]
+      const methods = [...prev.paymentMethods];
       if (methods.includes(method)) {
-        return { ...prev, paymentMethods: methods.filter((m) => m !== method) }
+        return { ...prev, paymentMethods: methods.filter((m) => m !== method) };
       } else {
-        return { ...prev, paymentMethods: [...methods, method] }
+        return { ...prev, paymentMethods: [...methods, method] };
       }
-    })
-  }
+    });
+  };
 
   const validateForm = () => {
-    if (!formData.title) return "Event title is required"
-    if (!formData.description) return "Event description is required"
-    if (!formData.location) return "Location is required"
-    if (!formData.date) return "Event date is required"
-    if (!formData.price) return "Price is required"
-    if (!formData.totalSpaces) return "Total spaces is required"
-    if (!formData.category) return "Category is required"
-    if (formData.paymentMethods.length === 0) return "At least one payment method is required"
-    return null
-  }
+    if (!formData.title) return "Event title is required";
+    if (!formData.description) return "Event description is required";
+    if (!formData.location) return "Location is required";
+    if (!formData.date) return "Event date is required";
+    if (!formData.price) return "Price is required";
+    if (!formData.totalSpaces) return "Total spaces is required";
+    if (!formData.category) return "Category is required";
+    if (formData.paymentMethods.length === 0)
+      return "At least one payment method is required";
+    return null;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      // Upload images
-      const imageUrls = []
+      const imageUrls = [];
 
       if (images.length > 0) {
         for (const image of images) {
-          const storageRef = ref(storage, `events/${Date.now()}_${image.name}`)
-          await uploadBytes(storageRef, image)
-          const url = await getDownloadURL(storageRef)
-          imageUrls.push(url)
+          const storageRef = ref(storage, `events/${Date.now()}_${image.name}`);
+          await uploadBytes(storageRef, image);
+          const url = await getDownloadURL(storageRef);
+          imageUrls.push(url);
         }
       }
 
-      // Create event document
       const eventData = {
         ...formData,
         price: Number(formData.price),
-        depositAmount: formData.depositAmount ? Number(formData.depositAmount) : 0,
+        depositAmount: formData.depositAmount
+          ? Number(formData.depositAmount)
+          : 0,
         totalSpaces: Number(formData.totalSpaces),
         availableSpaces: Number(formData.totalSpaces),
         itinerary,
@@ -178,21 +196,28 @@ export default function CreateEventPage() {
         createdAt: serverTimestamp(),
         organizerId: user.uid,
         organizerName: user.displayName || user.email,
-      }
+        paymentManagement: formData.paymentManagement,
+        platformFee: formData.platformFee,
+        accountDetails:
+          formData.paymentManagement === "platform"
+            ? formData.accountDetails
+            : null,
+        collectionBalance: 0,
+      };
 
-      await addDoc(collection(db, "events"), eventData)
+      await addDoc(collection(db, "events"), eventData);
 
-      setSuccess(true)
+      setSuccess(true);
       setTimeout(() => {
-        router.push("/organize/events")
-      }, 2000)
+        router.push("/organize/events");
+      }, 2000);
     } catch (error) {
-      console.error("Error creating event:", error)
-      setError("Failed to create event. Please try again.")
+      console.error("Error creating event:", error);
+      setError("Failed to create event. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (!user) {
     return (
@@ -203,13 +228,15 @@ export default function CreateEventPage() {
           <Link href="/login?redirect=/organize/create">Log In</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   if (success) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-green-600 mb-4">Event Created Successfully!</h1>
+        <h1 className="text-2xl font-bold text-green-600 mb-4">
+          Event Created Successfully!
+        </h1>
         <p className="mb-8">Your event has been created and is now live.</p>
         <div className="flex justify-center gap-4">
           <Button asChild>
@@ -220,7 +247,7 @@ export default function CreateEventPage() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -256,8 +283,9 @@ export default function CreateEventPage() {
               <Select
                 name="category"
                 value={formData.category}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-              >
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, category: value }))
+                }>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -317,9 +345,15 @@ export default function CreateEventPage() {
               <Label>Start Date*</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
+                    {formData.date ? (
+                      format(formData.date, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -337,9 +371,15 @@ export default function CreateEventPage() {
               <Label>End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate ? format(formData.endDate, "PPP") : <span>Pick a date</span>}
+                    {formData.endDate ? (
+                      format(formData.endDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -372,8 +412,9 @@ export default function CreateEventPage() {
               <Select
                 name="difficulty"
                 value={formData.difficulty}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, difficulty: value }))}
-              >
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, difficulty: value }))
+                }>
                 <SelectTrigger>
                   <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
@@ -430,16 +471,24 @@ export default function CreateEventPage() {
               <Label>Payment Deadline</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.paymentDeadline ? format(formData.paymentDeadline, "PPP") : <span>Pick a date</span>}
+                    {formData.paymentDeadline ? (
+                      format(formData.paymentDeadline, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
                     selected={formData.paymentDeadline}
-                    onSelect={(date) => handleDateChange("paymentDeadline", date)}
+                    onSelect={(date) =>
+                      handleDateChange("paymentDeadline", date)
+                    }
                     initialFocus
                   />
                 </PopoverContent>
@@ -450,18 +499,20 @@ export default function CreateEventPage() {
           <div className="mt-4 space-y-2">
             <Label>Payment Methods*</Label>
             <div className="flex flex-wrap gap-4">
-              {["M-Pesa", "Bank Transfer", "Cash", "Credit Card"].map((method) => (
-                <div key={method} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`payment-${method}`}
-                    checked={formData.paymentMethods.includes(method)}
-                    onChange={() => handlePaymentMethodChange(method)}
-                    className="mr-2"
-                  />
-                  <Label htmlFor={`payment-${method}`}>{method}</Label>
-                </div>
-              ))}
+              {["M-Pesa", "Bank Transfer", "Cash", "Credit Card"].map(
+                (method) => (
+                  <div key={method} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`payment-${method}`}
+                      checked={formData.paymentMethods.includes(method)}
+                      onChange={() => handlePaymentMethodChange(method)}
+                      className="mr-2"
+                    />
+                    <Label htmlFor={`payment-${method}`}>{method}</Label>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -471,11 +522,17 @@ export default function CreateEventPage() {
           <h2 className="text-xl font-semibold mb-4">Itinerary</h2>
 
           {itinerary.map((day, index) => (
-            <div key={index} className="mb-6 p-4 border border-gray-200 rounded-lg">
+            <div
+              key={index}
+              className="mb-6 p-4 border border-gray-200 rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-medium">{day.day}</h3>
                 {itinerary.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeItineraryDay(index)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItineraryDay(index)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -487,18 +544,24 @@ export default function CreateEventPage() {
                   <Input
                     id={`itinerary-${index}-title`}
                     value={day.title}
-                    onChange={(e) => handleItineraryChange(index, "title", e.target.value)}
+                    onChange={(e) =>
+                      handleItineraryChange(index, "title", e.target.value)
+                    }
                     placeholder="e.g. Nairobi to Mt. Kenya"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`itinerary-${index}-description`}>Description</Label>
+                <Label htmlFor={`itinerary-${index}-description`}>
+                  Description
+                </Label>
                 <Textarea
                   id={`itinerary-${index}-description`}
                   value={day.description}
-                  onChange={(e) => handleItineraryChange(index, "description", e.target.value)}
+                  onChange={(e) =>
+                    handleItineraryChange(index, "description", e.target.value)
+                  }
                   placeholder="Describe the activities for this day..."
                   rows={3}
                 />
@@ -506,7 +569,11 @@ export default function CreateEventPage() {
             </div>
           ))}
 
-          <Button type="button" variant="outline" onClick={addItineraryDay} className="w-full">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addItineraryDay}
+            className="w-full">
             <Plus className="h-4 w-4 mr-2" /> Add Day
           </Button>
         </div>
@@ -521,12 +588,18 @@ export default function CreateEventPage() {
                 <div key={index} className="flex items-center mb-2">
                   <Input
                     value={item}
-                    onChange={(e) => handleArrayChange("included", index, e.target.value)}
+                    onChange={(e) =>
+                      handleArrayChange("included", index, e.target.value)
+                    }
                     placeholder="e.g. Professional guide"
                     className="mr-2"
                   />
                   {formData.included.length > 1 && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem("included", index)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeArrayItem("included", index)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -538,20 +611,23 @@ export default function CreateEventPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => addArrayItem("included")}
-                className="mt-2"
-              >
+                className="mt-2">
                 <Plus className="h-4 w-4 mr-2" /> Add Item
               </Button>
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold mb-4">What's Not Included</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                What's Not Included
+              </h2>
 
               {formData.notIncluded.map((item, index) => (
                 <div key={index} className="flex items-center mb-2">
                   <Input
                     value={item}
-                    onChange={(e) => handleArrayChange("notIncluded", index, e.target.value)}
+                    onChange={(e) =>
+                      handleArrayChange("notIncluded", index, e.target.value)
+                    }
                     placeholder="e.g. Personal hiking gear"
                     className="mr-2"
                   />
@@ -560,8 +636,7 @@ export default function CreateEventPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeArrayItem("notIncluded", index)}
-                    >
+                      onClick={() => removeArrayItem("notIncluded", index)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -573,8 +648,7 @@ export default function CreateEventPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => addArrayItem("notIncluded")}
-                className="mt-2"
-              >
+                className="mt-2">
                 <Plus className="h-4 w-4 mr-2" /> Add Item
               </Button>
             </div>
@@ -587,7 +661,9 @@ export default function CreateEventPage() {
               <div key={index} className="flex items-center mb-2">
                 <Input
                   value={item}
-                  onChange={(e) => handleArrayChange("requirements", index, e.target.value)}
+                  onChange={(e) =>
+                    handleArrayChange("requirements", index, e.target.value)
+                  }
                   placeholder="e.g. Moderate fitness level"
                   className="mr-2"
                 />
@@ -596,8 +672,7 @@ export default function CreateEventPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeArrayItem("requirements", index)}
-                  >
+                    onClick={() => removeArrayItem("requirements", index)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -609,8 +684,7 @@ export default function CreateEventPage() {
               variant="outline"
               size="sm"
               onClick={() => addArrayItem("requirements")}
-              className="mt-2"
-            >
+              className="mt-2">
               <Plus className="h-4 w-4 mr-2" /> Add Requirement
             </Button>
           </div>
@@ -635,16 +709,18 @@ export default function CreateEventPage() {
               />
               <Label
                 htmlFor="images"
-                className="cursor-pointer flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
+                className="cursor-pointer flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
                 <Upload className="h-4 w-4 mr-2" />
                 Select Images
               </Label>
               <span className="ml-4 text-sm text-gray-500">
-                {images.length} {images.length === 1 ? "image" : "images"} selected
+                {images.length} {images.length === 1 ? "image" : "images"}{" "}
+                selected
               </span>
             </div>
-            <p className="mt-1 text-sm text-gray-500">The first image will be used as the event cover image.</p>
+            <p className="mt-1 text-sm text-gray-500">
+              The first image will be used as the event cover image.
+            </p>
           </div>
 
           {images.length > 0 && (
@@ -652,7 +728,7 @@ export default function CreateEventPage() {
               {images.map((image, index) => (
                 <div key={index} className="relative">
                   <img
-                    src={URL.createObjectURL(image) || "/placeholder.svg"}
+                    src={URL.createObjectURL(image)}
                     alt={`Preview ${index}`}
                     className="w-full h-32 object-cover rounded-md"
                   />
@@ -661,8 +737,7 @@ export default function CreateEventPage() {
                     variant="destructive"
                     size="sm"
                     className="absolute top-2 right-2 h-6 w-6 p-0"
-                    onClick={() => removeImage(index)}
-                  >
+                    onClick={() => removeImage(index)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                   {index === 0 && (
@@ -676,15 +751,106 @@ export default function CreateEventPage() {
           )}
         </div>
 
+        {/* Payment Management Section */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4">Payment Management</h2>
+
+          <div className="space-y-4">
+            <Label>How would you like to manage payments?</Label>
+            <RadioGroup
+              value={formData.paymentManagement}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, paymentManagement: value }))
+              }
+              className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="manual" id="manual" />
+                <Label htmlFor="manual">I'll manage payments myself</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="platform" id="platform" />
+                <Label htmlFor="platform">
+                  Let the platform manage payments (5% fee)
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {formData.paymentManagement === "platform" && (
+              <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium">Collection Account Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bankName"
+                      value={formData.accountDetails.bankName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          accountDetails: {
+                            ...prev.accountDetails,
+                            bankName: e.target.value,
+                          },
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Input
+                      id="accountNumber"
+                      value={formData.accountDetails.accountNumber}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          accountDetails: {
+                            ...prev.accountDetails,
+                            accountNumber: e.target.value,
+                          },
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="accountName">Account Name</Label>
+                    <Input
+                      id="accountName"
+                      value={formData.accountDetails.accountName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          accountDetails: {
+                            ...prev.accountDetails,
+                            accountName: e.target.value,
+                          },
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Platform fee: 3% of each booking payment
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>
+          <Button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700"
+            disabled={loading}>
             {loading ? "Creating Event..." : "Create Event"}
           </Button>
         </div>
       </form>
     </div>
-  )
+  );
 }
