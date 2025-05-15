@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
+        console.log("am updating the following transaction",querySnapshot.docs[0])
         const paymentDoc = querySnapshot.docs[0];
         await updateDoc(doc(db, "payments", paymentDoc.id), {
           status: "completed",
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
 
         // Update event promotion status
         const { eventId, promotionId } = paymentDoc.data();
+
+        console.log("event id",eventId)
         await updateDoc(doc(db, "events", eventId), {
           isPromoted: true,
           promotionId,
