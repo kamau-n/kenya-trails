@@ -17,6 +17,7 @@ export default function PromoteEventPage({ params }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
   const [email, setEmail] = useState("");
   const router = useRouter();
 
@@ -44,13 +45,41 @@ export default function PromoteEventPage({ params }) {
     }
   };
 
-  const handlePromotionSelect = (promotion) => {
+  const handlePromotionSelect = async (promotion) => {
     setSelectedPromotion(promotion);
+    setPaymentData(null); // reset on new selection
+
+    try {
+      const res = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: promotion.price,
+          eventId: id,
+          promotionId: promotion.id,
+          userId: event?.organizerId || "anonymous",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPaymentData(data);
+      } else {
+        alert("Failed to create payment intent.");
+        console.error(data.error);
+      }
+    } catch (error) {
+      console.error("Payment intent error:", error);
+    }
   };
 
   const handlePaymentSuccess = async (reference) => {
     console.log("Payment successful:", reference);
-    router.push("/success");
+
+    // Optional: call an endpoint or update status manually in Firebase
+    // e.g., /api/verify-payment?reference=reference.reference
+
+    router.push("/payment/success");
   };
 
   const handlePaymentClose = () => {
@@ -139,11 +168,12 @@ export default function PromoteEventPage({ params }) {
                     />
                   </div>
 
-                  {email && (
+                  {email && paymentData && (
                     <PaystackButton
                       publicKey={paystackPublicKey}
                       email={email}
-                      amount={selectedPromotion.price * 100}
+                      amount={paymentData.amount}
+                      reference={paymentData.reference}
                       currency="KES"
                       metadata={{
                         eventId: id,
