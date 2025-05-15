@@ -770,7 +770,7 @@ export default function CreateEventPage() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="platform" id="platform" />
                 <Label htmlFor="platform">
-                  Let the platform manage payments (5% fee)
+                  Let the platform manage payments (3% fee)
                 </Label>
               </div>
             </RadioGroup>
