@@ -10,8 +10,11 @@ import {
 } from "firebase/firestore";
 
 export async function POST(req: Request) {
+  console.log("this is a paystack callback with data below");
   try {
     const event = await req.json();
+
+    console.log(event);
 
     // Verify Paystack signature here
     const hash = req.headers.get("x-paystack-signature");
