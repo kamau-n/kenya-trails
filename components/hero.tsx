@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <div className="relative py-20 md:py-32 overflow-hidden rounded-3xl my-8">
+    <div className="relative py-20 md:py-32 overflow-hidden rounded-l my-8">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img

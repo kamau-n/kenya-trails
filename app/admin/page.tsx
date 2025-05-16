@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Users, Calendar, Package, DollarSign } from "lucide-react";
+import {
+  Menu,
+  Users,
+  Calendar,
+  Package,
+  DollarSign,
+  User2Icon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,33 +147,39 @@ export default function AdminDashboard() {
   const pieColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
 
   const SidebarLinks = () => (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col  gap-4 p-4">
+      <h5 className="text-xl font-bold mb-8">Admin Dashboard</h5>
+      <div className="mr-2">
+        <User2Icon />
+        <h5>Admin User</h5>
+      </div>
+
       <Link href="/admin/users">
         <Button
           variant={pathname === "/admin/users" ? "secondary" : "ghost"}
           className="w-full justify-start">
-          <Users className="mr-2 h-4 w-4" /> Users
+          <Users className="mr-2 h-8 w-8" /> Users
         </Button>
       </Link>
       <Link href="/admin/events">
         <Button
           variant={pathname === "/admin/events" ? "secondary" : "ghost"}
           className="w-full justify-start">
-          <Calendar className="mr-2 h-4 w-4" /> Events
+          <Calendar className="mr-2 h-8 w-8" /> Events
         </Button>
       </Link>
       <Link href="/admin/promotions">
         <Button
           variant={pathname === "/admin/promotions" ? "secondary" : "ghost"}
           className="w-full justify-start">
-          <Package className="mr-2 h-4 w-4" /> Promotions
+          <Package className="mr-2 h-8 w-8" /> Promotions
         </Button>
       </Link>
       <Link href="/admin/payments">
         <Button
           variant={pathname === "/admin/payments" ? "secondary" : "ghost"}
           className="w-full justify-start">
-          <DollarSign className="mr-2 h-4 w-4" /> Payments
+          <DollarSign className="mr-2 h-8 w-8" /> Payments
         </Button>
       </Link>
     </div>
@@ -175,12 +188,12 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex w-64 border-r bg-white">
+      <aside className="hidden md:flex w-64  border-r bg-white/55">
         <SidebarLinks />
       </aside>
 
       {/* Sidebar Trigger (mobile) */}
-      <div className="md:hidden p-2 fixed top-2 left-2 z-50">
+      <div className="md:hidden p-2 fixed bg-slate-50 top-2 left-2 z-50">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
@@ -195,8 +208,6 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
