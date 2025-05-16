@@ -28,6 +28,7 @@ import {
   Download,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { PaystackButton } from "react-paystack";
 import {
   collection,
   query,
@@ -50,6 +51,8 @@ export default function DashboardPage() {
   const [events, setEvents] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -151,41 +154,70 @@ export default function DashboardPage() {
     });
   };
 
-  const handlePayBalance = async (booking) => {
+  const handlePayBalance = async (booking: any) => {
+    setSelectedBooking(booking);
+    setPaymentData(null); // reset
+
     try {
-      // Create payment intent
       const response = await fetch("/api/create-book-payment", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: booking.amountDue,
           eventId: booking.eventId,
           userId: user.uid,
-          bookingId: booking.id
+          bookingId: booking.id,
         }),
       });
 
       const data = await response.json();
 
-      // Initialize Paystack payment
-      const paystack = new window.PaystackPop();
-      paystack.newTransaction({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email: user.email,
-        amount: data.amount,
-        reference: data.reference,
-        onSuccess: () => {
-          // Update booking status
-          updateBookingStatus(booking.id, booking.amountDue);
-        },
-      });
+      if (response.ok) {
+        setPaymentData(data);
+      } else {
+        alert("Failed to create payment intent.");
+      }
     } catch (error) {
-      console.error("Error processing payment:", error);
-      alert("Payment failed. Please try again.");
+      console.error("Payment intent error:", error);
+      alert("Error creating payment.");
     }
   };
+
+  // const handlePayBalance = async (booking) => {
+  //   try {
+  //     // Create payment intent
+  //     const response = await fetch("/api/create-book-payment", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         amount: booking.amountDue,
+  //         eventId: booking.eventId,
+  //         userId: user.uid,
+  //         bookingId: booking.id,
+  //       }),
+  //     });
+
+  //     const data = await response.json();
+
+  //     // Initialize Paystack payment
+  //     const paystack = new window.PaystackPop();
+  //     paystack.newTransaction({
+  //       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+  //       email: user.email,
+  //       amount: data.amount,
+  //       reference: data.reference,
+  //       onSuccess: () => {
+  //         // Update booking status
+  //         updateBookingStatus(booking.id, booking.amountDue);
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error("Error processing payment:", error);
+  //     alert("Payment failed. Please try again.");
+  //   }
+  // };
 
   const updateBookingStatus = async (bookingId, amount) => {
     try {
@@ -200,14 +232,16 @@ export default function DashboardPage() {
         amountPaid: newAmountPaid,
         amountDue: newAmountDue,
         paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
-        lastPaymentDate: new Date()
+        lastPaymentDate: new Date(),
       });
 
       // If event uses platform payment management, update collection balance
       if (bookingData.paymentManagement === "platform") {
         const eventRef = doc(db, "events", bookingData.eventId);
         await updateDoc(eventRef, {
-          collectionBalance: increment(amount * (1 - bookingData.platformFee / 100))
+          collectionBalance: increment(
+            amount * (1 - bookingData.platformFee / 100)
+          ),
         });
       }
 
@@ -216,13 +250,11 @@ export default function DashboardPage() {
         ...bookingData,
         amountPaid: newAmountPaid,
         amountDue: newAmountDue,
-        paymentStatus: newAmountDue <= 0 ? "paid" : "partial"
+        paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
       };
 
-      setBookings(prevBookings => 
-        prevBookings.map(b => 
-          b.id === bookingId ? updatedBooking : b
-        )
+      setBookings((prevBookings) =>
+        prevBookings.map((b) => (b.id === bookingId ? updatedBooking : b))
       );
     } catch (error) {
       console.error("Error updating booking status:", error);
@@ -235,29 +267,40 @@ export default function DashboardPage() {
     // Add company info
     doc.setFontSize(20);
     doc.text("Kenya Trails", 20, 20);
-    
+
     doc.setFontSize(12);
     doc.text("Payment Receipt", 20, 30);
-    
+
     // Add line
     doc.line(20, 35, 190, 35);
-    
+
     // Add booking details
     doc.text(`Booking ID: ${booking.id}`, 20, 45);
     doc.text(`Event: ${booking.eventTitle}`, 20, 55);
     doc.text(`Customer: ${booking.userName}`, 20, 65);
-    doc.text(`Booking Date: ${booking.bookingDate.toLocaleDateString()}`, 20, 75);
+    doc.text(
+      `Booking Date: ${booking.bookingDate.toLocaleDateString()}`,
+      20,
+      75
+    );
     doc.text(`Amount Paid: KSh ${booking.amountPaid.toLocaleString()}`, 20, 85);
     doc.text(`Balance Due: KSh ${booking.amountDue.toLocaleString()}`, 20, 95);
-    
+
     // Add footer
     doc.line(20, 180, 190, 180);
     doc.setFontSize(10);
     doc.text("Thank you for choosing Kenya Trails", 20, 190);
-    
+
     // Save the PDF
     doc.save(`receipt-${booking.id}.pdf`);
   };
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   if (authLoading) {
     return (
@@ -273,6 +316,34 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {selectedBooking && paymentData && (
+        <div className="mt-4">
+          <p>
+            You’re about to pay <strong>KES {selectedBooking.amountDue}</strong>{" "}
+            for booking <strong>{selectedBooking.eventTitle}</strong>
+          </p>
+
+          <PaystackButton
+            publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
+            email={user.email}
+            amount={paymentData.amount}
+            reference={paymentData.reference}
+            currency="KES"
+            metadata={{
+              bookingId: selectedBooking.id,
+              eventId: selectedBooking.eventId,
+              userId: user.uid,
+            }}
+            text="Pay Now"
+            onSuccess={() =>
+              updateBookingStatus(selectedBooking.id, selectedBooking.amountDue)
+            }
+            onClose={() => console.log("Payment popup closed")}
+            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+          />
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">My Dashboard</h1>
@@ -398,18 +469,16 @@ export default function DashboardPage() {
                       </Button>
                       <div className="flex gap-2">
                         {booking.amountDue > 0 && (
-                          <Button 
+                          <Button
                             onClick={() => handlePayBalance(booking)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
+                            className="bg-green-600 hover:bg-green-700">
                             Pay Balance
                           </Button>
                         )}
                         <Button
                           variant="outline"
                           onClick={() => downloadReceipt(booking)}
-                          className="flex items-center gap-2"
-                        >
+                          className="flex items-center gap-2">
                           <Download className="h-4 w-4" />
                           Receipt
                         </Button>
@@ -581,7 +650,6 @@ export default function DashboardPage() {
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" value={user.email || ""} disabled />
-                
                 </div>
               </div>
 

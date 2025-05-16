@@ -52,6 +52,7 @@ export async function POST(req: Request) {
               amountPaid: newAmountPaid,
               amountDue: newAmountDue,
               paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
+              status: "confirmed",
               lastPaymentDate: new Date()
             });
 

@@ -29,14 +29,8 @@ export async function POST(req: Request) {
       status: "pending",
       createdAt: serverTimestamp(),
       managedBy: event.paymentManagement,
-      platformFee:
-        event.paymentManagement === "platform"
-          ? amount * (event.platformFee / 100)
-          : 0,
-      organizerAmount:
-        event.paymentManagement === "platform"
-          ? amount * (1 - event.platformFee / 100)
-          : amount,
+      platformFee: amount * (event.platformFee / 100),
+      organizerAmount: amount * (1 - event.platformFee / 100),
     });
 
     // Return payment reference for Paystack
