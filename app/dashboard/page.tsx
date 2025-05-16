@@ -1,11 +1,12 @@
 "use client";
 
+import jsPDF from "jspdf";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/components/auth-provider"; // Updated import path
+import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -24,6 +25,7 @@ import {
   CheckCircle,
   AlertCircle,
   Users,
+  Download,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
@@ -43,6 +45,7 @@ export default function DashboardPage() {
 
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -87,7 +90,7 @@ export default function DashboardPage() {
 
         setBookings(bookingsData);
 
-        // If user is an organizer, fetch their events
+        // If user is an organizer, fetch their events and payments
         if (user.userType === "organizer") {
           const eventsQuery = query(
             collection(db, "events"),
@@ -103,6 +106,25 @@ export default function DashboardPage() {
           }));
 
           setEvents(eventsData);
+
+          // Fetch payments for promoted events
+          const paymentsQuery = query(
+            collection(db, "payments"),
+            where("userId", "==", user.uid),
+            where("status", "==", "completed")
+          );
+
+          console.log("fetching payment data");
+          const paymentsSnapshot = await getDocs(paymentsQuery);
+          const paymentsData = paymentsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date(),
+          }));
+
+          console.log("this is the payment data", paymentsData);
+
+          setPayments(paymentsData);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -114,10 +136,9 @@ export default function DashboardPage() {
     fetchUserData();
   }, [user, authLoading, router]);
 
-  // Placeholder data for initial render
-
   const displayBookings = bookings;
   const displayEvents = events;
+  const displayPayments = payments;
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -125,6 +146,56 @@ export default function DashboardPage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const downloadReceipt = (payment) => {
+    const doc = new jsPDF();
+
+    // Add logo (must be Base64 to embed in PDF)
+    const logoImg = new Image();
+    logoImg.src = "/logo.png";
+
+    logoImg.onload = () => {
+      // Add logo and company name
+      doc.addImage(logoImg, "SVG", 10, 10, 20, 20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("KenyaTrails", 35, 20);
+
+      // Add receipt title
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.text("Payment Receipt", 35, 28);
+
+      // Draw line
+      doc.setLineWidth(0.5);
+      doc.line(10, 32, 200, 32);
+
+      // Payment details
+      doc.setFontSize(12);
+      let y = 40;
+
+      const addLine = (label, value) => {
+        doc.text(`${label}:`, 20, y);
+        doc.text(`${value}`, 70, y);
+        y += 10;
+      };
+
+      addLine("Payment ID", payment.id);
+      addLine("Date", formatDate(payment.createdAt));
+      addLine("Amount", `KSh ${payment.amount.toLocaleString()}`);
+      addLine("Event", payment.eventTitle);
+      addLine("Status", payment.status);
+      addLine("Type", "Promotion");
+
+      // Draw footer line
+      doc.line(10, y + 5, 200, y + 5);
+      doc.setFontSize(10);
+      doc.text("Thank you for using KenyaTrails!", 20, y + 15);
+
+      // Save the PDF
+      doc.save(`receipt-${payment.id}.pdf`);
+    };
   };
 
   if (authLoading) {
@@ -168,11 +239,10 @@ export default function DashboardPage() {
         <TabsList className="mb-8">
           <TabsTrigger value="bookings">My Bookings</TabsTrigger>
           {user.userType === "organizer" && (
-            <TabsTrigger value="events">My Events</TabsTrigger>
-          )}
-
-          {user.userType === "organizer" && (
-            <TabsTrigger value="org-bio">Organizer Bio</TabsTrigger>
+            <>
+              <TabsTrigger value="events">My Events</TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+            </>
           )}
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
@@ -265,15 +335,6 @@ export default function DashboardPage() {
                           View Event
                         </Link>
                       </Button>
-                      {/* {booking.amountDue > 0 && (
-                        <Button
-                          asChild
-                          className="bg-green-600 hover:bg-green-700">
-                          <Link href={`/bookings/${booking.id}/payment`}>
-                            Complete Payment
-                          </Link>
-                        </Button> */}
-                      {/* )} */}
                     </div>
                   </CardFooter>
                 </Card>
@@ -283,91 +344,147 @@ export default function DashboardPage() {
         </TabsContent>
 
         {user.userType === "organizer" && (
-          <TabsContent value="events">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {loading ? (
-                <p className="text-center py-12 col-span-full">
-                  Loading your events...
-                </p>
-              ) : displayEvents.length === 0 ? (
-                <div className="text-center py-12 col-span-full">
-                  <p className="text-lg text-gray-600 mb-4">
-                    You haven't created any events yet.
+          <>
+            <TabsContent value="events">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {loading ? (
+                  <p className="text-center py-12 col-span-full">
+                    Loading your events...
                   </p>
-                  <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <Link href="/organize/create">Create Your First Event</Link>
-                  </Button>
-                </div>
-              ) : (
-                displayEvents.map((event) => (
-                  <Card key={event.id} className="overflow-hidden">
-                    <div className="h-40 overflow-hidden">
-                      <img
-                        src={
-                          event.imageUrl ||
-                          "/placeholder.svg?height=300&width=500"
-                        }
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{event.title}</CardTitle>
-                      <div className="flex items-center text-gray-500 text-sm">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {event.location}
+                ) : displayEvents.length === 0 ? (
+                  <div className="text-center py-12 col-span-full">
+                    <p className="text-lg text-gray-600 mb-4">
+                      You haven't created any events yet.
+                    </p>
+                    <Button asChild className="bg-green-600 hover:bg-green-700">
+                      <Link href="/organize/create">
+                        Create Your First Event
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  displayEvents.map((event) => (
+                    <Card key={event.id} className="overflow-hidden">
+                      <div className="h-40 overflow-hidden">
+                        <img
+                          src={
+                            event.imageUrl ||
+                            "/placeholder.svg?height=300&width=500"
+                          }
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="flex items-center text-gray-700 mb-2">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        <span>{formatDate(event.date)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-gray-700">
-                          <Users className="h-4 w-4 mr-2" />
-                          <span>
-                            {event.availableSpaces} / {event.totalSpaces} spots
-                            left
-                          </span>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{event.title}</CardTitle>
+                        <div className="flex items-center text-gray-500 text-sm">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {event.location}
                         </div>
-                        <div className="font-bold text-green-600">
-                          KSh {event.price?.toLocaleString()}
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <div className="flex items-center text-gray-700 mb-2">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          <span>{formatDate(event.date)}</span>
                         </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-gray-700">
+                            <Users className="h-4 w-4 mr-2" />
+                            <span>
+                              {event.availableSpaces} / {event.totalSpaces}{" "}
+                              spots left
+                            </span>
+                          </div>
+                          <div className="font-bold text-green-600">
+                            KSh {event.price?.toLocaleString()}
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <div className="flex flex-wrap gap-2 justify-between w-full">
+                          <Button asChild variant="outline">
+                            <Link href={`/events/${event.id}`}>View</Link>
+                          </Button>
+                          <Button asChild variant="outline">
+                            <Link href={`/events/${event.id}/promote`}>
+                              Promote
+                            </Link>
+                          </Button>
+                          <Button asChild>
+                            <Link
+                              href={`/organize/events/${event.id}/bookings`}>
+                              Manage Bookings
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="payments">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Promotion Payments</CardTitle>
+                    <CardDescription>
+                      View and manage your promotion payments
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {displayPayments.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">
+                          No promotion payments found
+                        </p>
                       </div>
-                    </CardContent>
-                    <CardFooter>
-                      <div className="flex flex-wrap gap-2 justify-between w-full">
-                        <Button asChild variant="outline">
-                          <Link href={`/events/${event.id}`}>View</Link>
-                        </Button>
-                        <Button asChild variant="outline">
-                          <Link href={`/events/${event.id}/promote`}>
-                            Promote
-                          </Link>
-                        </Button>
-                        <Button asChild>
-                          <Link href={`/organize/events/${event.id}/bookings`}>
-                            Manage Bookings
-                          </Link>
-                        </Button>
-                        <Button asChild>
-                          <Link href={`/events/${event.id}/edit`}>
-                            Edit Booking
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleDeleteEvent(event.id)}>
-                          Delete
-                        </Button>
+                    ) : (
+                      <div className="space-y-4">
+                        {displayPayments.map((payment) => (
+                          <div
+                            key={payment.id}
+                            className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg">
+                            <div className="space-y-2 mb-4 md:mb-0">
+                              <p className="font-medium">
+                                {payment.eventTitle}
+                              </p>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                {formatDate(payment.createdAt)}
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                KSh {payment.amount.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <Badge
+                                className={
+                                  payment.status === "completed"
+                                    ? "bg-green-600"
+                                    : "bg-yellow-600"
+                                }>
+                                {payment.status}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => downloadReceipt(payment)}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Receipt
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </CardFooter>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </>
         )}
 
         <TabsContent value="profile">
@@ -399,12 +516,6 @@ export default function DashboardPage() {
                   }
                   disabled
                 />
-              </div>
-
-              <div className="pt-4">
-                <Button asChild className="w-full md:w-auto" disabled>
-                  {/* <Link href="/profile/edit">Edit Profile</Link> */}
-                </Button>
               </div>
             </CardContent>
           </Card>

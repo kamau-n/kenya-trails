@@ -35,9 +35,12 @@ export default function AdminDashboard() {
     totalEvents: 0,
     activeEvents: 0,
     totalPackages: 0,
+    totalRevenue: 0,
+    totalBookings: 0,
   });
 
   const [userData, setUserData] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
   const [loadingUserData, setLoadingUserData] = useState(true);
 
   useEffect(() => {
@@ -46,18 +49,50 @@ export default function AdminDashboard() {
         const usersSnapshot = await getDocs(collection(db, "users"));
         const eventsSnapshot = await getDocs(collection(db, "events"));
         const packagesSnapshot = await getDocs(collection(db, "promotions"));
+        const paymentsSnapshot = await getDocs(collection(db, "payments"));
+        const bookingsSnapshot = await getDocs(collection(db, "bookings"));
 
         const activeEvents = eventsSnapshot.docs.filter((doc) => {
           const date = doc.data().date?.seconds;
           return date && new Date(date * 1000) > new Date();
         }).length;
 
+        const totalRevenue = paymentsSnapshot.docs.reduce((sum, doc) => {
+          const payment = doc.data();
+          return payment.status === "completed"
+            ? sum + (payment.amount || 0)
+            : sum;
+        }, 0);
+
         setStats({
           totalUsers: usersSnapshot.size,
           totalEvents: eventsSnapshot.size,
           activeEvents,
           totalPackages: packagesSnapshot.size,
+          totalRevenue,
+          totalBookings: bookingsSnapshot.size,
         });
+
+        // Fetch revenue data
+        const revenueByMonth = {};
+        paymentsSnapshot.docs.forEach((doc) => {
+          const payment = doc.data();
+          if (payment.status === "completed" && payment.createdAt) {
+            const date = new Date(payment.createdAt.seconds * 1000);
+            const monthYear = date.toLocaleString("default", {
+              month: "short",
+              year: "numeric",
+            });
+            revenueByMonth[monthYear] =
+              (revenueByMonth[monthYear] || 0) + (payment.amount || 0);
+          }
+        });
+
+        const formattedRevenueData = Object.entries(revenueByMonth)
+          .map(([date, amount]) => ({ date, amount }))
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        setRevenueData(formattedRevenueData);
       } catch (e) {
         console.error("Error fetching stats:", e);
       }
@@ -67,7 +102,7 @@ export default function AdminDashboard() {
       try {
         const q = query(collection(db, "users"), orderBy("createdAt"));
         const snapshot = await getDocs(q);
-        const data: { [key: string]: number } = {};
+        const data = {};
 
         snapshot.forEach((doc) => {
           const createdAt = doc.data().createdAt?.toDate();
@@ -83,7 +118,7 @@ export default function AdminDashboard() {
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
           );
 
-        setUserData(formatted as any);
+        setUserData(formatted);
         setLoadingUserData(false);
       } catch (e) {
         console.error("Error fetching user data:", e);
@@ -127,10 +162,9 @@ export default function AdminDashboard() {
           <Package className="mr-2 h-4 w-4" /> Promotions
         </Button>
       </Link>
-
       <Link href="/admin/payments">
         <Button
-          variant={pathname === "/admin/users" ? "secondary" : "ghost"}
+          variant={pathname === "/admin/payments" ? "secondary" : "ghost"}
           className="w-full justify-start">
           <DollarSign className="mr-2 h-4 w-4" /> Payments
         </Button>
@@ -139,9 +173,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex w-64 border-r bg-muted">
+      <aside className="hidden md:flex w-64 border-r bg-white">
         <SidebarLinks />
       </aside>
 
@@ -164,40 +198,46 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
             <CardHeader>
-              <CardTitle>Total Users</CardTitle>
+              <CardTitle className="text-lg">Total Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-3xl font-bold">{stats.totalUsers}</div>
+              <p className="text-purple-100">Active accounts</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
             <CardHeader>
-              <CardTitle>Total Events</CardTitle>
+              <CardTitle className="text-lg">Total Events</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalEvents}</div>
+              <div className="text-3xl font-bold">{stats.totalEvents}</div>
+              <p className="text-green-100">Published events</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
             <CardHeader>
-              <CardTitle>Active Events</CardTitle>
+              <CardTitle className="text-lg">Total Bookings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeEvents}</div>
+              <div className="text-3xl font-bold">{stats.totalBookings}</div>
+              <p className="text-blue-100">Confirmed bookings</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
             <CardHeader>
-              <CardTitle>Promotions</CardTitle>
+              <CardTitle className="text-lg">Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPackages}</div>
+              <div className="text-3xl font-bold">
+                KSh {stats.totalRevenue.toLocaleString()}
+              </div>
+              <p className="text-yellow-100">Platform earnings</p>
             </CardContent>
           </Card>
         </div>
@@ -206,50 +246,41 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Overview (Bar)</CardTitle>
+              <CardTitle>Revenue Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statsData}>
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient
+                      id="colorRevenue"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" />
+                  <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#8884d8"
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Distribution (Pie)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statsData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                    dataKey="value">
-                    {statsData.map((_, i) => (
-                      <Cell key={i} fill={pieColors[i % pieColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>New Users (Line)</CardTitle>
+              <CardTitle>User Growth</CardTitle>
             </CardHeader>
             <CardContent>
               {loadingUserData ? (
@@ -276,45 +307,48 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>User Growth (Area)</CardTitle>
+              <CardTitle>Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              {loadingUserData ? (
-                <p>Loading...</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={userData}>
-                    <defs>
-                      <linearGradient
-                        id="colorUsers"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="#8884d8"
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#8884d8"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area
-                      type="monotone"
-                      dataKey="users"
-                      stroke="#8884d8"
-                      fill="url(#colorUsers)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statsData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label>
+                    {statsData.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={pieColors[index % pieColors.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={statsData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
