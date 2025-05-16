@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  increment,
 } from "firebase/firestore";
 
 export async function POST(req: Request) {
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
 
       if (paymentDocSnap.exists()) {
         console.log("Updating the following transaction with ID:", reference);
+        const paymentData = paymentDocSnap.data();
 
         // Update payment status
         await updateDoc(paymentDocRef, {
@@ -35,15 +37,40 @@ export async function POST(req: Request) {
           completedAt: new Date(),
         });
 
-        // Update event promotion status
-        const { eventId, promotionId } = paymentDocSnap.data();
+        // If this is a booking payment
+        if (paymentData.bookingId) {
+          const bookingRef = doc(db, "bookings", paymentData.bookingId);
+          const bookingDoc = await getDoc(bookingRef);
+          
+          if (bookingDoc.exists()) {
+            const bookingData = bookingDoc.data();
+            const newAmountPaid = (bookingData.amountPaid || 0) + paymentData.amount;
+            const newAmountDue = bookingData.totalAmount - newAmountPaid;
 
-        console.log("Updating event:", eventId);
-        await updateDoc(doc(db, "events", eventId), {
-          isPromoted: true,
-          promotionId,
-          promotionStartDate: new Date(),
-        });
+            // Update booking payment status
+            await updateDoc(bookingRef, {
+              amountPaid: newAmountPaid,
+              amountDue: newAmountDue,
+              paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
+              lastPaymentDate: new Date()
+            });
+
+            // If using platform payment management, update collection balance
+            if (paymentData.managedBy === "platform") {
+              await updateDoc(doc(db, "events", paymentData.eventId), {
+                collectionBalance: increment(paymentData.organizerAmount)
+              });
+            }
+          }
+        }
+        // If this is a promotion payment
+        else if (paymentData.promotionId) {
+          await updateDoc(doc(db, "events", paymentData.eventId), {
+            isPromoted: true,
+            promotionId: paymentData.promotionId,
+            promotionStartDate: new Date(),
+          });
+        }
       } else {
         console.warn("No payment document found with ID:", reference);
       }

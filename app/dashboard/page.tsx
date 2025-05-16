@@ -36,6 +36,9 @@ import {
   orderBy,
   deleteDoc,
   doc,
+  updateDoc,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 export default function DashboardPage() {
@@ -148,54 +151,112 @@ export default function DashboardPage() {
     });
   };
 
-  const downloadReceipt = (payment) => {
-    const doc = new jsPDF();
+  const handlePayBalance = async (booking) => {
+    try {
+      // Create payment intent
+      const response = await fetch("/api/create-book-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: booking.amountDue,
+          eventId: booking.eventId,
+          userId: user.uid,
+          bookingId: booking.id
+        }),
+      });
 
-    // Add logo (must be Base64 to embed in PDF)
-    const logoImg = new Image();
-    logoImg.src = "/logo.png";
+      const data = await response.json();
 
-    logoImg.onload = () => {
-      // Add logo and company name
-      doc.addImage(logoImg, "SVG", 10, 10, 20, 20);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("KenyaTrails", 35, 20);
+      // Initialize Paystack payment
+      const paystack = new window.PaystackPop();
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: data.amount,
+        reference: data.reference,
+        onSuccess: () => {
+          // Update booking status
+          updateBookingStatus(booking.id, booking.amountDue);
+        },
+      });
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      alert("Payment failed. Please try again.");
+    }
+  };
 
-      // Add receipt title
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "normal");
-      doc.text("Payment Receipt", 35, 28);
+  const updateBookingStatus = async (bookingId, amount) => {
+    try {
+      const bookingRef = doc(db, "bookings", bookingId);
+      const bookingDoc = await getDoc(bookingRef);
+      const bookingData = bookingDoc.data();
 
-      // Draw line
-      doc.setLineWidth(0.5);
-      doc.line(10, 32, 200, 32);
+      const newAmountPaid = (bookingData.amountPaid || 0) + amount;
+      const newAmountDue = bookingData.totalAmount - newAmountPaid;
 
-      // Payment details
-      doc.setFontSize(12);
-      let y = 40;
+      await updateDoc(bookingRef, {
+        amountPaid: newAmountPaid,
+        amountDue: newAmountDue,
+        paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
+        lastPaymentDate: new Date()
+      });
 
-      const addLine = (label, value) => {
-        doc.text(`${label}:`, 20, y);
-        doc.text(`${value}`, 70, y);
-        y += 10;
+      // If event uses platform payment management, update collection balance
+      if (bookingData.paymentManagement === "platform") {
+        const eventRef = doc(db, "events", bookingData.eventId);
+        await updateDoc(eventRef, {
+          collectionBalance: increment(amount * (1 - bookingData.platformFee / 100))
+        });
+      }
+
+      // Refresh bookings
+      const updatedBooking = {
+        ...bookingData,
+        amountPaid: newAmountPaid,
+        amountDue: newAmountDue,
+        paymentStatus: newAmountDue <= 0 ? "paid" : "partial"
       };
 
-      addLine("Payment ID", payment.id);
-      addLine("Date", formatDate(payment.createdAt));
-      addLine("Amount", `KSh ${payment.amount.toLocaleString()}`);
-      addLine("Event", payment.eventTitle);
-      addLine("Status", payment.status);
-      addLine("Type", "Promotion");
+      setBookings(prevBookings => 
+        prevBookings.map(b => 
+          b.id === bookingId ? updatedBooking : b
+        )
+      );
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+    }
+  };
 
-      // Draw footer line
-      doc.line(10, y + 5, 200, y + 5);
-      doc.setFontSize(10);
-      doc.text("Thank you for using KenyaTrails!", 20, y + 15);
+  const downloadReceipt = (booking) => {
+    const doc = new jsPDF();
 
-      // Save the PDF
-      doc.save(`receipt-${payment.id}.pdf`);
-    };
+    // Add company info
+    doc.setFontSize(20);
+    doc.text("Kenya Trails", 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text("Payment Receipt", 20, 30);
+    
+    // Add line
+    doc.line(20, 35, 190, 35);
+    
+    // Add booking details
+    doc.text(`Booking ID: ${booking.id}`, 20, 45);
+    doc.text(`Event: ${booking.eventTitle}`, 20, 55);
+    doc.text(`Customer: ${booking.userName}`, 20, 65);
+    doc.text(`Booking Date: ${booking.bookingDate.toLocaleDateString()}`, 20, 75);
+    doc.text(`Amount Paid: KSh ${booking.amountPaid.toLocaleString()}`, 20, 85);
+    doc.text(`Balance Due: KSh ${booking.amountDue.toLocaleString()}`, 20, 95);
+    
+    // Add footer
+    doc.line(20, 180, 190, 180);
+    doc.setFontSize(10);
+    doc.text("Thank you for choosing Kenya Trails", 20, 190);
+    
+    // Save the PDF
+    doc.save(`receipt-${booking.id}.pdf`);
   };
 
   if (authLoading) {
@@ -335,6 +396,24 @@ export default function DashboardPage() {
                           View Event
                         </Link>
                       </Button>
+                      <div className="flex gap-2">
+                        {booking.amountDue > 0 && (
+                          <Button 
+                            onClick={() => handlePayBalance(booking)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Pay Balance
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={() => downloadReceipt(booking)}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Receipt
+                        </Button>
+                      </div>
                     </div>
                   </CardFooter>
                 </Card>
@@ -412,8 +491,8 @@ export default function DashboardPage() {
                           </Button>
                           <Button asChild>
                             <Link
-                              href={`/organize/events/${event.id}/bookings`}>
-                              Manage Bookings
+                              href={`/organize/events/${event.id}/payments`}>
+                              Manage Payments
                             </Link>
                           </Button>
                         </div>
@@ -502,6 +581,7 @@ export default function DashboardPage() {
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" value={user.email || ""} disabled />
+                
                 </div>
               </div>
 
