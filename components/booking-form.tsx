@@ -16,17 +16,18 @@ import {
   updateDoc,
   increment,
 } from "firebase/firestore";
+import { PaystackButton } from "react-paystack";
 
 export default function BookingForm({ event, onClose, onSuccess }) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     numberOfPeople: 1,
     specialRequirements: "",
-    paymentMethod: event.paymentMethods[0] || "M-Pesa",
     paymentAmount: event.depositAmount || event.price,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paymentData, setPaymentData] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,13 +39,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
     setFormData((prev) => ({
       ...prev,
       [name]: value ? Number.parseInt(value) : 1,
-    }));
-  };
-
-  const handlePaymentAmountChange = (type) => {
-    setFormData((prev) => ({
-      ...prev,
-      paymentAmount: type === "full" ? event.price : event.depositAmount,
     }));
   };
 
@@ -72,7 +66,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
         userEmail: user.email,
         numberOfPeople: formData.numberOfPeople,
         specialRequirements: formData.specialRequirements,
-        paymentMethod: formData.paymentMethod,
         totalAmount: totalAmount,
         amountPaid: 0,
         amountDue: totalAmount,
@@ -83,7 +76,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
         platformFee: event.platformFee || 3,
       };
 
-      // Add booking to database
       const bookingRef = await addDoc(collection(db, "bookings"), bookingData);
 
       // If platform manages payments, initiate payment
@@ -95,7 +87,7 @@ export default function BookingForm({ event, onClose, onSuccess }) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            amount: totalAmount,
+            amount: formData.paymentAmount,
             eventId: event.id,
             userId: user.uid,
             bookingId: bookingRef.id,
@@ -103,28 +95,12 @@ export default function BookingForm({ event, onClose, onSuccess }) {
         });
 
         const data = await response.json();
-
-        // Initialize Paystack payment
-        const paystack = new window.PaystackPop();
-        paystack.newTransaction({
-          key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-          email: user.email,
-          amount: data.amount,
-          reference: data.reference,
-          onSuccess: () => {
-            // Update event available spaces
-            updateDoc(doc(db, "events", event.id), {
-              availableSpaces: increment(-formData.numberOfPeople),
-            });
-            onSuccess(bookingRef.id);
-          },
-          onCancel: () => {
-            // Delete the booking if payment is cancelled
-            deleteDoc(doc(db, "bookings", bookingRef.id));
-            setError("Payment was cancelled");
-            setLoading(false);
-          },
-        });
+        console.log(data);
+        if (response.ok) {
+          setPaymentData(data);
+        } else {
+          throw new Error("Failed to create payment intent");
+        }
       } else {
         // For manual payment management, just update spaces and complete
         await updateDoc(doc(db, "events", event.id), {
@@ -137,6 +113,21 @@ export default function BookingForm({ event, onClose, onSuccess }) {
       setError("Failed to create booking. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (reference) => {
+    try {
+      // Update event available spaces
+      await updateDoc(doc(db, "events", event.id), {
+        availableSpaces: increment(-formData.numberOfPeople),
+      });
+      onSuccess(reference.bookingId);
+    } catch (error) {
+      console.error("Error updating after payment:", error);
+      setError(
+        "Payment successful but failed to update booking. Please contact support."
+      );
     }
   };
 
@@ -188,8 +179,40 @@ export default function BookingForm({ event, onClose, onSuccess }) {
               Total Amount: KSh{" "}
               {(event.price * formData.numberOfPeople).toLocaleString()}
             </div>
-            <div className="text-sm text-gray-600 mb-4">
-              Payment must be completed to confirm booking
+            <div className="flex gap-4 mb-4">
+              <Button
+                type="button"
+                variant={
+                  formData.paymentAmount ===
+                  event.price * formData.numberOfPeople
+                    ? "default"
+                    : "outline"
+                }
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    paymentAmount: event.price * formData.numberOfPeople,
+                  }))
+                }>
+                Pay Full Amount
+              </Button>
+              {event.depositAmount > 0 && (
+                <Button
+                  type="button"
+                  variant={
+                    formData.paymentAmount === event.depositAmount
+                      ? "default"
+                      : "outline"
+                  }
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      paymentAmount: event.depositAmount,
+                    }))
+                  }>
+                  Pay Deposit (KSh {event.depositAmount.toLocaleString()})
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -205,11 +228,32 @@ export default function BookingForm({ event, onClose, onSuccess }) {
             {loading
               ? "Processing..."
               : event.paymentManagement === "platform"
-              ? "Book & Pay"
+              ? "Continue to Payment"
               : "Confirm Booking"}
           </Button>
         </div>
       </form>
+
+      {paymentData && (
+        <div className="mt-4 p-4 border-t border-gray-200">
+          <PaystackButton
+            publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
+            email={user.email}
+            amount={paymentData.amount}
+            reference={paymentData.reference}
+            currency="KES"
+            metadata={{
+              bookingId: paymentData.bookingId,
+              eventId: event.id,
+              userId: user.uid,
+            }}
+            text="Pay Now"
+            onSuccess={handlePaymentSuccess}
+            onClose={() => setPaymentData(null)}
+            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+          />
+        </div>
+      )}
     </div>
   );
 }

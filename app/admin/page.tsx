@@ -67,7 +67,7 @@ export default function AdminDashboard() {
         const totalRevenue = paymentsSnapshot.docs.reduce((sum, doc) => {
           const payment = doc.data();
           return payment.status === "completed"
-            ? sum + (payment.amount || 0)
+            ? sum + (Number(payment.amount) || 0)
             : sum;
         }, 0);
 
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
               year: "numeric",
             });
             revenueByMonth[monthYear] =
-              (revenueByMonth[monthYear] || 0) + (payment.amount || 0);
+              (revenueByMonth[monthYear] || 0) + (Number(payment.amount) || 0);
           }
         });
 

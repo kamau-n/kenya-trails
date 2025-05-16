@@ -527,7 +527,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-lg">{event.title}</CardTitle>
                         <div className="flex items-center text-gray-500 text-sm">
                           <MapPin className="h-4 w-4 mr-1" />
-                          {event.location}
+                          {event?.location || "location"}
                         </div>
                       </CardHeader>
                       <CardContent className="pb-2">
