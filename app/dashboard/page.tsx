@@ -63,20 +63,20 @@ export default function DashboardPage() {
       return;
     }
 
-    const handleDeleteEvent = async (eventId) => {
-      const confirmed = window.confirm(
-        "Are you sure you want to delete this event?"
-      );
-      if (!confirmed) return;
+    // const handleDeleteEvent = async (eventId) => {
+    //   const confirmed = window.confirm(
+    //     "Are you sure you want to delete this event?"
+    //   );
+    //   if (!confirmed) return;
 
-      try {
-        await deleteDoc(doc(db, "events", eventId));
-        setEvents((prev) => prev.filter((event) => event.id !== eventId));
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("Failed to delete the event. Please try again.");
-      }
-    };
+    //   try {
+    //     await deleteDoc(doc(db, "events", eventId));
+    //     setEvents((prev) => prev.filter((event) => event.id !== eventId));
+    //   } catch (error) {
+    //     console.error("Error deleting event:", error);
+    //     alert("Failed to delete the event. Please try again.");
+    //   }
+    // };
 
     const fetchUserData = async () => {
       try {

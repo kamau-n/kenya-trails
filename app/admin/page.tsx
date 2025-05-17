@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import Sidebar from "./components/sidebar";
 
 export default function AdminDashboard() {
   const pathname = usePathname();
@@ -146,50 +147,50 @@ export default function AdminDashboard() {
 
   const pieColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
 
-  const SidebarLinks = () => (
-    <div className="flex flex-col  gap-4 p-4">
-      <h5 className="text-xl font-bold mb-8">Admin Dashboard</h5>
-      <div className="mr-2">
-        <User2Icon />
-        <h5>Admin User</h5>
-      </div>
+  // const SidebarLinks = () => (
+  //   <div className="flex flex-col  gap-4 p-4">
+  //     <h5 className="text-xl font-bold mb-8">Admin Dashboard</h5>
+  //     <div className="mr-2">
+  //       <User2Icon />
+  //       <h5>Admin User</h5>
+  //     </div>
 
-      <Link href="/admin/users">
-        <Button
-          variant={pathname === "/admin/users" ? "secondary" : "ghost"}
-          className="w-full justify-start">
-          <Users className="mr-2 h-8 w-8" /> Users
-        </Button>
-      </Link>
-      <Link href="/admin/events">
-        <Button
-          variant={pathname === "/admin/events" ? "secondary" : "ghost"}
-          className="w-full justify-start">
-          <Calendar className="mr-2 h-8 w-8" /> Events
-        </Button>
-      </Link>
-      <Link href="/admin/promotions">
-        <Button
-          variant={pathname === "/admin/promotions" ? "secondary" : "ghost"}
-          className="w-full justify-start">
-          <Package className="mr-2 h-8 w-8" /> Promotions
-        </Button>
-      </Link>
-      <Link href="/admin/payments">
-        <Button
-          variant={pathname === "/admin/payments" ? "secondary" : "ghost"}
-          className="w-full justify-start">
-          <DollarSign className="mr-2 h-8 w-8" /> Payments
-        </Button>
-      </Link>
-    </div>
-  );
+  //     <Link href="/admin/users">
+  //       <Button
+  //         variant={pathname === "/admin/users" ? "secondary" : "ghost"}
+  //         className="w-full justify-start">
+  //         <Users className="mr-2 h-8 w-8" /> Users
+  //       </Button>
+  //     </Link>
+  //     <Link href="/admin/events">
+  //       <Button
+  //         variant={pathname === "/admin/events" ? "secondary" : "ghost"}
+  //         className="w-full justify-start">
+  //         <Calendar className="mr-2 h-8 w-8" /> Events
+  //       </Button>
+  //     </Link>
+  //     <Link href="/admin/promotions">
+  //       <Button
+  //         variant={pathname === "/admin/promotions" ? "secondary" : "ghost"}
+  //         className="w-full justify-start">
+  //         <Package className="mr-2 h-8 w-8" /> Promotions
+  //       </Button>
+  //     </Link>
+  //     <Link href="/admin/payments">
+  //       <Button
+  //         variant={pathname === "/admin/payments" ? "secondary" : "ghost"}
+  //         className="w-full justify-start">
+  //         <DollarSign className="mr-2 h-8 w-8" /> Payments
+  //       </Button>
+  //     </Link>
+  //   </div>
+  // );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (desktop) */}
       <aside className="hidden md:flex w-64  border-r bg-white/55">
-        <SidebarLinks />
+        <Sidebar />
       </aside>
 
       {/* Sidebar Trigger (mobile) */}
@@ -201,7 +202,7 @@ export default function AdminDashboard() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64">
-            <SidebarLinks />
+            <Sidebar />
           </SheetContent>
         </Sheet>
       </div>

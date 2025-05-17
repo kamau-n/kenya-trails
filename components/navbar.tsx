@@ -21,6 +21,7 @@ import {
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
+import { ThemeToggle } from "@/app/theme-toggle";
 
 export default function Navbar() {
   const auth = useAuth();
@@ -160,6 +161,10 @@ export default function Navbar() {
                 </Button>
               </>
             )}
+
+            <div>
+              <ThemeToggle />
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="md:hidden">
