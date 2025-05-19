@@ -45,7 +45,11 @@ export default function AdminDashboard() {
     totalPackages: 0,
     totalRevenue: 0,
     totalBookings: 0,
+    totalWithdrawals: 0,
+    totalEarned: 0,
   });
+
+  const COLORS = ["#4CAF50", "#F44336", "#fff"];
 
   const [userData, setUserData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
@@ -59,6 +63,9 @@ export default function AdminDashboard() {
         const packagesSnapshot = await getDocs(collection(db, "promotions"));
         const paymentsSnapshot = await getDocs(collection(db, "payments"));
         const bookingsSnapshot = await getDocs(collection(db, "bookings"));
+        const withdrawalsSnapshot = await getDocs(
+          collection(db, "withdrawals")
+        );
 
         const activeEvents = eventsSnapshot.docs.filter((doc) => {
           const date = doc.data().date?.seconds;
@@ -72,13 +79,22 @@ export default function AdminDashboard() {
             : sum;
         }, 0);
 
-        setStats({
+        const totalWithdrawals = withdrawalsSnapshot.docs.reduce((sum, doc) => {
+          const payment = doc.data();
+          return payment.status === "completed"
+            ? sum + (Number(payment.netAmount) || 0)
+            : sum;
+        }, 0);
+
+        const totalEarned = setStats({
           totalUsers: usersSnapshot.size,
           totalEvents: eventsSnapshot.size,
           activeEvents,
           totalPackages: packagesSnapshot.size,
           totalRevenue,
           totalBookings: bookingsSnapshot.size,
+          totalWithdrawals: totalWithdrawals,
+          totalEarned: 0,
         });
 
         // Fetch revenue data
@@ -147,45 +163,6 @@ export default function AdminDashboard() {
 
   const pieColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
 
-  // const SidebarLinks = () => (
-  //   <div className="flex flex-col  gap-4 p-4">
-  //     <h5 className="text-xl font-bold mb-8">Admin Dashboard</h5>
-  //     <div className="mr-2">
-  //       <User2Icon />
-  //       <h5>Admin User</h5>
-  //     </div>
-
-  //     <Link href="/admin/users">
-  //       <Button
-  //         variant={pathname === "/admin/users" ? "secondary" : "ghost"}
-  //         className="w-full justify-start">
-  //         <Users className="mr-2 h-8 w-8" /> Users
-  //       </Button>
-  //     </Link>
-  //     <Link href="/admin/events">
-  //       <Button
-  //         variant={pathname === "/admin/events" ? "secondary" : "ghost"}
-  //         className="w-full justify-start">
-  //         <Calendar className="mr-2 h-8 w-8" /> Events
-  //       </Button>
-  //     </Link>
-  //     <Link href="/admin/promotions">
-  //       <Button
-  //         variant={pathname === "/admin/promotions" ? "secondary" : "ghost"}
-  //         className="w-full justify-start">
-  //         <Package className="mr-2 h-8 w-8" /> Promotions
-  //       </Button>
-  //     </Link>
-  //     <Link href="/admin/payments">
-  //       <Button
-  //         variant={pathname === "/admin/payments" ? "secondary" : "ghost"}
-  //         className="w-full justify-start">
-  //         <DollarSign className="mr-2 h-8 w-8" /> Payments
-  //       </Button>
-  //     </Link>
-  //   </div>
-  // );
-
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (desktop) */}
@@ -252,11 +229,63 @@ export default function AdminDashboard() {
               <p className="text-yellow-100">Platform earnings</p>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+            <CardHeader>
+              <CardTitle className="text-lg">Total Withdrawals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                KSh {stats.totalWithdrawals.toLocaleString()}
+              </div>
+              <p className="text-yellow-100">Platform earnings</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
+            <CardHeader>
+              <CardTitle>Revenue Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingUserData ? (
+                <p>Loading...</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Total Revenue", value: stats.totalRevenue },
+                        {
+                          name: "Total Profit",
+                          value: stats.totalRevenue - stats.totalWithdrawals,
+                        },
+                        {
+                          name: "Total Withdrawals",
+                          value: stats.totalWithdrawals,
+                        },
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      outerRadius={100}
+                      fill="#8884d8"
+                      label>
+                      {revenueData.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* <Card>
             <CardHeader>
               <CardTitle>Revenue Overview</CardTitle>
             </CardHeader>
@@ -288,7 +317,7 @@ export default function AdminDashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader>

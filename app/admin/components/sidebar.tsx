@@ -116,8 +116,8 @@ export default function Sidebar() {
                   Finance
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="/admin/payments" icon={Wallet}>
-                    Transactions
+                  <NavItem href="/admin/withdrawals" icon={Wallet}>
+                    Withdrawals
                   </NavItem>
                   <NavItem href="/admin/invoices" icon={Receipt}>
                     Invoices
