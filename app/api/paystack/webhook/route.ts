@@ -14,6 +14,8 @@ import {
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 export async function POST(req: Request) {
+  console.log("this is the webhook with the response for a withdrawal request");
+  console.log(req);
   try {
     const event = await req.json();
 
