@@ -41,8 +41,6 @@ export default function WithdrawalsPage() {
   const [success, setSuccess] = useState("");
   const [accountDetails, setAccountDetails] = useState<accountDetails>();
 
-  console.log("this is the user ", user);
-
   useEffect(() => {
     // if (!user) {
     //   router.push("/login");
