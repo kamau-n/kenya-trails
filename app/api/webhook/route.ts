@@ -19,6 +19,8 @@ export async function POST(req: Request) {
     const eventType = event.event;
     const hash = req.headers.get("x-paystack-signature");
 
+    console.log("this is the received event");
+    console.log(event);
     // TODO: Add signature verification here if needed
 
     switch (eventType) {
