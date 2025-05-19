@@ -19,6 +19,9 @@ export async function POST(req: Request) {
   try {
     const event = await req.json();
 
+    console.log("event as json");
+    console.log(event);
+
     // Verify Paystack webhook signature
     const hash = req.headers.get("x-paystack-signature");
     // Add signature verification logic here
