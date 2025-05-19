@@ -5,76 +5,110 @@ import {
   getDoc,
   updateDoc,
   increment,
+  collection,
+  where,
+  getDocs,
+  query,
 } from "firebase/firestore";
 
 export async function POST(req: Request) {
-  console.log("this is a paystack callback with data below");
+  console.log("Received Paystack webhook...");
 
   try {
     const event = await req.json();
-    console.log(event);
-
-    // Verify Paystack signature here
+    const eventType = event.event;
     const hash = req.headers.get("x-paystack-signature");
-    // Add signature verification logic here (optional)
 
-    if (event.event === "charge.success") {
-      const reference = event.data.reference;
+    // TODO: Add signature verification here if needed
 
-      console.log("Attempting to update payment and event with reference:", reference);
+    switch (eventType) {
+      case "charge.success": {
+        const reference = event.data.reference;
+        console.log("Processing charge.success for:", reference);
 
-      // Assume reference is the Firestore document ID
-      const paymentDocRef = doc(db, "payments", reference);
-      const paymentDocSnap = await getDoc(paymentDocRef);
+        const paymentDocRef = doc(db, "payments", reference);
+        const paymentDocSnap = await getDoc(paymentDocRef);
 
-      if (paymentDocSnap.exists()) {
-        console.log("Updating the following transaction with ID:", reference);
-        const paymentData = paymentDocSnap.data();
+        if (paymentDocSnap.exists()) {
+          const paymentData = paymentDocSnap.data();
 
-        // Update payment status
-        await updateDoc(paymentDocRef, {
-          status: "completed",
-          completedAt: new Date(),
-        });
-
-        // If this is a booking payment
-        if (paymentData.bookingId) {
-          const bookingRef = doc(db, "bookings", paymentData.bookingId);
-          const bookingDoc = await getDoc(bookingRef);
-          
-          if (bookingDoc.exists()) {
-            const bookingData = bookingDoc.data();
-            const newAmountPaid = (bookingData.amountPaid || 0) + paymentData.amount;
-            const newAmountDue = bookingData.totalAmount - newAmountPaid;
-
-            // Update booking payment status
-            await updateDoc(bookingRef, {
-              amountPaid: newAmountPaid,
-              amountDue: newAmountDue,
-              paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
-              status: "confirmed",
-              lastPaymentDate: new Date()
-            });
-
-            // If using platform payment management, update collection balance
-            if (paymentData.managedBy === "platform") {
-              await updateDoc(doc(db, "events", paymentData.eventId), {
-                collectionBalance: increment(paymentData.organizerAmount)
-              });
-            }
-          }
-        }
-        // If this is a promotion payment
-        else if (paymentData.promotionId) {
-          await updateDoc(doc(db, "events", paymentData.eventId), {
-            isPromoted: true,
-            promotionId: paymentData.promotionId,
-            promotionStartDate: new Date(),
+          await updateDoc(paymentDocRef, {
+            status: "completed",
+            completedAt: new Date(),
           });
+
+          if (paymentData.bookingId) {
+            const bookingRef = doc(db, "bookings", paymentData.bookingId);
+            const bookingDoc = await getDoc(bookingRef);
+
+            if (bookingDoc.exists()) {
+              const bookingData = bookingDoc.data();
+              const newAmountPaid =
+                (bookingData.amountPaid || 0) + paymentData.amount;
+              const newAmountDue = bookingData.totalAmount - newAmountPaid;
+
+              await updateDoc(bookingRef, {
+                amountPaid: newAmountPaid,
+                amountDue: newAmountDue,
+                paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
+                status: "confirmed",
+                lastPaymentDate: new Date(),
+              });
+
+              if (paymentData.managedBy === "platform") {
+                await updateDoc(doc(db, "events", paymentData.eventId), {
+                  collectionBalance: increment(paymentData.organizerAmount),
+                });
+              }
+            }
+          } else if (paymentData.promotionId) {
+            await updateDoc(doc(db, "events", paymentData.eventId), {
+              isPromoted: true,
+              promotionId: paymentData.promotionId,
+              promotionStartDate: new Date(),
+            });
+          }
+        } else {
+          console.warn("No payment found for reference:", reference);
         }
-      } else {
-        console.warn("No payment document found with ID:", reference);
+
+        break;
       }
+
+      case "transfer.success": {
+        const reference = event.data.reference;
+        console.log("Processing transfer.success for:", reference);
+
+        const withdrawalsRef = collection(db, "withdrawals");
+        const q = query(
+          withdrawalsRef,
+          where("transferReference", "==", reference)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const withdrawal = querySnapshot.docs[0];
+          const withdrawalData = withdrawal.data();
+
+          await updateDoc(doc(db, "withdrawals", withdrawal.id), {
+            status: "completed",
+            completedAt: new Date(),
+          });
+
+          if (withdrawalData.eventId) {
+            await updateDoc(doc(db, "events", withdrawalData.eventId), {
+              collectionBalance: increment(-withdrawalData.amount),
+            });
+          }
+        } else {
+          console.warn("No withdrawal found for reference:", reference);
+        }
+
+        break;
+      }
+
+      default:
+        console.log("Unhandled Paystack event type:", eventType);
     }
 
     return NextResponse.json({ received: true });

@@ -40,19 +40,55 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
+  getDoc,
 } from "firebase/firestore";
+
+export type events = {
+  toDate: Date;
+  title: string;
+  location: string;
+  fromDate: Date;
+  availableSpaces: number;
+  totaSpaces: number;
+  date: Date;
+  price: number;
+  totalSpaces: number;
+  id: string;
+  imageUrl: string;
+};
+
+export type booking = {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  paymentStatus: string;
+  amountPaid: number;
+  totalAmount: number;
+  bookingDate: Date;
+  amountDue: number;
+  numberOfPeople: number;
+};
+
+export type payments = {
+  amount: number;
+  reference: string;
+  status: string;
+  createdAt: Date;
+  eventTitle: string;
+  id: string;
+};
 
 export default function DashboardPage() {
   const auth = useAuth();
   const user = auth?.user;
   const authLoading = auth?.loading || false;
 
-  const [bookings, setBookings] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [payments, setPayments] = useState([]);
+  const [bookings, setBookings] = useState<booking[]>([]);
+  const [events, setEvents] = useState<events[]>([]);
+  const [payments, setPayments] = useState<payments[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [paymentData, setPaymentData] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState<booking>();
+  const [paymentData, setPaymentData] = useState<payments>();
   const router = useRouter();
 
   useEffect(() => {
@@ -63,20 +99,22 @@ export default function DashboardPage() {
       return;
     }
 
-    // const handleDeleteEvent = async (eventId) => {
-    //   const confirmed = window.confirm(
-    //     "Are you sure you want to delete this event?"
-    //   );
-    //   if (!confirmed) return;
+    const handleDeleteEvent = async (eventId: string) => {
+      if (typeof window !== "undefined") {
+        const confirmed = window.confirm(
+          "Are you sure you want to delete this event?"
+        );
+        if (!confirmed) return;
 
-    //   try {
-    //     await deleteDoc(doc(db, "events", eventId));
-    //     setEvents((prev) => prev.filter((event) => event.id !== eventId));
-    //   } catch (error) {
-    //     console.error("Error deleting event:", error);
-    //     alert("Failed to delete the event. Please try again.");
-    //   }
-    // };
+        try {
+          await deleteDoc(doc(db, "events", eventId));
+          setEvents((prev) => prev.filter((event) => event.id !== eventId));
+        } catch (error) {
+          console.error("Error deleting event:", error);
+          alert("Failed to delete the event. Please try again.");
+        }
+      }
+    };
 
     const fetchUserData = async () => {
       try {
@@ -146,7 +184,7 @@ export default function DashboardPage() {
   const displayEvents = events;
   const displayPayments = payments;
 
-  const formatDate = (date) => {
+  const formatDate = (date: any) => {
     return new Date(date).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
@@ -156,7 +194,7 @@ export default function DashboardPage() {
 
   const handlePayBalance = async (booking: any) => {
     setSelectedBooking(booking);
-    setPaymentData(null); // reset
+    setPaymentData({}); // reset
 
     try {
       const response = await fetch("/api/create-book-payment", {
@@ -174,7 +212,12 @@ export default function DashboardPage() {
 
       if (response.ok) {
         setPaymentData(data);
+        setSelectedBooking(null);
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
       } else {
+        setSelectedBooking(null);
         alert("Failed to create payment intent.");
       }
     } catch (error) {
@@ -183,50 +226,14 @@ export default function DashboardPage() {
     }
   };
 
-  // const handlePayBalance = async (booking) => {
-  //   try {
-  //     // Create payment intent
-  //     const response = await fetch("/api/create-book-payment", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         amount: booking.amountDue,
-  //         eventId: booking.eventId,
-  //         userId: user.uid,
-  //         bookingId: booking.id,
-  //       }),
-  //     });
-
-  //     const data = await response.json();
-
-  //     // Initialize Paystack payment
-  //     const paystack = new window.PaystackPop();
-  //     paystack.newTransaction({
-  //       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-  //       email: user.email,
-  //       amount: data.amount,
-  //       reference: data.reference,
-  //       onSuccess: () => {
-  //         // Update booking status
-  //         updateBookingStatus(booking.id, booking.amountDue);
-  //       },
-  //     });
-  //   } catch (error) {
-  //     console.error("Error processing payment:", error);
-  //     alert("Payment failed. Please try again.");
-  //   }
-  // };
-
-  const updateBookingStatus = async (bookingId, amount) => {
+  const updateBookingStatus = async (bookingId: any, amount: any) => {
     try {
       const bookingRef = doc(db, "bookings", bookingId);
       const bookingDoc = await getDoc(bookingRef);
       const bookingData = bookingDoc.data();
 
-      const newAmountPaid = (bookingData.amountPaid || 0) + amount;
-      const newAmountDue = bookingData.totalAmount - newAmountPaid;
+      const newAmountPaid = (bookingData?.amountPaid || 0) + amount;
+      const newAmountDue = bookingData?.totalAmount - newAmountPaid;
 
       await updateDoc(bookingRef, {
         amountPaid: newAmountPaid,
@@ -236,8 +243,8 @@ export default function DashboardPage() {
       });
 
       // If event uses platform payment management, update collection balance
-      if (bookingData.paymentManagement === "platform") {
-        const eventRef = doc(db, "events", bookingData.eventId);
+      if (bookingData?.paymentManagement === "platform") {
+        const eventRef = doc(db, "events", bookingData?.eventId);
         await updateDoc(eventRef, {
           collectionBalance: increment(
             amount * (1 - bookingData.platformFee / 100)
@@ -261,7 +268,7 @@ export default function DashboardPage() {
     }
   };
 
-  const downloadReceipt = (booking) => {
+  const downloadReceipt = (booking: any) => {
     const doc = new jsPDF();
 
     // Add company info
@@ -316,34 +323,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {selectedBooking && paymentData && (
-        <div className="mt-4">
-          <p>
-            You’re about to pay <strong>KES {selectedBooking.amountDue}</strong>{" "}
-            for booking <strong>{selectedBooking.eventTitle}</strong>
-          </p>
-
-          <PaystackButton
-            publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
-            email={user.email}
-            amount={paymentData.amount}
-            reference={paymentData.reference}
-            currency="KES"
-            metadata={{
-              bookingId: selectedBooking.id,
-              eventId: selectedBooking.eventId,
-              userId: user.uid,
-            }}
-            text="Pay Now"
-            onSuccess={() =>
-              updateBookingStatus(selectedBooking.id, selectedBooking.amountDue)
-            }
-            onClose={() => console.log("Payment popup closed")}
-            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-          />
-        </div>
-      )}
-
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">My Dashboard</h1>
@@ -380,6 +359,38 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="bookings">
+          {selectedBooking && paymentData && (
+            <div className="mt-4 text-center p-4">
+              <p>
+                You’re about to pay{" "}
+                <strong>KES {selectedBooking.amountDue}</strong> for booking{" "}
+                <strong>{selectedBooking.eventTitle}</strong>
+              </p>
+
+              <PaystackButton
+                publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
+                email={user.email}
+                amount={paymentData.amount}
+                reference={paymentData.reference}
+                currency="KES"
+                metadata={{
+                  bookingId: selectedBooking.id,
+                  eventId: selectedBooking.eventId,
+                  userId: user.uid,
+                }}
+                text="Pay Now"
+                onSuccess={() =>
+                  updateBookingStatus(
+                    selectedBooking.id,
+                    selectedBooking.amountDue
+                  )
+                }
+                onClose={() => console.log("Payment popup closed")}
+                className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-6">
             {loading ? (
               <p className="text-center py-12">Loading your bookings...</p>

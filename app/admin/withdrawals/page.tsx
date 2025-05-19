@@ -17,6 +17,7 @@ import {
   updateDoc,
   orderBy,
   where,
+  getDoc,
 } from "firebase/firestore";
 import jsPDF from "jspdf";
 
@@ -65,17 +66,32 @@ export default function AdminWithdrawalsPage() {
     if (!confirm("Are you sure you want to approve this withdrawal?")) return;
 
     try {
-      await updateDoc(doc(db, "withdrawals", withdrawalId), {
-        status: "completed",
-        completedAt: new Date(),
-        approvedBy: user.uid,
+      const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
+      const withdrawalData = withdrawalDoc.data();
+
+      // Initiate Paystack transfer
+      const response = await fetch("/api/paystack/transfer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          withdrawalId,
+          accountDetails: withdrawalData.accountDetails,
+          amount: withdrawalData.amount,
+        }),
       });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Transfer failed");
+      }
 
       // Refresh withdrawals
       fetchWithdrawals();
     } catch (error) {
       console.error("Error approving withdrawal:", error);
-      alert("Failed to approve withdrawal");
+      alert("Failed to approve withdrawal: " + error.message);
     }
   };
 
