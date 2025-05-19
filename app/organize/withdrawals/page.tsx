@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ export default function WithdrawalsPage() {
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [eventId, setEventId] = useState<string>();
   const [accountDetails, setAccountDetails] = useState<accountDetails>();
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function WithdrawalsPage() {
         const event = doc.data();
         console.log("event data", event);
         setAccountDetails(event.accountDetails);
+        setEventId(doc.id);
         totalBalance += event.collectionBalance || 0;
       });
       setBalance(totalBalance);
@@ -116,6 +118,9 @@ export default function WithdrawalsPage() {
       await addDoc(collection(db, "withdrawals"), {
         organizerId: user.uid,
         organizerName: user.displayName || user.email,
+        transferReference: "",
+        eventReference: eventId,
+        transferRecipientCode: "",
         amount: withdrawAmount,
         platformFee,
         netAmount,

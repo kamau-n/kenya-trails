@@ -98,7 +98,7 @@ export async function POST(req: Request) {
           });
 
           if (withdrawalData.eventId) {
-            await updateDoc(doc(db, "events", withdrawalData.eventId), {
+            await updateDoc(doc(db, "events", withdrawalData.eventReference), {
               collectionBalance: increment(-withdrawalData.amount),
             });
           }
