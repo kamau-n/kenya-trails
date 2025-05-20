@@ -40,10 +40,10 @@ export default function Hero() {
   }, []);
 
   return (
-    <div className="relative py-24 md:py-36 lg:py-40 overflow-hidden rounded-lg my-8 transition-all duration-500">
+    <div className="relative py-16 md:py-24 lg:py-32 overflow-hidden rounded-lg my-4 transition-all duration-1000">
       {/* Background Image with fade effect */}
       <div
-        className="absolute inset-0 z-0 transition-opacity duration-500"
+        className="absolute inset-0 z-0 transition-opacity duration-1000"
         style={{ opacity: isVisible ? 1 : 0 }}>
         <img
           src={images[currentImageIndex].url}
