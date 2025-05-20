@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Download } from "lucide-react";
+import { Search, Download, RefreshCw } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -20,12 +20,14 @@ import {
   getDoc,
 } from "firebase/firestore";
 import jsPDF from "jspdf";
+import { toast } from "@/components/ui/use-toast";
 
 export default function AdminWithdrawalsPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processingAction, setProcessingAction] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -57,17 +59,24 @@ export default function AdminWithdrawalsPage() {
       setWithdrawals(withdrawalsData);
     } catch (error) {
       console.error("Error fetching withdrawals:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load withdrawal requests",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (withdrawalId) => {
-    if (!confirm("Are you sure you want to approve this withdrawal?")) return;
-
+  const initiatePaystackTransfer = async (withdrawalId, withdrawalData) => {
     try {
-      const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
-      const withdrawalData = withdrawalDoc.data();
+      // Update status to processing first
+      await updateDoc(doc(db, "withdrawals", withdrawalId), {
+        status: "processing",
+        processedAt: new Date(),
+        processedBy: user.uid,
+      });
 
       // Initiate Paystack transfer
       const response = await fetch("/api/paystack/transfer", {
@@ -87,16 +96,87 @@ export default function AdminWithdrawalsPage() {
         throw new Error(data.error || "Transfer failed");
       }
 
+      // Update to completed if successful
+      await updateDoc(doc(db, "withdrawals", withdrawalId), {
+        status: "completed",
+        completedAt: new Date(),
+        completedBy: user.uid,
+        transactionReference: data.reference || null,
+        transferDetails: data.transferDetails || null,
+      });
+
+      toast({
+        title: "Success",
+        description: "Withdrawal approved successfully",
+      });
+    } catch (error) {
+      console.error("Error in Paystack transfer:", error);
+
+      // Keep it in processing state with error details
+      await updateDoc(doc(db, "withdrawals", withdrawalId), {
+        status: "processing",
+        lastError: error.message,
+        lastErrorAt: new Date(),
+      });
+
+      throw error;
+    }
+  };
+
+  const handleApprove = async (withdrawalId) => {
+    if (!confirm("Are you sure you want to approve this withdrawal?")) return;
+
+    setProcessingAction(withdrawalId);
+
+    try {
+      const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
+      const withdrawalData = withdrawalDoc.data();
+
+      await initiatePaystackTransfer(withdrawalId, withdrawalData);
+
       // Refresh withdrawals
       fetchWithdrawals();
     } catch (error) {
       console.error("Error approving withdrawal:", error);
-      alert("Failed to approve withdrawal: " + error.message);
+      toast({
+        title: "Error",
+        description: `Failed to approve withdrawal: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const handleReapprove = async (withdrawalId) => {
+    if (!confirm("Are you sure you want to retry this withdrawal?")) return;
+
+    setProcessingAction(withdrawalId);
+
+    try {
+      const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
+      const withdrawalData = withdrawalDoc.data();
+
+      await initiatePaystackTransfer(withdrawalId, withdrawalData);
+
+      // Refresh withdrawals
+      fetchWithdrawals();
+    } catch (error) {
+      console.error("Error reapproving withdrawal:", error);
+      toast({
+        title: "Error",
+        description: `Failed to reapprove withdrawal: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(null);
     }
   };
 
   const handleReject = async (withdrawalId) => {
     if (!confirm("Are you sure you want to reject this withdrawal?")) return;
+
+    setProcessingAction(withdrawalId);
 
     try {
       await updateDoc(doc(db, "withdrawals", withdrawalId), {
@@ -105,60 +185,134 @@ export default function AdminWithdrawalsPage() {
         rejectedBy: user.uid,
       });
 
+      toast({
+        title: "Success",
+        description: "Withdrawal rejected successfully",
+      });
+
       // Refresh withdrawals
       fetchWithdrawals();
     } catch (error) {
       console.error("Error rejecting withdrawal:", error);
-      alert("Failed to reject withdrawal");
+      toast({
+        title: "Error",
+        description: "Failed to reject withdrawal",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(null);
     }
   };
 
   const downloadReceipt = (withdrawal) => {
-    const doc = new jsPDF();
+    try {
+      const doc = new jsPDF();
 
-    // Add company info
-    doc.setFontSize(20);
-    doc.text("Kenya Trails", 20, 20);
+      // Add company info
+      doc.setFontSize(20);
+      doc.text("Kenya Trails", 20, 20);
 
-    doc.setFontSize(12);
-    doc.text("Withdrawal Receipt", 20, 30);
+      doc.setFontSize(12);
+      doc.text("Withdrawal Receipt", 20, 30);
 
-    // Add line
-    doc.line(20, 35, 190, 35);
+      // Add line
+      doc.line(20, 35, 190, 35);
 
-    // Add withdrawal details
-    doc.text(`Withdrawal ID: ${withdrawal.id}`, 20, 45);
-    doc.text(`Organizer: ${withdrawal.organizerName}`, 20, 55);
-    doc.text(`Amount: KSh ${withdrawal.amount.toLocaleString()}`, 20, 65);
-    doc.text(`Platform Fee: KSh ${withdrawal.platformFee.toLocaleString()}`, 20, 75);
-    doc.text(`Net Amount: KSh ${withdrawal.netAmount.toLocaleString()}`, 20, 85);
-    doc.text(`Status: ${withdrawal.status}`, 20, 95);
-    doc.text(`Date: ${withdrawal.createdAt.toLocaleDateString()}`, 20, 105);
+      // Add withdrawal details
+      doc.text(`Withdrawal ID: ${withdrawal.id}`, 20, 45);
+      doc.text(`Organizer: ${withdrawal.organizerName}`, 20, 55);
+      doc.text(`Amount: KSh ${withdrawal.amount.toLocaleString()}`, 20, 65);
+      doc.text(
+        `Platform Fee: KSh ${withdrawal.platformFee.toLocaleString()}`,
+        20,
+        75
+      );
+      doc.text(
+        `Net Amount: KSh ${withdrawal.netAmount.toLocaleString()}`,
+        20,
+        85
+      );
+      doc.text(`Status: ${withdrawal.status}`, 20, 95);
+      doc.text(`Date: ${withdrawal.createdAt.toLocaleDateString()}`, 20, 105);
 
-    if (withdrawal.accountDetails) {
-      doc.text("Bank Details:", 20, 120);
-      doc.text(`Bank: ${withdrawal.accountDetails.bankName}`, 30, 130);
-      doc.text(`Account: ${withdrawal.accountDetails.accountNumber}`, 30, 140);
-      doc.text(`Name: ${withdrawal.accountDetails.accountName}`, 30, 150);
+      if (withdrawal.accountDetails) {
+        doc.text("Bank Details:", 20, 120);
+        doc.text(`Bank: ${withdrawal.accountDetails.bankName}`, 30, 130);
+        doc.text(
+          `Account: ${withdrawal.accountDetails.accountNumber}`,
+          30,
+          140
+        );
+        doc.text(`Name: ${withdrawal.accountDetails.accountName}`, 30, 150);
+      }
+
+      // Add transaction reference if available
+      if (withdrawal.transactionReference) {
+        doc.text(
+          `Transaction Ref: ${withdrawal.transactionReference}`,
+          20,
+          165
+        );
+      }
+
+      // Add footer
+      doc.line(20, 180, 190, 180);
+      doc.setFontSize(10);
+      doc.text("Kenya Trails - Admin Copy", 20, 190);
+
+      // Save the PDF
+      doc.save(`withdrawal-${withdrawal.id}-admin.pdf`);
+
+      toast({
+        title: "Success",
+        description: "Receipt downloaded successfully",
+      });
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download receipt",
+        variant: "destructive",
+      });
     }
+  };
 
-    // Add footer
-    doc.line(20, 180, 190, 180);
-    doc.setFontSize(10);
-    doc.text("Kenya Trails - Admin Copy", 20, 190);
-
-    // Save the PDF
-    doc.save(`withdrawal-${withdrawal.id}-admin.pdf`);
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-600 hover:bg-green-700";
+      case "pending":
+        return "bg-yellow-600 hover:bg-yellow-700";
+      case "processing":
+        return "bg-blue-600 hover:bg-blue-700";
+      case "rejected":
+        return "bg-red-600 hover:bg-red-700";
+      default:
+        return "bg-gray-600 hover:bg-gray-700";
+    }
   };
 
   const filteredWithdrawals = withdrawals.filter(
     (withdrawal) =>
-      withdrawal.organizerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.id.toLowerCase().includes(searchTerm.toLowerCase())
+      withdrawal.organizerName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      withdrawal.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (withdrawal.transactionReference &&
+        withdrawal.transactionReference
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()))
   );
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Loading...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="mt-4">Loading withdrawal requests...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -183,16 +337,27 @@ export default function AdminWithdrawalsPage() {
             {filteredWithdrawals.map((withdrawal) => (
               <div
                 key={withdrawal.id}
-                className="border border-gray-200 rounded-lg p-4">
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <p className="font-medium">{withdrawal.organizerName}</p>
+                  <div className="w-full md:w-3/4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                      <p className="font-medium">{withdrawal.organizerName}</p>
+                      <Badge className={getStatusBadgeClass(withdrawal.status)}>
+                        {withdrawal.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-500">ID: {withdrawal.id}</p>
                     <p className="text-sm text-gray-500">
-                      {withdrawal.createdAt.toLocaleDateString()}
+                      {withdrawal.createdAt.toLocaleDateString()} at{" "}
+                      {withdrawal.createdAt.toLocaleTimeString()}
                     </p>
+
                     <div className="mt-2">
                       <p className="text-sm">
-                        Amount: KSh {withdrawal.amount.toLocaleString()}
+                        Amount:{" "}
+                        <span className="font-medium">
+                          KSh {withdrawal.amount.toLocaleString()}
+                        </span>
                       </p>
                       <p className="text-sm text-gray-500">
                         Fee: KSh {withdrawal.platformFee.toLocaleString()}
@@ -201,47 +366,75 @@ export default function AdminWithdrawalsPage() {
                         Net: KSh {withdrawal.netAmount.toLocaleString()}
                       </p>
                     </div>
+
                     {withdrawal.accountDetails && (
                       <div className="mt-2 text-sm text-gray-500">
                         <p>Bank: {withdrawal.accountDetails.bankName}</p>
-                        <p>Account: {withdrawal.accountDetails.accountNumber}</p>
+                        <p>
+                          Account: {withdrawal.accountDetails.accountNumber}
+                        </p>
                         <p>Name: {withdrawal.accountDetails.accountName}</p>
                       </div>
                     )}
+
+                    {withdrawal.transactionReference && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Ref: {withdrawal.transactionReference}
+                      </p>
+                    )}
+
+                    {withdrawal.lastError && (
+                      <p className="text-sm text-red-500 mt-2">
+                        Error: {withdrawal.lastError}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Badge
-                      className={
-                        withdrawal.status === "completed"
-                          ? "bg-green-600"
-                          : withdrawal.status === "pending"
-                          ? "bg-yellow-600"
-                          : "bg-red-600"
-                      }>
-                      {withdrawal.status}
-                    </Badge>
-                    <div className="flex gap-2">
+
+                  <div className="flex flex-col gap-2 w-full md:w-1/4">
+                    <div className="flex flex-wrap gap-2 justify-end">
                       {withdrawal.status === "pending" && (
                         <>
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"
+                            disabled={processingAction === withdrawal.id}
                             onClick={() => handleApprove(withdrawal.id)}>
+                            {processingAction === withdrawal.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
                             Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
+                            disabled={processingAction === withdrawal.id}
                             onClick={() => handleReject(withdrawal.id)}>
                             Reject
                           </Button>
                         </>
                       )}
+
+                      {withdrawal.status === "processing" && (
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700"
+                          disabled={processingAction === withdrawal.id}
+                          onClick={() => handleReapprove(withdrawal.id)}>
+                          {processingAction === withdrawal.id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Reapprove
+                        </Button>
+                      )}
+
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => downloadReceipt(withdrawal)}>
-                        <Download className="h-4 w-4" />
+                        <Download className="h-4 w-4 mr-2" />
+                        Receipt
                       </Button>
                     </div>
                   </div>
@@ -250,9 +443,14 @@ export default function AdminWithdrawalsPage() {
             ))}
 
             {filteredWithdrawals.length === 0 && (
-              <p className="text-center text-gray-500 py-4">
-                No withdrawal requests found
-              </p>
+              <div className="text-center text-gray-500 py-8 border border-dashed rounded-lg">
+                <p>No withdrawal requests found</p>
+                {searchTerm && (
+                  <p className="text-sm mt-2">
+                    Try adjusting your search criteria
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </CardContent>

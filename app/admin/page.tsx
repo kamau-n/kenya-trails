@@ -1,19 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Menu,
-  Users,
+  TrendingUp,
+  Activity,
   Calendar,
   Package,
   DollarSign,
-  User2Icon,
+  Users,
+  ArrowUpRight,
+  BarChart3,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   BarChart,
   Bar,
@@ -34,10 +43,12 @@ import {
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import Sidebar from "./components/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminDashboard() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalEvents: 0,
@@ -49,7 +60,13 @@ export default function AdminDashboard() {
     totalEarned: 0,
   });
 
-  const COLORS = ["#4CAF50", "#F44336", "#fff"];
+  const COLORS = ["#4ade80", "#f87171", "#60a5fa", "#f59e0b"];
+  const CHART_COLORS = {
+    revenue: "#4ade80",
+    profit: "#60a5fa",
+    withdrawals: "#f87171",
+    users: "#8b5cf6",
+  };
 
   const [userData, setUserData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
@@ -86,7 +103,7 @@ export default function AdminDashboard() {
             : sum;
         }, 0);
 
-        const totalEarned = setStats({
+        setStats({
           totalUsers: usersSnapshot.size,
           totalEvents: eventsSnapshot.size,
           activeEvents,
@@ -94,7 +111,7 @@ export default function AdminDashboard() {
           totalRevenue,
           totalBookings: bookingsSnapshot.size,
           totalWithdrawals: totalWithdrawals,
-          totalEarned: 0,
+          totalEarned: totalRevenue - totalWithdrawals,
         });
 
         // Fetch revenue data
@@ -155,244 +172,576 @@ export default function AdminDashboard() {
   }, []);
 
   const statsData = [
-    { name: "Users", value: stats.totalUsers },
-    { name: "Events", value: stats.totalEvents },
-    { name: "Active Events", value: stats.activeEvents },
-    { name: "Promotions", value: stats.totalPackages },
+    { name: "Users", value: stats.totalUsers, color: "#8b5cf6" },
+    { name: "Events", value: stats.totalEvents, color: "#3b82f6" },
+    { name: "Active Events", value: stats.activeEvents, color: "#10b981" },
+    { name: "Promotions", value: stats.totalPackages, color: "#f59e0b" },
   ];
 
-  const pieColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
+  const pieColors = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b"];
+
+  const financeData = [
+    { name: "Total Revenue", value: stats.totalRevenue, color: "#4ade80" },
+    {
+      name: "Net Profit",
+      value: stats.totalRevenue - stats.totalWithdrawals,
+      color: "#60a5fa",
+    },
+    {
+      name: "Total Withdrawals",
+      value: stats.totalWithdrawals,
+      color: "#f87171",
+    },
+  ];
+
+  const StatCard = ({ title, value, description, icon, trend, color }) => (
+    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-medium text-gray-700">
+            {title}
+          </CardTitle>
+          <div className={`p-2 rounded-lg bg-opacity-20 ${color}`}>{icon}</div>
+        </div>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex justify-between items-end">
+          <div className="text-3xl font-bold">{value}</div>
+          {trend && (
+            <div
+              className={`flex items-center text-sm ${
+                trend > 0 ? "text-green-500" : "text-red-500"
+              }`}>
+              {trend > 0 ? "+" : ""}
+              {trend}%
+              <ArrowUpRight
+                className={`ml-1 h-4 w-4 ${
+                  trend < 0 ? "transform rotate-90" : ""
+                }`}
+              />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const ChartCard = ({ title, children, icon }) => (
+    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+      <CardHeader className="pb-2 flex flex-row justify-between items-center">
+        <CardTitle className="text-lg font-medium text-gray-700">
+          {title}
+        </CardTitle>
+        <div className="p-2 rounded-lg bg-gray-100">{icon}</div>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+
+  const getCustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border shadow-md rounded-md">
+          <p className="font-medium">{`${
+            payload[0].name
+          }: ${payload[0].value.toLocaleString()}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex w-64  border-r bg-white/55">
+      <aside className="hidden md:flex w-64 border-r bg-white shadow-sm">
         <Sidebar />
       </aside>
 
       {/* Sidebar Trigger (mobile) */}
-      <div className="md:hidden p-2 fixed bg-slate-50 top-2 left-2 z-50">
+      <div className="md:hidden p-2 fixed bg-white top-2 left-2 z-50 shadow-md rounded-md">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="rounded-md">
               <Menu />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64">
+          <SheetContent side="left" className="w-64 p-0">
             <Sidebar />
           </SheetContent>
         </Sheet>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalUsers}</div>
-              <p className="text-purple-100">Active accounts</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalEvents}</div>
-              <p className="text-green-100">Published events</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Bookings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.totalBookings}</div>
-              <p className="text-blue-100">Confirmed bookings</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Revenue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                KSh {stats.totalRevenue.toLocaleString()}
-              </div>
-              <p className="text-yellow-100">Platform earnings</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Withdrawals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                KSh {stats.totalWithdrawals.toLocaleString()}
-              </div>
-              <p className="text-yellow-100">Platform earnings</p>
-            </CardContent>
-          </Card>
+      <main className="flex-1 p-4 md:p-6 pt-16 md:pt-6 max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">
+            Dashboard Overview
+          </h1>
+          <p className="text-gray-500">
+            Welcome back! Here's what's happening with your platform.
+          </p>
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Revenue Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingUserData ? (
-                <p>Loading...</p>
-              ) : (
+        <Tabs
+          defaultValue="overview"
+          className="mb-8"
+          onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="finance">Finance</TabsTrigger>
+            <TabsTrigger value="users">Users & Events</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard
+                title="Users"
+                value={stats.totalUsers.toLocaleString()}
+                description="Active accounts"
+                icon={<Users className="h-5 w-5 text-purple-500" />}
+                trend={7.2}
+                color="bg-purple-100"
+              />
+              <StatCard
+                title="Events"
+                value={stats.totalEvents.toLocaleString()}
+                description="Published events"
+                icon={<Calendar className="h-5 w-5 text-blue-500" />}
+                trend={4.1}
+                color="bg-blue-100"
+              />
+              <StatCard
+                title="Bookings"
+                value={stats.totalBookings.toLocaleString()}
+                description="Confirmed bookings"
+                icon={<Package className="h-5 w-5 text-green-500" />}
+                trend={12.5}
+                color="bg-green-100"
+              />
+              <StatCard
+                title="Revenue"
+                value={`KSh ${stats.totalRevenue.toLocaleString()}`}
+                description="Platform earnings"
+                icon={<DollarSign className="h-5 w-5 text-yellow-500" />}
+                trend={5.8}
+                color="bg-yellow-100"
+              />
+            </div>
+
+            {/* Main Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <ChartCard
+                title="Revenue Overview"
+                icon={<TrendingUp className="h-5 w-5 text-gray-500" />}>
+                {loadingUserData ? (
+                  <div className="flex justify-center items-center h-72">
+                    <p>Loading data...</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient
+                          id="colorRevenue"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor={CHART_COLORS.revenue}
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={CHART_COLORS.revenue}
+                            stopOpacity={0.1}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <Tooltip content={getCustomTooltip} />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke={CHART_COLORS.revenue}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="User Growth"
+                icon={<Activity className="h-5 w-5 text-gray-500" />}>
+                {loadingUserData ? (
+                  <div className="flex justify-center items-center h-72">
+                    <p>Loading data...</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={userData}>
+                      <defs>
+                        <linearGradient
+                          id="colorUsers"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor={CHART_COLORS.users}
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={CHART_COLORS.users}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip content={getCustomTooltip} />
+                      <Line
+                        type="monotone"
+                        dataKey="users"
+                        stroke={CHART_COLORS.users}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        fill="url(#colorUsers)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+            </div>
+
+            {/* Distribution Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChartCard
+                title="Platform Distribution"
+                icon={<PieChartIcon className="h-5 w-5 text-gray-500" />}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={statsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
+                      label>
+                      {statsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={getCustomTooltip} />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      formatter={(value, entry, index) => (
+                        <span className="text-gray-700">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard
+                title="Metrics Overview"
+                icon={<BarChart3 className="h-5 w-5 text-gray-500" />}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={statsData} barGap={8} barSize={36}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#f0f0f0"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} axisLine={false} />
+                    <Tooltip content={getCustomTooltip} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {statsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="finance">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <StatCard
+                title="Total Revenue"
+                value={`KSh ${stats.totalRevenue.toLocaleString()}`}
+                description="All platform earnings"
+                icon={<DollarSign className="h-5 w-5 text-green-500" />}
+                trend={5.8}
+                color="bg-green-100"
+              />
+              <StatCard
+                title="Net Profit"
+                value={`KSh ${(
+                  stats.totalRevenue - stats.totalWithdrawals
+                ).toLocaleString()}`}
+                description="After withdrawals"
+                icon={<TrendingUp className="h-5 w-5 text-blue-500" />}
+                trend={3.2}
+                color="bg-blue-100"
+              />
+              <StatCard
+                title="Total Withdrawals"
+                value={`KSh ${stats.totalWithdrawals.toLocaleString()}`}
+                description="Completed payouts"
+                icon={<Activity className="h-5 w-5 text-red-500" />}
+                trend={-2.4}
+                color="bg-red-100"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChartCard
+                title="Revenue Breakdown"
+                icon={<PieChartIcon className="h-5 w-5 text-gray-500" />}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={financeData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
+                      label>
+                      {financeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={getCustomTooltip} />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      formatter={(value, entry, index) => (
+                        <span className="text-gray-700">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard
+                title="Monthly Revenue"
+                icon={<TrendingUp className="h-5 w-5 text-gray-500" />}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient
+                        id="colorMonthlyRevenue"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1">
+                        <stop
+                          offset="5%"
+                          stopColor={CHART_COLORS.revenue}
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor={CHART_COLORS.revenue}
+                          stopOpacity={0.1}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <Tooltip content={getCustomTooltip} />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke={CHART_COLORS.revenue}
+                      fillOpacity={1}
+                      fill="url(#colorMonthlyRevenue)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <StatCard
+                title="Total Users"
+                value={stats.totalUsers.toLocaleString()}
+                description="Active accounts"
+                icon={<Users className="h-5 w-5 text-purple-500" />}
+                trend={7.2}
+                color="bg-purple-100"
+              />
+              <StatCard
+                title="Total Events"
+                value={stats.totalEvents.toLocaleString()}
+                description="All events"
+                icon={<Calendar className="h-5 w-5 text-blue-500" />}
+                trend={4.1}
+                color="bg-blue-100"
+              />
+              <StatCard
+                title="Active Events"
+                value={stats.activeEvents.toLocaleString()}
+                description="Upcoming events"
+                icon={<Calendar className="h-5 w-5 text-green-500" />}
+                trend={9.3}
+                color="bg-green-100"
+              />
+              <StatCard
+                title="Promotions"
+                value={stats.totalPackages.toLocaleString()}
+                description="Active packages"
+                icon={<Package className="h-5 w-5 text-yellow-500" />}
+                trend={2.8}
+                color="bg-yellow-100"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChartCard
+                title="User Growth"
+                icon={<Activity className="h-5 w-5 text-gray-500" />}>
+                {loadingUserData ? (
+                  <div className="flex justify-center items-center h-72">
+                    <p>Loading data...</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={userData}>
+                      <defs>
+                        <linearGradient
+                          id="colorUsers2"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor={CHART_COLORS.users}
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={CHART_COLORS.users}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip content={getCustomTooltip} />
+                      <Line
+                        type="monotone"
+                        dataKey="users"
+                        stroke={CHART_COLORS.users}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        fill="url(#colorUsers2)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="Event Distribution"
+                icon={<PieChartIcon className="h-5 w-5 text-gray-500" />}>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={[
-                        { name: "Total Revenue", value: stats.totalRevenue },
                         {
-                          name: "Total Profit",
-                          value: stats.totalRevenue - stats.totalWithdrawals,
+                          name: "Total Events",
+                          value: stats.totalEvents,
+                          color: "#3b82f6",
                         },
                         {
-                          name: "Total Withdrawals",
-                          value: stats.totalWithdrawals,
+                          name: "Active Events",
+                          value: stats.activeEvents,
+                          color: "#10b981",
+                        },
+                        {
+                          name: "Promotions",
+                          value: stats.totalPackages,
+                          color: "#f59e0b",
                         },
                       ]}
-                      dataKey="value"
-                      nameKey="name"
-                      outerRadius={100}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
                       fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
                       label>
-                      {revenueData.map((_, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
+                      {[
+                        {
+                          name: "Total Events",
+                          value: stats.totalEvents,
+                          color: "#3b82f6",
+                        },
+                        {
+                          name: "Active Events",
+                          value: stats.activeEvents,
+                          color: "#10b981",
+                        },
+                        {
+                          name: "Promotions",
+                          value: stats.totalPackages,
+                          color: "#f59e0b",
+                        },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={getCustomTooltip} />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      formatter={(value, entry, index) => (
+                        <span className="text-gray-700">{value}</span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* <Card>
-            <CardHeader>
-              <CardTitle>Revenue Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient
-                      id="colorRevenue"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#8884d8"
-                    fillOpacity={1}
-                    fill="url(#colorRevenue)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card> */}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>User Growth</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingUserData ? (
-                <p>Loading...</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={userData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="users"
-                      stroke="#8884d8"
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statsData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label>
-                    {statsData.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={pieColors[index % pieColors.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+              </ChartCard>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

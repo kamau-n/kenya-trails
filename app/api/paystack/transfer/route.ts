@@ -7,7 +7,7 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const generateUniqueReference = (): string => {
   const timestamp = Date.now().toString(); // Current time in milliseconds
   const randomPart = Math.random().toString(36).substring(2, 8); // Random alphanumeric string
-  return `payout_${timestamp}_${randomPart}`;
+  return `payout_kenya_trails_${timestamp}_${randomPart}`;
 };
 
 export async function POST(req: Request) {
