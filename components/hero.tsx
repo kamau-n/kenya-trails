@@ -56,7 +56,7 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 flex flex-col items-start text-left md:max-w-4xl">
         <div className="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-medium mb-4 animate-pulse">
-          Limited spots available for June expeditions
+          Limited spots available
         </div>
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 transition-all">
