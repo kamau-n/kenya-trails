@@ -14,16 +14,15 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured, googleProvider } from "@/lib/firebase";
 
-// Create the context with a default value of null
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(!isFirebaseConfigured);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
-    // If we're in demo mode, don't try to connect to Firebase
     if (demoMode) {
       setLoading(false);
       return;
@@ -31,7 +30,6 @@ export function AuthProvider({ children }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Get additional user data from Firestore
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
@@ -69,18 +67,15 @@ export function AuthProvider({ children }) {
         password
       );
 
-      // Update profile
       await updateProfile(userCredential.user, { displayName });
-
-      // Send verification email
       await sendEmailVerification(userCredential.user);
 
-      // Store user info in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         email,
         displayName,
-        userType: "traveler", // default role
+        userType: "traveler",
         createdAt: new Date(),
+        twoFactorEnabled: false,
       });
 
       return userCredential.user;
@@ -89,7 +84,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signIn = async (email, password) => {
+  const signIn = async (email, password, verificationCode = null) => {
     if (demoMode) {
       throw new Error(
         "Firebase is not configured. Please add your Firebase credentials to use authentication features."
@@ -103,13 +98,34 @@ export function AuthProvider({ children }) {
         password
       );
 
-      // Check if email is verified
       if (!userCredential.user.emailVerified) {
         await firebaseSignOut(auth);
         throw new Error(
           "Email not verified. Please check your inbox for a verification link."
         );
       }
+
+      //  Check if user has 2FA enabled
+      // const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+      // const userData = userDoc.data();
+
+      // if (userData?.twoFactorEnabled) {
+      //   if (!verificationCode) {
+      //     setNeedsVerification(true);
+      //     return { needsVerification: true };
+      //   }
+
+      //   // Verify 2FA code
+      //   const response = await fetch("/api/2fa/verify", {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({ code: verificationCode }),
+      //   });
+
+      //   if (!response.ok) {
+      //     throw new Error("Invalid verification code");
+      //   }
+      // }
 
       return userCredential.user;
     } catch (error) {
@@ -210,12 +226,12 @@ export function AuthProvider({ children }) {
     signOut,
     updateUserProfile,
     demoMode,
+    needsVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Export the useAuth hook with a null check
 export const useAuth = () => {
   const context = useContext(AuthContext);
   return context;
