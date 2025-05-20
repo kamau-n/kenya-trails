@@ -67,6 +67,7 @@ export type events = {
   totalSpaces: number;
   id: string;
   imageUrl: string;
+  paymentManagement: string;
 };
 
 export type booking = {
@@ -105,6 +106,7 @@ export default function DashboardPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
+  const [selectedBookingEvent, setSelectedBookingEvent] = useState<events>();
   const router = useRouter();
 
   useEffect(() => {
@@ -322,6 +324,13 @@ export default function DashboardPage() {
     doc.save(`receipt-${booking.id}.pdf`);
   };
 
+  let platformManagedEvents = [];
+  platformManagedEvents = events
+    .filter((ev) => ev.paymentManagement === "platform")
+    .map((ev) => ev.id);
+
+  console.log("this are the  platform managed events", platformManagedEvents);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://js.paystack.co/v1/inline.js";
@@ -502,13 +511,14 @@ export default function DashboardPage() {
                         </Link>
                       </Button>
                       <div className="flex gap-2">
-                        {booking.amountDue > 0 && (
-                          <Button
-                            onClick={() => handlePayBalance(booking)}
-                            className="bg-green-600 hover:bg-green-700">
-                            Pay Balance
-                          </Button>
-                        )}
+                        {booking.amountDue > 0 &&
+                          platformManagedEvents.includes(booking.eventId) && (
+                            <Button
+                              onClick={() => handlePayBalance(booking)}
+                              className="bg-green-600 hover:bg-green-700">
+                              Pay Balance
+                            </Button>
+                          )}
                         <Button
                           variant="outline"
                           onClick={() => downloadReceipt(booking)}
