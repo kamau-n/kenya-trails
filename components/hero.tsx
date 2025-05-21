@@ -53,25 +53,25 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 flex flex-col items-start text-left md:max-w-7xl">
-        <div className="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-medium mb-4 animate-pulse">
+        <div className="inline-block bg-green-600 text-white px-4 py-1 rounded-full md:text-sm text-xs font-medium mb-4 animate-pulse">
           Limited spots available
         </div>
 
-        <h1 className="text-3xl md:text-4xl lg:text-7xl font-bold text-white mb-4 transition-all">
+        <h1 className="text-xl md:text-4xl lg:text-7xl font-bold text-white mb-4 transition-all">
           Discover Kenya's <span className="text-green-400">Wild</span> Beauty
         </h1>
 
         <div className="flex items-center text-green-300 mb-2">
-          <span className="text-lg md:text-xl font-medium">
+          <span className="text-sm md:text-xl font-medium">
             {images[currentImageIndex].location}
           </span>
           <span className="mx-2">•</span>
-          <span className="text-gray-300 text-base">
+          <span className="text-gray-300 tex-xm text-base">
             {images[currentImageIndex].description}
           </span>
         </div>
 
-        <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-2xl">
+        <p className="text-sm md:text-xl text-gray-200 mb-8 max-w-2xl">
           Join guided group adventures to Kenya's most breathtaking
           destinations. Connect with fellow travelers, experience authentic
           wildlife encounters, and create memories that last a lifetime.
@@ -81,7 +81,7 @@ export default function Hero() {
           <Button
             asChild
             size="lg"
-            className="bg-green-600 hover:bg-green-700 text-lg font-medium px-8 py-6 flex items-center gap-2">
+            className="bg-green-600 hover:bg-green-700 md:text-lg font-medium md:px-8 md:py-6 flex items-center gap-2">
             <Link href="/events">
               Explore Adventures
               <ChevronRight className="ml-1 h-5 w-5" />
@@ -91,7 +91,7 @@ export default function Hero() {
             asChild
             size="lg"
             variant="outline"
-            className="border-white text-black hover:bg-white hover:text-green-800 text-lg font-medium px-8 py-6">
+            className="border-white text-black hover:bg-white hover:text-green-800 md:text-lg font-medium md:px-8 py-6">
             <Link href="/organize">Organize Your Trip</Link>
           </Button>
         </div>

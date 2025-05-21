@@ -370,8 +370,10 @@ export default function DashboardPage() {
     <div className="container mx-auto px-4 py-8 ">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-50 p-6 rounded-lg shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">My Dashboard</h1>
-          <p className="text-slate-600 mt-1">
+          <h1 className="md:text-3xl lg:text-3xl text-xl font-bold text-slate-800">
+            My Dashboard
+          </h1>
+          <p className="text-slate-600 text-sm md:text-lg mt-1">
             Welcome back, {user.displayName || user.email}
           </p>
         </div>
@@ -379,7 +381,7 @@ export default function DashboardPage() {
         {user.userType === "organizer" && (
           <Button asChild className="bg-green-600 hover:bg-green-700">
             <Link href="/organize/create">
-              <Calendar className="mr-2 h-4 w-4" />
+              <Calendar className="mr-2 h-4  w-4" />
               Create New Event
             </Link>
           </Button>
@@ -396,29 +398,29 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="bookings" className="space-y-4">
-        <TabsList className="mb-8 bg-white shadow-sm rounded-lg p-1">
+        <TabsList className="mb-8  bg-white shadow-sm rounded-lg ">
           <TabsTrigger
             value="bookings"
-            className="data-[state=active]:bg-green-50 data-[state=active]:text-green-800">
+            className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
             My Bookings
           </TabsTrigger>
           {user.userType === "organizer" && (
             <>
               <TabsTrigger
                 value="events"
-                className="data-[state=active]:bg-green-50 data-[state=active]:text-green-800">
+                className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
                 My Events
               </TabsTrigger>
               <TabsTrigger
                 value="payments"
-                className="data-[state=active]:bg-green-50 data-[state=active]:text-green-800">
+                className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
                 Payments
               </TabsTrigger>
             </>
           )}
           <TabsTrigger
             value="profile"
-            className="data-[state=active]:bg-green-50 data-[state=active]:text-green-800">
+            className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
             Profile
           </TabsTrigger>
         </TabsList>
@@ -453,7 +455,9 @@ export default function DashboardPage() {
                   <CardHeader className="pb-2 bg-slate-50">
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{booking.eventTitle}</CardTitle>
+                        <CardTitle className="text-xl md:text-2xl lg:text-2xl">
+                          {booking.eventTitle}
+                        </CardTitle>
                         <CardDescription>
                           Booked on {formatDate(booking.bookingDate)}
                         </CardDescription>
@@ -666,9 +670,12 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Promotion Payments</CardTitle>
+                    <CardTitle className="md:text-2xl text-lg">
+                      {" "}
+                      Payments
+                    </CardTitle>
                     <CardDescription>
-                      View and manage your promotion payments
+                      View and manage all your payments
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -738,7 +745,9 @@ export default function DashboardPage() {
         <TabsContent value="profile">
           <Card className="border-slate-200 shadow-sm">
             <CardHeader className="bg-slate-50">
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle className="md:text-2xl text-lg">
+                Profile Information
+              </CardTitle>
               <CardDescription>Manage your account details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">

@@ -275,7 +275,9 @@ export default function CreateEventPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Create a New Event</h1>
+      <h1 className="md:text-3xl text-lg px-1 font-bold mb-8">
+        Create a New Event
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {error && (

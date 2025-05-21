@@ -367,10 +367,10 @@ export default function EventPaymentsPage({ params }) {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            <h1 className="md:text-3xl text-xl font-bold text-gray-900 mb-1">
               {event.title}
             </h1>
-            <p className="text-gray-500 flex items-center gap-2">
+            <p className="text-gray-500 md:text-lg text-sm flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
               {new Date(event.date?.seconds * 1000).toLocaleDateString()}
               <span className="mx-2">•</span>
@@ -401,7 +401,7 @@ export default function EventPaymentsPage({ params }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-gray-900">
+            <p className="md:text-3xl text-xl font-bold text-gray-900">
               KSh {totalCollections.toLocaleString()}
             </p>
             <p className="text-sm text-gray-500 mt-1">
@@ -412,13 +412,13 @@ export default function EventPaymentsPage({ params }) {
 
         <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2 text-gray-700">
+            <CardTitle className="text-lg  flex items-center gap-2 text-gray-700">
               <DollarSign className="h-5 w-5 text-green-500" />
               Available Balance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-gray-900">
+            <p className="md:text-3xl text-xl font-bold text-gray-900">
               KSh {collectionBalance.toLocaleString()}
             </p>
             <p className="text-sm text-gray-500 mt-1">
@@ -435,7 +435,7 @@ export default function EventPaymentsPage({ params }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-gray-900">
+            <p className="md:text-3xl  text-xl font-bold text-gray-900">
               KSh {totalDue.toLocaleString()}
             </p>
             <p className="text-sm text-gray-500 mt-1">
@@ -501,9 +501,15 @@ export default function EventPaymentsPage({ params }) {
         <CardContent>
           <Tabs defaultValue="list" className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="list">List View</TabsTrigger>
-              <TabsTrigger value="stats">Payment Stats</TabsTrigger>
-              <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
+              <TabsTrigger className="md:text-sm text-xs" value="list">
+                List View
+              </TabsTrigger>
+              <TabsTrigger className="md:text-sm text-xs" value="stats">
+                Payment Stats
+              </TabsTrigger>
+              <TabsTrigger className="md:text-sm text-xs" value="withdrawals">
+                Withdrawals
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="list">
@@ -699,7 +705,9 @@ export default function EventPaymentsPage({ params }) {
             <TabsContent value="withdrawals">
               <Card>
                 <CardHeader>
-                  <CardTitle>Withdrawal History</CardTitle>
+                  <CardTitle className="md:text-2xl text-lg text-center">
+                    Withdrawal History
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">

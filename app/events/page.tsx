@@ -115,7 +115,7 @@ export default function EventsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <h1 className="text-3xl font-bold">Explore Adventures</h1>
+        <h1 className="md:text-3xl text-2xl font-bold">Explore Adventures</h1>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
@@ -275,8 +275,10 @@ export default function EventsPage() {
                     </Badge>
                   </div>
                   <CardHeader className="pb-2">
-                    <h3 className="text-xl font-bold">{event.title}</h3>
-                    <div className="flex items-center text-gray-500 text-sm">
+                    <h3 className="md:text-xl text-lg font-bold">
+                      {event.title}
+                    </h3>
+                    <div className="flex items-center text-gray-500  text-xs md:text-sm">
                       <MapPin className="h-4 w-4 mr-1" />
                       {event.location}
                     </div>
@@ -284,17 +286,19 @@ export default function EventsPage() {
                   <CardContent className="pb-2">
                     <div className="flex items-center text-gray-700 mb-2">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span>{formatDate(event.date)}</span>
+                      <span className="md:text-lg text-sm">
+                        {formatDate(event.date)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-gray-700">
                         <Users className="h-4 w-4 mr-2" />
-                        <span>
+                        <span className="md:text-lg text-sm">
                           {event.availableSpaces} / {event.totalSpaces} spots
                           left
                         </span>
                       </div>
-                      <div className="font-bold text-green-600">
+                      <div className="font-bold md:text-lg text-sm text-green-600">
                         KSh {event.price.toLocaleString()}
                       </div>
                     </div>
