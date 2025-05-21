@@ -232,7 +232,7 @@ export default function OrganizerEventsPage() {
                   </Button>
 
                   <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <Link href={`/organize/events/${event.id}/promote`}>
+                    <Link href={`/events/${event.id}/promote`}>
                       Promote Event
                     </Link>
                   </Button>

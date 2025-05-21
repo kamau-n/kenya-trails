@@ -14,6 +14,7 @@ import {
   Settings,
   HelpCircle,
   Menu,
+  Banknote,
 } from "lucide-react";
 
 import { Home } from "lucide-react";
@@ -116,14 +117,17 @@ export default function Sidebar() {
                   Finance
                 </div>
                 <div className="space-y-1">
+                  <NavItem href="/admin/payments" icon={CreditCard}>
+                    Payments
+                  </NavItem>
                   <NavItem href="/admin/withdrawals" icon={Wallet}>
                     Withdrawals
                   </NavItem>
                   <NavItem href="/admin/invoices" icon={Receipt}>
-                    Invoices
+                    Refunds
                   </NavItem>
-                  <NavItem href="/admin/payments" icon={CreditCard}>
-                    Payments
+                  <NavItem href="admin/transactions" icon={Banknote}>
+                    Transactions
                   </NavItem>
                 </div>
               </div>

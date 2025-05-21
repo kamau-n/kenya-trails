@@ -44,9 +44,11 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import Sidebar from "./components/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PaystackBalanceResponse } from "../api/paystack/balance/route";
 
 export default function AdminDashboard() {
   const pathname = usePathname();
+  const [balances, setBalances] = useState<PaystackBalanceResponse[]>([]);
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState({
@@ -171,6 +173,26 @@ export default function AdminDashboard() {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    async function fetchBalances() {
+      try {
+        const res = await fetch("/api/paystack/balance");
+        const data = await res.json();
+
+        console.log("this is the response from paystack", data);
+        if (data.status) {
+          setBalances(data.data); // 'data' contains the array of banks
+        }
+      } catch (e) {
+        console.error("Failed to fetch balances:", e);
+      } finally {
+        // setLoadingBanks(false);
+      }
+    }
+
+    fetchBalances();
+  }, []);
+
   const statsData = [
     { name: "Users", value: stats.totalUsers, color: "#8b5cf6" },
     { name: "Events", value: stats.totalEvents, color: "#3b82f6" },
@@ -263,9 +285,10 @@ export default function AdminDashboard() {
       <div className="md:hidden p-2 fixed bg-white top-2 left-2 z-50 shadow-md rounded-md">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-md">
+            {/* <Button variant="outline" size="icon" className="rounded-md">
               <Menu />
-            </Button>
+            </Button> */}
+            <Sidebar />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <Sidebar />
@@ -489,11 +512,25 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="finance">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <StatCard
                 title="Total Revenue"
                 value={`KSh ${stats.totalRevenue.toLocaleString()}`}
                 description="All platform earnings"
+                icon={<DollarSign className="h-5 w-5 text-green-500" />}
+                trend={5.8}
+                color="bg-green-100"
+              />
+
+              <StatCard
+                title="Account Balance"
+                value={`KSh ${
+                  balances
+                    ?.reduce((total, item) => total + item.balance, 0)
+                    .toLocaleString("en-KE", { minimumFractionDigits: 2 }) ||
+                  "0.00"
+                }`}
+                description="All account balances"
                 icon={<DollarSign className="h-5 w-5 text-green-500" />}
                 trend={5.8}
                 color="bg-green-100"

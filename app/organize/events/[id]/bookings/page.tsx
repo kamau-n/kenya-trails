@@ -28,6 +28,7 @@ import {
 } from "firebase/firestore";
 
 import { event } from "@/app/types/types";
+import { booking, events } from "@/app/dashboard/page";
 
 const generateCSV = (bookings, eventName) => {
   const header = [
@@ -73,8 +74,8 @@ const generateCSV = (bookings, eventName) => {
 export default function EventBookingsPage({ params }) {
   const { id } = params;
   const { user, loading: authLoading } = useAuth();
-  const [event, setEvent] = useState<event>();
-  const [bookings, setBookings] = useState([]);
+  const [event, setEvent] = useState<events>();
+  const [bookings, setBookings] = useState<booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
