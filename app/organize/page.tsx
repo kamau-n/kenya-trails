@@ -101,7 +101,7 @@ export default function OrganizePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
-      <div className="relative py-20 md:py-32 overflow-hidden rounded-3xl my-8">
+      <div className="relative py-20 md:py-32 overflow-hidden my-8">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img

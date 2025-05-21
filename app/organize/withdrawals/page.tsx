@@ -110,7 +110,7 @@ export default function WithdrawalsPage() {
     }
 
     try {
-      // Calculate platform fee (3%)
+      // Calculate platform fee (6%)
       const platformFee = Math.max(withdrawAmount * 0.005, 10);
       const netAmount = withdrawAmount - platformFee;
 

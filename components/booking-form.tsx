@@ -18,6 +18,10 @@ import {
 } from "firebase/firestore";
 import { PaystackButton } from "react-paystack";
 
+export type user = {
+  uid: string;
+};
+
 export default function BookingForm({ event, onClose, onSuccess }) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -207,10 +211,15 @@ export default function BookingForm({ event, onClose, onSuccess }) {
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
-                      paymentAmount: event.depositAmount,
+                      paymentAmount:
+                        event.depositAmount * formData.numberOfPeople,
                     }))
                   }>
-                  Pay Deposit (KSh {event.depositAmount.toLocaleString()})
+                  Pay Deposit (KSh{" "}
+                  {(
+                    event.depositAmount * formData.numberOfPeople
+                  ).toLocaleString()}
+                  )
                 </Button>
               )}
             </div>

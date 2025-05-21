@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,9 @@ export default function CreateEventPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [banks, setBanks] = useState([]);
+  const [loadingBanks, setLoadingBanks] = useState(true);
+  const [selectedAccountCode, setSelectedCode] = useState();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -249,6 +252,26 @@ export default function CreateEventPage() {
       </div>
     );
   }
+
+  useEffect(() => {
+    async function fetchBanks() {
+      try {
+        const res = await fetch("/api/paystack/banks?country=KE");
+        const data = await res.json();
+
+        console.log("this is the response from paystack", data);
+        if (data.status) {
+          setBanks(data.data); // 'data' contains the array of banks
+        }
+      } catch (e) {
+        console.error("Failed to fetch banks:", e);
+      } finally {
+        setLoadingBanks(false);
+      }
+    }
+
+    fetchBanks();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -770,7 +793,7 @@ export default function CreateEventPage() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="platform" id="platform" />
                 <Label htmlFor="platform">
-                  Let the platform manage payments (3% fee)
+                  Let the platform manage payments (5% fee)
                 </Label>
               </div>
             </RadioGroup>
@@ -781,20 +804,40 @@ export default function CreateEventPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="bankName">Bank Name</Label>
-                    <Input
+                    <select
                       id="bankName"
+                      className="w-full p-2 border rounded"
                       value={formData.accountDetails.bankName}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        // Find the selected bank to get its code
+                        const selectedBank = banks.find(
+                          (bank) => bank.name === e.target.value
+                        );
+                        // Update the account code if a bank is found
+                        if (selectedBank) {
+                          setSelectedCode(selectedBank.code);
+                        }
+
+                        // Update form data as before
                         setFormData((prev) => ({
                           ...prev,
                           accountDetails: {
                             ...prev.accountDetails,
                             bankName: e.target.value,
                           },
-                        }))
-                      }
-                      required
-                    />
+                        }));
+                      }}
+                      required>
+                      <option value="">Select a bank</option>
+                      {banks.map((bank) => (
+                        <option key={bank.code} value={bank.name}>
+                          {bank.name}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingBanks && (
+                      <p className="text-sm text-gray-500">Loading banks...</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="accountNumber">Account Number</Label>
@@ -811,6 +854,15 @@ export default function CreateEventPage() {
                         }))
                       }
                       required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="accountCode">Account Code</Label>
+                    <Input
+                      id="accountCode"
+                      value={selectedAccountCode}
+                      required
+                      disabled
                     />
                   </div>
                   <div>
@@ -832,7 +884,7 @@ export default function CreateEventPage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Platform fee: 3% of each booking payment
+                  Platform fee: 5% of each booking payment
                 </p>
               </div>
             )}

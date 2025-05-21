@@ -40,11 +40,9 @@ export default function Hero() {
   }, []);
 
   return (
-    <div className="relative py-16 md:py-24 lg:py-32 overflow-hidden rounded-lg my-4 transition-all duration-1000">
+    <div className="relative py-12 md:py-16 lg:py-24 overflow-hidden rounded-lg my-4 ">
       {/* Background Image with fade effect */}
-      <div
-        className="absolute inset-0 z-0 transition-opacity duration-1000"
-        style={{ opacity: isVisible ? 1 : 0 }}>
+      <div className="absolute inset-0 z-0 ">
         <img
           src={images[currentImageIndex].url}
           alt={images[currentImageIndex].location}
@@ -54,12 +52,12 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 flex flex-col items-start text-left md:max-w-4xl">
+      <div className="relative z-10 container mx-auto px-4 flex flex-col items-start text-left md:max-w-7xl">
         <div className="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-medium mb-4 animate-pulse">
           Limited spots available
         </div>
 
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 transition-all">
+        <h1 className="text-3xl md:text-4xl lg:text-7xl font-bold text-white mb-4 transition-all">
           Discover Kenya's <span className="text-green-400">Wild</span> Beauty
         </h1>
 
