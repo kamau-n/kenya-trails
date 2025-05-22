@@ -254,6 +254,9 @@ export default function PaymentsPage() {
               <TableHead>Payment ID</TableHead>
               <TableHead>Event ID</TableHead>
               <TableHead>User ID</TableHead>
+              <TableHead>Reference</TableHead>
+              <TableHead>Channel</TableHead>
+              <TableHead>Currency</TableHead>
               <TableHead
                 onClick={() => toggleSort("amount")}
                 className="cursor-pointer select-none">
@@ -296,6 +299,9 @@ export default function PaymentsPage() {
                 <TableCell className="font-mono">{payment.id}</TableCell>
                 <TableCell>{payment.eventId}</TableCell>
                 <TableCell>{payment.userId}</TableCell>
+                <TableCell>{payment.reference}</TableCell>
+                <TableCell>{payment.channel}</TableCell>
+                <TableCell>{payment.currency}</TableCell>
                 <TableCell>{currencyFormat(payment.amount)}</TableCell>
                 <TableCell>
                   <Badge
