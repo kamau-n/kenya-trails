@@ -39,11 +39,11 @@ export async function POST(req: Request) {
           await updateDoc(paymentDocRef, {
             status: "completed",
             completedAt: new Date(),
-           paidAt: Timestamp.fromDate(new Date(event.paid_at)),
-            reference: event.reference,
-            channel: event.channel,
-            currency: event.currency,
-            customer: event.customer,
+           paidAt: Timestamp.fromDate(new Date(event?.data?.paid_at)),
+            reference: event?.data?.reference,
+            channel: event?.data?.channel,
+            currency: event?.data?.currency,
+            customer: event?.data?.customer,
           });
 
           if (paymentData.bookingId) {
