@@ -99,11 +99,11 @@ export default function OrganizePage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4  py-8">
       {/* Hero Section */}
-      <div className="relative py-20 md:py-32 overflow-hidden my-8">
+      <div className="relative py-20 rounded-lg md:py-32 overflow-hidden my-8">
         {/* Background Image */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 rounded-md">
           <img
             src="/bg.jpg"
             alt="/placeholder.svg?height=800&width=1600"
@@ -114,17 +114,17 @@ export default function OrganizePage() {
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="text-2xl md:text-6xl font-bold text-white mb-6">
             Become an <span className="text-green-400">Event Organizer</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto">
+          <p className="text-sm md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto">
             Share your expertise and passion for Kenya's landscapes by
             organizing and hosting your own travel events.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-green-600 hover:bg-green-700 text-lg"
+              className="bg-green-600 hover:bg-green-700 text-sm md:text-lg"
               onClick={handleCreateEvent}
               disabled={loading}>
               {loading ? "Loading..." : "Create Your First Event"}
@@ -133,7 +133,7 @@ export default function OrganizePage() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white text-white hover:bg-white hover:text-green-800 text-lg">
+              className="border-white text-slate-300 hover:bg-white hover:text-green-800 text-sm md:text-lg">
               <Link href="#how-it-works">Learn More</Link>
             </Button>
           </div>
@@ -143,7 +143,7 @@ export default function OrganizePage() {
       {/* Benefits Section */}
       <section className="py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="md:text-3xl text-xl font-bold mb-4">
             Why Organize with Kenya Trails?
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -199,7 +199,7 @@ export default function OrganizePage() {
       {/* Features Section */}
       <section className="py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="md:text-3xl text-2xl font-bold mb-4">
             Powerful Tools for Organizers
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -302,7 +302,9 @@ export default function OrganizePage() {
       <section className="py-16 bg-green-50 rounded-xl">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">What Organizers Say</h2>
+            <h2 className="md:text-3xl text-2xl font-bold mb-4">
+              What Organizers Say
+            </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Hear from guides and event organizers who are already using Kenya
               Trails.
@@ -340,7 +342,7 @@ export default function OrganizePage() {
         <Card className="bg-green-600 text-white border-none">
           <CardContent className="pt-8 pb-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">
+              <h2 className="md:text-3xl text-2xl font-bold mb-4">
                 Ready to Share Your Expertise?
               </h2>
               <p className="text-xl mb-8 max-w-2xl mx-auto">
@@ -375,7 +377,7 @@ export default function OrganizePage() {
       {/* FAQ Section */}
       <section className="py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="md:text-3xl text-2xl font-bold mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
