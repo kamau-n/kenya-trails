@@ -24,6 +24,11 @@ export async function POST(req: Request) {
     const paymentDoc = await addDoc(collection(db, "payments"), {
       eventId,
       bookingId,
+      channel: "",
+      currency: "",
+      customer: "",
+      reference: "",
+      paidAt: serverTimestamp(),
       userId,
       amount,
       status: "pending",
@@ -31,6 +36,7 @@ export async function POST(req: Request) {
       managedBy: event.paymentManagement,
       platformFee: amount * (event.platformFee / 100),
       organizerAmount: amount * (1 - event.platformFee / 100),
+      paymentFor: "eventBooking",
     });
 
     // Return payment reference for Paystack
