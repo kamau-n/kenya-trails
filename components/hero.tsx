@@ -77,22 +77,26 @@ export default function Hero() {
           wildlife encounters, and create memories that last a lifetime.
         </p>
 
-        <div className="flex flex-row gap-4 mb-10">
+        <div className="flex flex-row gap-6 sm:gap-4 mb-10">
           <Button
             asChild
             size="lg"
-            className="bg-green-600 hover:bg-green-700 md:text-lg font-medium md:px-8 md:py-6 flex items-center gap-2">
+            className="bg-green-600 hover:bg-green-700 text-sm sm:text-base md:text-lg font-medium px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6 flex items-center gap-2 flex-1 justify-center">
             <Link href="/events">
-              Explore Adventures
-              <ChevronRight className="ml-1 h-5 w-5" />
+              <span className="hidden sm:inline">Explore Adventures</span>
+              <span className="sm:hidden">Explore</span>
+              <ChevronRight className="ml-1 h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </Button>
           <Button
             asChild
             size="lg"
             variant="outline"
-            className="border-white text-black hover:bg-white hover:text-green-800 md:text-lg font-medium md:px-8 py-6">
-            <Link href="/organize">Organize Your Trip</Link>
+            className="border-white text-black hover:bg-white hover:text-green-800 text-sm sm:text-base md:text-lg font-medium px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6 flex-1 justify-center">
+            <Link href="/organize">
+              <span className="hidden sm:inline">Organize Your Trip</span>
+              <span className="sm:hidden">Organize</span>
+            </Link>
           </Button>
         </div>
 

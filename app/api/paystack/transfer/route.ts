@@ -27,7 +27,7 @@ export async function POST(req: Request) {
           type: "kepss",
           name: accountDetails.accountName,
           account_number: accountDetails.accountNumber,
-          bank_code: "04",
+          bank_code: "03",
           currency: "KES",
         }),
       }
