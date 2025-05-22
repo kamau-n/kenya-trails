@@ -19,6 +19,7 @@ export default function PromoteEventPage({ params }) {
   const [selectedPromotion, setSelectedPromotion] = useState(null);
   const [paymentData, setPaymentData] = useState(null);
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -156,7 +157,7 @@ export default function PromoteEventPage({ params }) {
                     <label
                       htmlFor="email"
                       className="block text-sm font-medium text-gray-700">
-                      Organizer Email
+                      Email
                     </label>
                     <input
                       type="email"
@@ -168,10 +169,27 @@ export default function PromoteEventPage({ params }) {
                     />
                   </div>
 
-                  {email && paymentData && (
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                      className="mt-1 w-full p-2 border border-gray-300 rounded"
+                    />
+                  </div>
+
+                  {email && phone && paymentData && (
                     <PaystackButton
                       publicKey={paystackPublicKey}
                       email={email}
+                      phone={phone}
                       amount={paymentData.amount}
                       reference={paymentData.reference}
                       currency="KES"

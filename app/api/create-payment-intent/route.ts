@@ -12,10 +12,16 @@ export async function POST(req: Request) {
     const paymentDoc = await addDoc(collection(db, "payments"), {
       eventId,
       promotionId,
+      channel: "",
+      currency: "",
+      customer: "",
+      paidAt: serverTimestamp(),
+      reference: "",
       userId,
       amount,
       status: "pending",
       createdAt: serverTimestamp(),
+      paymentFor: "eventPromtion",
     });
 
     // Return payment reference for Paystack
