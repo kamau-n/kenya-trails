@@ -11,6 +11,7 @@ import {
   query,
 } from "firebase/firestore";
 import { channel } from "diagnostics_channel";
+import { Timestamp } from 'firebase/firestore';
 
 export async function POST(req: Request) {
   console.log("Received Paystack webhook...");
@@ -38,11 +39,11 @@ export async function POST(req: Request) {
           await updateDoc(paymentDocRef, {
             status: "completed",
             completedAt: new Date(),
-            paidAt: event.paid_at,
-            reference: event.reference,
-            channel: event.channel,
-            currency: event.currency,
-            customer: event.customer,
+           paidAt: Timestamp.fromDate(new Date(event?.data?.paid_at)),
+            reference: event?.data?.reference,
+            channel: event?.data?.channel,
+            currency: event?.data?.currency,
+            customer: event?.data?.customer,
           });
 
           if (paymentData.bookingId) {
