@@ -455,7 +455,7 @@ export default function DashboardPage() {
                   <CardHeader className="pb-2 bg-slate-50">
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-xl md:text-2xl lg:text-2xl">
+                        <CardTitle className="text-lg md:text-2xl lg:text-2xl">
                           {booking.eventTitle}
                         </CardTitle>
                         <CardDescription>
@@ -483,13 +483,13 @@ export default function DashboardPage() {
                       <div className="space-y-3">
                         <div className="flex items-center text-slate-700">
                           <Calendar className="h-4 w-4 mr-2 text-slate-500" />
-                          <span>
+                          <span className="text-sm md:text-lg ">
                             Booking ID: {booking.id.substring(0, 8)}...
                           </span>
                         </div>
                         <div className="flex items-center text-slate-700">
                           <Users className="h-4 w-4 mr-2 text-slate-500" />
-                          <span>
+                          <span className="text-sm md:text-lg ">
                             Number of People: {booking.numberOfPeople}
                           </span>
                         </div>
@@ -497,7 +497,7 @@ export default function DashboardPage() {
                       <div className="space-y-3">
                         <div className="flex items-center text-slate-700">
                           <CreditCard className="h-4 w-4 mr-2 text-slate-500" />
-                          <span>
+                          <span className="text-sm md:text-lg ">
                             Total Amount: KSh{" "}
                             {booking.totalAmount?.toLocaleString()}
                           </span>
@@ -506,7 +506,7 @@ export default function DashboardPage() {
                           {booking.amountDue > 0 ? (
                             <>
                               <AlertCircle className="h-4 w-4 mr-2 text-yellow-600" />
-                              <span className="font-medium">
+                              <span className="font-medium text-sm md:text-lg ">
                                 Amount Due: KSh{" "}
                                 {booking.amountDue?.toLocaleString()}
                               </span>

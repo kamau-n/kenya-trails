@@ -6,7 +6,7 @@ type balanceAmounts = {
 
 
 
-type PaystackBalanceResponse = {
+export type PaystackBalanceResponse = {
     status: boolean;
     message: string;
     data:balanceAmounts []

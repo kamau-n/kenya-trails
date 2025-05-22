@@ -13,10 +13,13 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured, googleProvider } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(!isFirebaseConfigured);
@@ -175,6 +178,9 @@ export function AuthProvider({ children }) {
 
     try {
       await firebaseSignOut(auth);
+      // navigate to login page
+      router.push("/login")
+      
     } catch (error) {
       throw error;
     }

@@ -77,7 +77,7 @@ export default function Hero() {
           wildlife encounters, and create memories that last a lifetime.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-10">
+        <div className="flex flex-row gap-4 mb-10">
           <Button
             asChild
             size="lg"

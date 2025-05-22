@@ -7,7 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Download, RefreshCw } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Search, Download, RefreshCw, CreditCard } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -21,14 +37,57 @@ import {
 } from "firebase/firestore";
 import jsPDF from "jspdf";
 import { toast } from "@/components/ui/use-toast";
+import { PaystackBalanceResponse } from "@/app/api/paystack/balance/route";
+import { accountDetails } from "@/app/dashboard/page";
+
+export type withdrawal = {
+  id: string;
+  transactionReference: string;
+  organizerName: string;
+  createdAt: Date;
+  platformFee: number;
+  amount: number;
+  netAmount: number;
+  status: string;
+  accountDetails: accountDetails;
+};
 
 export default function AdminWithdrawalsPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawals, setWithdrawals] = useState<withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingAction, setProcessingAction] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Modal states
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+  const [selectedPaystackSource, setSelectedPaystackSource] = useState("");
+  const [paystackSources] = useState([
+    {
+      id: "balance",
+      name: "Main Balance",
+      description: "Your main Paystack wallet balance",
+    },
+    // {
+    //   id: "settlement",
+    //   name: "Settlement",
+    //   description: "Transfer from unsettled funds",
+    // },
+    // {
+    //   id: "subaccount",
+    //   name: "Subaccount",
+    //   description: "Transfer from subaccount balance",
+    // },
+    // {
+    //   id: "payout",
+    //   name: "Direct Payout",
+    //   description: "Direct bank transfer (bypasses wallet)",
+    // },
+  ]);
+  const [balances, setBalances] = useState<PaystackBalanceResponse>([]);
+  const [loadingBalances, setLoadingBalances] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -69,13 +128,38 @@ export default function AdminWithdrawalsPage() {
     }
   };
 
-  const initiatePaystackTransfer = async (withdrawalId, withdrawalData) => {
+  const fetchBalances = async () => {
+    setLoadingBalances(true);
+    try {
+      const response = await fetch("/api/paystack/balance");
+      const data = await response.json();
+
+      console.log("this is the response", data);
+
+      if (data.status) {
+        setBalances(data || []);
+      } else {
+        console.error("Failed to fetch balances:", data);
+      }
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+    } finally {
+      setLoadingBalances(false);
+    }
+  };
+
+  const initiatePaystackTransfer = async (
+    withdrawalId,
+    withdrawalData,
+    source
+  ) => {
     try {
       // Update status to processing first
       await updateDoc(doc(db, "withdrawals", withdrawalId), {
         status: "processing",
         processedAt: new Date(),
         processedBy: user.uid,
+        paystackSource: source,
       });
 
       // Initiate Paystack transfer
@@ -88,6 +172,7 @@ export default function AdminWithdrawalsPage() {
           withdrawalId,
           accountDetails: withdrawalData.accountDetails,
           amount: withdrawalData.amount,
+          source, // Include the selected source
         }),
       });
 
@@ -123,16 +208,39 @@ export default function AdminWithdrawalsPage() {
     }
   };
 
-  const handleApprove = async (withdrawalId) => {
+  const handleApproveClick = (withdrawal) => {
+    setSelectedWithdrawal(withdrawal);
+    setSelectedPaystackSource("");
+    setShowApprovalModal(true);
+    fetchBalances(); // Fetch current balances when modal opens
+  };
+
+  const handleApprove = async () => {
+    if (!selectedPaystackSource) {
+      toast({
+        title: "Error",
+        description: "Please select a Paystack source",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!confirm("Are you sure you want to approve this withdrawal?")) return;
 
-    setProcessingAction(withdrawalId);
+    setProcessingAction(selectedWithdrawal.id);
+    setShowApprovalModal(false);
 
     try {
-      const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
+      const withdrawalDoc = await getDoc(
+        doc(db, "withdrawals", selectedWithdrawal.id)
+      );
       const withdrawalData = withdrawalDoc.data();
 
-      await initiatePaystackTransfer(withdrawalId, withdrawalData);
+      await initiatePaystackTransfer(
+        selectedWithdrawal.id,
+        withdrawalData,
+        selectedPaystackSource
+      );
 
       // Refresh withdrawals
       fetchWithdrawals();
@@ -145,6 +253,8 @@ export default function AdminWithdrawalsPage() {
       });
     } finally {
       setProcessingAction(null);
+      setSelectedWithdrawal(null);
+      setSelectedPaystackSource("");
     }
   };
 
@@ -157,7 +267,9 @@ export default function AdminWithdrawalsPage() {
       const withdrawalDoc = await getDoc(doc(db, "withdrawals", withdrawalId));
       const withdrawalData = withdrawalDoc.data();
 
-      await initiatePaystackTransfer(withdrawalId, withdrawalData);
+      // Use the previously selected Paystack source or prompt for selection
+      const source = withdrawalData.paystackSource || "balance";
+      await initiatePaystackTransfer(withdrawalId, withdrawalData, source);
 
       // Refresh withdrawals
       fetchWithdrawals();
@@ -246,12 +358,26 @@ export default function AdminWithdrawalsPage() {
         doc.text(`Name: ${withdrawal.accountDetails.accountName}`, 30, 150);
       }
 
+      // Add Paystack source info if available
+      if (withdrawal.paystackSource) {
+        const source = paystackSources.find(
+          (src) => src.id === withdrawal.paystackSource
+        );
+        doc.text(
+          `Paystack Source: ${
+            source ? source.name : withdrawal.paystackSource
+          }`,
+          20,
+          160
+        );
+      }
+
       // Add transaction reference if available
       if (withdrawal.transactionReference) {
         doc.text(
           `Transaction Ref: ${withdrawal.transactionReference}`,
           20,
-          165
+          withdrawal.paystackSource ? 170 : 165
         );
       }
 
@@ -316,11 +442,13 @@ export default function AdminWithdrawalsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto md:px-4 md:py-8">
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <CardTitle>Withdrawal Requests</CardTitle>
+            <CardTitle className="md:text-2xl text-lg">
+              Withdrawal Requests
+            </CardTitle>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -377,6 +505,15 @@ export default function AdminWithdrawalsPage() {
                       </div>
                     )}
 
+                    {withdrawal.paystackSource && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Source:{" "}
+                        {paystackSources.find(
+                          (src) => src.id === withdrawal.paystackSource
+                        )?.name || withdrawal.paystackSource}
+                      </p>
+                    )}
+
                     {withdrawal.transactionReference && (
                       <p className="text-sm text-gray-500 mt-2">
                         Ref: {withdrawal.transactionReference}
@@ -398,10 +535,12 @@ export default function AdminWithdrawalsPage() {
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"
                             disabled={processingAction === withdrawal.id}
-                            onClick={() => handleApprove(withdrawal.id)}>
+                            onClick={() => handleApproveClick(withdrawal)}>
                             {processingAction === withdrawal.id ? (
                               <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                            ) : null}
+                            ) : (
+                              <CreditCard className="h-4 w-4 mr-2" />
+                            )}
                             Approve
                           </Button>
                           <Button
@@ -455,6 +594,149 @@ export default function AdminWithdrawalsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Approval Modal */}
+      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Select Paystack Source
+            </DialogTitle>
+            <DialogDescription>
+              Choose which Paystack source to use for this withdrawal.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedWithdrawal && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">
+                  {selectedWithdrawal.organizerName}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Amount: KSh {selectedWithdrawal.netAmount.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Bank: {selectedWithdrawal.accountDetails?.bankName}
+                </p>
+              </div>
+
+              {/* Balance Information */}
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-sm">Account Balances</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchBalances}
+                    disabled={loadingBalances}
+                    className="h-6 px-2">
+                    <RefreshCw
+                      className={`h-3 w-3 ${
+                        loadingBalances ? "animate-spin" : ""
+                      }`}
+                    />
+                  </Button>
+                </div>
+                {loadingBalances ? (
+                  <p className="text-xs text-gray-500">Loading balances...</p>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-600">
+                      Main Balance: KSh{" "}
+                      {balances.data
+                        ? balances.data[0].balance.toLocaleString()
+                        : "N/A"}
+                    </p>
+                    {/* <p className="text-xs text-gray-600">
+                      Settlement: KSh{" "}
+                      {balances.settlement
+                        ? balances.settlement.toLocaleString()
+                        : "N/A"}
+                    </p> */}
+                    {/* {balances.subaccount && (
+                      <p className="text-xs text-gray-600">
+                        Subaccount: KSh {balances.subaccount.toLocaleString()}
+                      </p>
+                    )} */}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paystack-source">Paystack Source</Label>
+                <Select
+                  value={selectedPaystackSource}
+                  onValueChange={setSelectedPaystackSource}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paystackSources.map((source) => {
+                      // const hasBalance =
+                      // (source.id === "balance" && balances.balance > 0) ||
+                      // (source.id === "settlement" &&
+                      //   balances.settlement > 0) ||
+                      // (source.id === "subaccount" &&
+                      //   balances.subaccount > 0) ||
+                      // source.id === "payout";
+
+                      return (
+                        <SelectItem
+                          key={source.id}
+                          value={source.id}
+                          // disabled={!hasBalance && source.id !== "payout"}
+                        >
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{source.name}</span>
+                              {source.id === "balance" && balances.balance && (
+                                <span className="text-xs text-green-600">
+                                  KSh {balances.balance.toLocaleString()}
+                                </span>
+                              )}
+                              {source.id === "settlement" &&
+                                balances.settlement && (
+                                  <span className="text-xs text-green-600">
+                                    KSh {balances.settlement.toLocaleString()}
+                                  </span>
+                                )}
+                              {source.id === "subaccount" &&
+                                balances.subaccount && (
+                                  <span className="text-xs text-green-600">
+                                    KSh {balances.subaccount.toLocaleString()}
+                                  </span>
+                                )}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {source.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowApprovalModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={!selectedPaystackSource}
+              className="bg-green-600 hover:bg-green-700">
+              Approve Withdrawal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

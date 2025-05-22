@@ -12,7 +12,7 @@ const generateUniqueReference = (): string => {
 
 export async function POST(req: Request) {
   try {
-    const { withdrawalId, accountDetails, amount } = await req.json();
+    const { withdrawalId, accountDetails, amount, source } = await req.json();
 
     // Create transfer recipient
     const recipientResponse = await fetch(
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
           type: "kepss",
           name: accountDetails.accountName,
           account_number: accountDetails.accountNumber,
-          bank_code: "03",
+          bank_code: accountDetails.bankCode,
           currency: "KES",
         }),
       }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        source: "balance",
+        source: source,
         recipient: recipientData.data.recipient_code,
         reference: generateUniqueReference(),
         amount: amount * 100, // Convert to kobo

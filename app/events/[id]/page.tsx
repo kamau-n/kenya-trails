@@ -7,13 +7,23 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Clock, User, Users, CreditCard } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  User,
+  Users,
+  CreditCard,
+  Check,
+  Link as LinkIcon,
+} from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import BookingForm from "@/components/booking-form";
 import { event } from "@/app/types/types";
 
 export default function EventPage({ params }) {
+  const [copied, setCopied] = useState(false);
   const { id } = params;
   const [event, setEvent] = useState<event>();
   const [organizer, setOrganizer] = useState(null);
@@ -21,8 +31,69 @@ export default function EventPage({ params }) {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingId, setBookingId] = useState(null);
+  const [currentUrl, setCurrentUrl] = useState("");
   const { user } = useAuth();
   const router = useRouter();
+
+  // Set current URL after component mounts (client-side only)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
+  }, []);
+
+  // Create share links based on current URL and event data
+  const getShareLinks = () => {
+    if (!event || !currentUrl) return {};
+
+    const encodedUrl = encodeURIComponent(currentUrl);
+    const encodedTitle = encodeURIComponent(event.title || "Amazing Event");
+    const encodedDescription = encodeURIComponent(
+      event.description || "Join us for this incredible event!"
+    );
+
+    return {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+      youtube: `https://www.youtube.com/results?search_query=${encodedTitle}`,
+      discord: `https://discord.com/channels/@me`,
+    };
+  };
+
+  const handleShare = (platform) => {
+    const shareLinks = getShareLinks();
+
+    if (platform === "discord") {
+      // For Discord, we'll copy the link since there's no direct share URL
+      copyToClipboard();
+      alert("Link copied! You can now paste it in Discord.");
+      return;
+    }
+
+    if (shareLinks[platform]) {
+      window.open(shareLinks[platform], "_blank", "width=600,height=400");
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!currentUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -61,8 +132,6 @@ export default function EventPage({ params }) {
 
     fetchEventData();
   }, [id]);
-
-  // Placeholder event for initial render or if event not found
 
   const formatDate = (date: any) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -312,7 +381,7 @@ export default function EventPage({ params }) {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-2xl font-bold text-green-600">
-                      KSh {event.price.toLocaleString()}
+                      KSh {event.price?.toLocaleString()}
                     </p>
                     <p className="text-gray-600">per person</p>
                   </div>
@@ -356,7 +425,7 @@ export default function EventPage({ params }) {
                     <CreditCard className="h-5 w-5 mr-2" />
                     <div>
                       <p className="font-medium">Payment Options</p>
-                      <p>{event.paymentMethods.join(", ")}</p>
+                      <p>{event.paymentMethods?.join(", ")}</p>
                     </div>
                   </div>
                 </div>
@@ -370,59 +439,94 @@ export default function EventPage({ params }) {
 
                 {event.depositAmount > 0 && (
                   <p className="text-sm text-gray-600 mt-2 text-center">
-                    Minimum deposit: KSh {event.depositAmount.toLocaleString()}
+                    Minimum deposit: KSh {event.depositAmount?.toLocaleString()}
                   </p>
                 )}
               </div>
 
-              <div className="p-6">
-                <h3 className="font-semibold mb-2">Share this event</h3>
-                <div className="flex space-x-2">
+              <div className="p-6 bg-white rounded-lg border">
+                <h3 className="font-semibold mb-4 text-lg">Share this event</h3>
+                <div className="flex flex-wrap gap-3">
+                  {/* Facebook */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-full">
+                    className="rounded-full hover:bg-blue-50 hover:border-blue-300"
+                    onClick={() => handleShare("facebook")}
+                    title="Share on Facebook">
                     <svg
-                      className="h-4 w-4"
+                      className="h-4 w-4 text-blue-600"
                       fill="currentColor"
                       viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385h-3.047v-3.47h3.047v-2.642c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953h-1.514c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385c5.737-.9 10.125-5.864 10.125-11.854z" />
                     </svg>
                   </Button>
+
+                  {/* Twitter */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-full">
+                    className="rounded-full hover:bg-blue-50 hover:border-blue-400"
+                    onClick={() => handleShare("twitter")}
+                    title="Share on Twitter">
                     <svg
-                      className="h-4 w-4"
+                      className="h-4 w-4 text-blue-500"
                       fill="currentColor"
                       viewBox="0 0 24 24">
                       <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                     </svg>
                   </Button>
+
+                  {/* YouTube */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-full">
+                    className="rounded-full hover:bg-red-50 hover:border-red-300"
+                    onClick={() => handleShare("youtube")}
+                    title="Search on YouTube">
                     <svg
-                      className="h-4 w-4"
+                      className="h-4 w-4 text-red-600"
                       fill="currentColor"
                       viewBox="0 0 24 24">
                       <path d="M21.582 6.186a2.914 2.914 0 00-2.046-2.046C17.788 3.6 12 3.6 12 3.6s-5.788 0-7.536.54a2.914 2.914 0 00-2.046 2.046C2.4 7.934 2.4 12 2.4 12s0 4.066.54 5.814a2.914 2.914 0 002.046 2.046c1.748.54 7.536.54 7.536.54s5.788 0 7.536-.54a2.914 2.914 0 002.046-2.046C22.2 16.066 22.2 12 22.2 12s0-4.066-.618-5.814zM9.6 15.6V8.4l6.6 3.6-6.6 3.6z" />
                     </svg>
                   </Button>
+
+                  {/* Discord */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-full">
+                    className="rounded-full hover:bg-indigo-50 hover:border-indigo-300"
+                    onClick={() => handleShare("discord")}
+                    title="Share on Discord">
                     <svg
-                      className="h-4 w-4"
+                      className="h-4 w-4 text-indigo-600"
                       fill="currentColor"
                       viewBox="0 0 24 24">
-                      <path d="M7.17 22c-.69 0-1.37-.132-2-.39-4.2-1.69-4.18-7.14-4.18-7.14v-6.9c0-.24.15-.45.37-.53l.22-.09c.51-.19 1.03-.35 1.57-.48C4.93 4.76 7.26 3.97 12 3.97c4.26 0 6.57.61 8.35 2.16.54.14 1.06.3 1.57.48l.22.09c.23.09.38.29.38.53v6.9s.02 5.45-4.18 7.13c-.63.26-1.31.39-2 .39-1.42 0-2.78-.58-3.77-1.59l-.7-.71-.7.71c-1 1.02-2.36 1.59-3.77 1.59zm-3.17-14.32v6.8c0 .09.01 4.14 2.96 5.41.48.2 1 .3 1.52.3.87 0 1.7-.35 2.32-.95 1.04-1.01 2.7-1.01 3.74 0 .62.6 1.45.95 2.32.95.52 0 1.04-.1 1.52-.3 2.95-1.27 2.96-5.32 2.96-5.41v-6.8c-.47-.17-.97-.33-1.5-.47C17.23 5.66 15.21 5 12 5c-3.21 0-5.23.66-6.83 2.22-.53.13-1.03.29-1.5.46z" />
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.445.865-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.249.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.197.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                     </svg>
                   </Button>
+
+                  {/* Copy Link Button */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full hover:bg-gray-50 hover:border-gray-300"
+                    onClick={copyToClipboard}
+                    title="Copy link">
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <LinkIcon className="h-4 w-4 text-gray-600" />
+                    )}
+                  </Button>
                 </div>
+
+                {copied && (
+                  <div className="mt-3 text-sm text-green-600 font-medium">
+                    Link copied to clipboard!
+                  </div>
+                )}
               </div>
             </div>
           )}
