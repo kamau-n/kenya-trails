@@ -220,7 +220,7 @@ export default function DashboardPage() {
   events.filter((ev) => ev.organizerId == user?.uid);
 
   const displayBookings = bookings;
-  const displayEvents = filteredUserEvents;
+  const displayEvents = events;
   const displayPayments = payments;
 
   const formatDate = (date: any) => {
@@ -654,6 +654,12 @@ export default function DashboardPage() {
                             className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">
                             <Link href={`/events/${event.id}/promote`}>
                               Promote
+                            </Link>
+                          </Button>
+
+                          <Button asChild variant="outline">
+                            <Link href={`/organize/events/${event.id}/refunds`}>
+                              Create Refunds
                             </Link>
                           </Button>
                           <Button
