@@ -57,7 +57,7 @@ export default function Hero() {
           Limited spots available
         </div>
 
-        <h1 className="text-xl md:text-4xl lg:text-7xl font-bold text-white mb-4 transition-all">
+        <h1 className="text-xl md:text-4xl lg:text-5xl font-bold text-white mb-4 transition-all">
           Discover Kenya's <span className="text-green-400">Wild</span> Beauty
         </h1>
 
