@@ -140,6 +140,9 @@ importers:
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      prisma:
+        specifier: link:@/lib/prisma
+        version: link:@/lib/prisma
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
