@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
@@ -26,7 +26,11 @@ function SuspendedRedirect({
 }) {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
-  onReady(redirect);
+
+  useEffect(() => {
+    onReady(redirect);
+  }, [redirect, onReady]);
+
   return null;
 }
 
@@ -39,6 +43,21 @@ export default function Login() {
 
   const auth = useAuth();
   const router = useRouter();
+
+  const performRedirect = (destination: string) => {
+    console.log("Redirecting to:", destination);
+
+    // Try router.replace first, then fallback methods
+    try {
+      router.replace(destination);
+    } catch (routerError) {
+      console.warn(
+        "Router.replace failed, trying window.location:",
+        routerError
+      );
+      window.location.href = destination;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,8 +74,12 @@ export default function Login() {
         return;
       }
 
-      console.log("am redirecting to dashboard");
-      router.push("/dashboard");
+      // Wait for auth state to settle
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Use redirect path if available, otherwise default to dashboard
+      const destination = redirectPath || "/dashboard";
+      performRedirect(destination);
     } catch (error) {
       console.error("Error during login:", error);
       setError("Failed to log in. Please check your credentials.");
@@ -79,7 +102,12 @@ export default function Login() {
         return;
       }
 
-      router.push("/dashboard");
+      // Wait for auth state to settle
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Use redirect path if available, otherwise default to dashboard
+      const destination = redirectPath || "/dashboard";
+      performRedirect(destination);
     } catch (error) {
       console.error("Error during Google sign in:", error);
       setError("Failed to sign in with Google.");

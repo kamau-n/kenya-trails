@@ -64,6 +64,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import {
+  BookingReceiptData,
   downloadBookingReceipt,
   downloadPaymentReceipt,
   PaymentReceiptData,
@@ -160,7 +161,7 @@ export default function DashboardPage() {
         if (user.userType === "organizer") {
           const eventsQuery = query(
             collection(db, "events"),
-            where("organizerId", "==", user.uid),
+            // where("organizerId", "==", user.uid),
             orderBy("date", "desc")
           );
 
@@ -170,6 +171,8 @@ export default function DashboardPage() {
             ...doc.data(),
             date: doc.data().date?.toDate() || new Date(),
           }));
+
+          console.log(eventsData);
 
           setEvents(eventsData);
 
@@ -213,8 +216,11 @@ export default function DashboardPage() {
     }
   };
 
+  let filteredUserEvents: events[] = [];
+  events.filter((ev) => ev.organizerId == user?.uid);
+
   const displayBookings = bookings;
-  const displayEvents = events;
+  const displayEvents = filteredUserEvents;
   const displayPayments = payments;
 
   const formatDate = (date: any) => {
@@ -303,48 +309,6 @@ export default function DashboardPage() {
     }
   };
 
-  // const downloadReceipt = (booking: any) => {
-  //   const doc = new jsPDF();
-
-  //   // Add company info
-  //   doc.setFontSize(20);
-  //   doc.text("Kenya Trails", 20, 20);
-
-  //   doc.setFontSize(12);
-  //   doc.text("Payment Receipt", 20, 30);
-
-  //   // Add line
-  //   doc.line(20, 35, 190, 35);
-
-  //   // Add booking details
-  //   doc.text(`Booking ID: ${booking.id}`, 20, 45);
-  //   doc.text(`Event: ${booking.eventTitle}`, 20, 55);
-  //   doc.text(
-  //     `Customer: ${booking.userName || user.displayName || user.email}`,
-  //     20,
-  //     65
-  //   );
-  //   doc.text(
-  //     `Booking Date: ${new Date(booking.bookingDate).toLocaleDateString()}`,
-  //     20,
-  //     75
-  //   );
-  //   doc.text(
-  //     `Amount Paid: KSh ${booking.amountPaid?.toLocaleString()}`,
-  //     20,
-  //     85
-  //   );
-  //   doc.text(`Balance Due: KSh ${booking.amountDue?.toLocaleString()}`, 20, 95);
-
-  //   // Add footer
-  //   doc.line(20, 180, 190, 180);
-  //   doc.setFontSize(10);
-  //   doc.text("Thank you for choosing Kenya Trails", 20, 190);
-
-  //   // Save the PDF
-  //   doc.save(`receipt-${booking.id}.pdf`);
-  // };
-
   const downloadBookingReceiptModern = (booking: any) => {
     const receiptData: BookingReceiptData = {
       id: booking.id,
@@ -378,12 +342,16 @@ export default function DashboardPage() {
     downloadPaymentReceipt(receiptData);
   };
 
-  let platformManagedEvents = [];
-  platformManagedEvents = events
-    .filter((ev) => ev.paymentManagement === "platform")
-    .map((ev) => ev.id);
+  let platformManagedEvents: string[] = [];
+
+  if (events.length > 0) {
+    platformManagedEvents = events
+      .filter((ev) => ev.paymentManagement === "platform")
+      .map((ev) => ev.id);
+  }
 
   console.log("this are the  platform managed events", platformManagedEvents);
+  console.log("this are all the bookings", bookings);
 
   useEffect(() => {
     const script = document.createElement("script");

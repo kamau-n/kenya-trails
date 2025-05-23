@@ -25,7 +25,7 @@ import { event } from "@/app/types/types";
 export default function EventPage({ params }) {
   const [copied, setCopied] = useState(false);
   const { id } = params;
-  const [event, setEvent] = useState<event>();
+  const [event, setEvent] = useState<Partial<event>>();
   const [organizer, setOrganizer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -142,7 +142,7 @@ export default function EventPage({ params }) {
     });
   };
 
-  const handleBookNow = () => {
+  const handleBookNow = (eventId) => {
     if (!user) {
       router.push("/login?redirect=" + encodeURIComponent(`/events/${id}`));
       return;
@@ -181,6 +181,16 @@ export default function EventPage({ params }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {showBookingForm && (
+        <BookingForm
+          open={() => {}}
+          event={event}
+          onSuccess={handleBookingSuccess}
+          onClose={() => {
+            setShowBookingForm(false);
+          }}
+        />
+      )}
       {/* Event Header */}
       <div className="relative h-80 md:h-96 rounded-xl overflow-hidden mb-8">
         <img
@@ -369,13 +379,15 @@ export default function EventPage({ params }) {
                 <Link href="/dashboard">View My Bookings</Link>
               </Button>
             </div>
-          ) : showBookingForm ? (
-            <BookingForm
-              event={event}
-              onClose={() => setShowBookingForm(false)}
-              onSuccess={handleBookingSuccess}
-            />
           ) : (
+            //  showBookingForm ? (
+            //   <BookingForm
+            //     event={event}
+            //     onClose={() => setShowBookingForm(false)}
+            //     onSuccess={handleBookingSuccess}
+            //   />
+            // )
+            //  :
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden sticky top-20">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex justify-between items-start mb-4">

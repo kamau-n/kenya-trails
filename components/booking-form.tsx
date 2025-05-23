@@ -18,11 +18,19 @@ import {
 } from "firebase/firestore";
 import { PaystackButton } from "react-paystack";
 
+// 🧩 Modal Components (you can replace with your preferred modal lib)
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"; // Assume you're using a modal from your UI lib
+
 export type user = {
   uid: string;
 };
 
-export default function BookingForm({ event, onClose, onSuccess }) {
+export default function BookingFormModal({ event, onClose, onSuccess, open }) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     numberOfPeople: 1,
@@ -52,7 +60,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
     setError("");
 
     try {
-      // Validate available spaces
       if (formData.numberOfPeople > event.availableSpaces) {
         setError(`Only ${event.availableSpaces} spaces available`);
         setLoading(false);
@@ -61,7 +68,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
 
       const totalAmount = event.price * formData.numberOfPeople;
 
-      // Create booking document
       const bookingData = {
         eventId: event.id,
         eventTitle: event.title,
@@ -82,14 +88,10 @@ export default function BookingForm({ event, onClose, onSuccess }) {
 
       const bookingRef = await addDoc(collection(db, "bookings"), bookingData);
 
-      // If platform manages payments, initiate payment
       if (event.paymentManagement === "platform") {
-        // Create payment intent
         const response = await fetch("/api/create-book-payment", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             amount: formData.paymentAmount,
             eventId: event.id,
@@ -99,14 +101,12 @@ export default function BookingForm({ event, onClose, onSuccess }) {
         });
 
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
           setPaymentData(data);
         } else {
           throw new Error("Failed to create payment intent");
         }
       } else {
-        // For manual payment management, just update spaces and complete
         await updateDoc(doc(db, "events", event.id), {
           availableSpaces: increment(-formData.numberOfPeople),
         });
@@ -122,7 +122,6 @@ export default function BookingForm({ event, onClose, onSuccess }) {
 
   const handlePaymentSuccess = async (reference) => {
     try {
-      // Update event available spaces
       await updateDoc(doc(db, "events", event.id), {
         availableSpaces: increment(-formData.numberOfPeople),
       });
@@ -136,133 +135,137 @@ export default function BookingForm({ event, onClose, onSuccess }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200">
-      <h2 className="text-xl font-semibold mb-4">Book Your Spot</h2>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Book Your Spot</DialogTitle>
+        </DialogHeader>
 
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="numberOfPeople">Number of People</Label>
-          <Input
-            id="numberOfPeople"
-            name="numberOfPeople"
-            type="number"
-            min="1"
-            max={event.availableSpaces}
-            value={formData.numberOfPeople}
-            onChange={handleNumberChange}
-            className="mt-1"
-          />
-          <p className="text-sm text-gray-500 mt-1">
-            {event.availableSpaces} spaces available
-          </p>
-        </div>
-
-        <div>
-          <Label htmlFor="specialRequirements">Special Requirements</Label>
-          <Textarea
-            id="specialRequirements"
-            name="specialRequirements"
-            value={formData.specialRequirements}
-            onChange={handleChange}
-            placeholder="Any dietary restrictions, medical conditions, etc."
-            className="mt-1"
-            rows={3}
-          />
-        </div>
-
-        {event.paymentManagement === "platform" && (
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div>
-            <Label className="mb-2 block">Payment Amount</Label>
-            <div className="text-sm text-gray-600 mb-2">
-              Total Amount: KSh{" "}
-              {(event.price * formData.numberOfPeople).toLocaleString()}
-            </div>
-            <div className="flex gap-4 mb-4">
-              <Button
-                type="button"
-                variant={
-                  formData.paymentAmount ===
-                  event.price * formData.numberOfPeople
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    paymentAmount: event.price * formData.numberOfPeople,
-                  }))
-                }>
-                Pay Full Amount
-              </Button>
-              {event.depositAmount > 0 && (
+            <Label htmlFor="numberOfPeople">Number of People</Label>
+            <Input
+              id="numberOfPeople"
+              name="numberOfPeople"
+              type="number"
+              min="1"
+              max={event.availableSpaces}
+              value={formData.numberOfPeople}
+              onChange={handleNumberChange}
+              className="mt-1"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              {event.availableSpaces} spaces available
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="specialRequirements">Special Requirements</Label>
+            <Textarea
+              id="specialRequirements"
+              name="specialRequirements"
+              value={formData.specialRequirements}
+              onChange={handleChange}
+              placeholder="Any dietary restrictions, medical conditions, etc."
+              className="mt-1"
+              rows={3}
+            />
+          </div>
+
+          {event.paymentManagement === "platform" && (
+            <div>
+              <Label className="mb-2 block">Payment Amount</Label>
+              <div className="text-sm text-gray-600 mb-2">
+                Total Amount: KSh{" "}
+                {(event.price * formData.numberOfPeople).toLocaleString()}
+              </div>
+              <div className="flex gap-4 mb-4">
                 <Button
                   type="button"
                   variant={
-                    formData.paymentAmount === event.depositAmount
+                    formData.paymentAmount ===
+                    event.price * formData.numberOfPeople
                       ? "default"
                       : "outline"
                   }
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
-                      paymentAmount:
-                        event.depositAmount * formData.numberOfPeople,
+                      paymentAmount: event.price * formData.numberOfPeople,
                     }))
                   }>
-                  Pay Deposit (KSh{" "}
-                  {(
-                    event.depositAmount * formData.numberOfPeople
-                  ).toLocaleString()}
-                  )
+                  Pay Full Amount
                 </Button>
-              )}
+                {event.depositAmount > 0 && (
+                  <Button
+                    type="button"
+                    variant={
+                      formData.paymentAmount === event.depositAmount
+                        ? "default"
+                        : "outline"
+                    }
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        paymentAmount:
+                          event.depositAmount * formData.numberOfPeople,
+                      }))
+                    }>
+                    Pay Deposit (KSh{" "}
+                    {(
+                      event.depositAmount * formData.numberOfPeople
+                    ).toLocaleString()}
+                    )
+                  </Button>
+                )}
+              </div>
             </div>
+          )}
+
+          <div className="pt-4 flex justify-end space-x-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={loading}>
+              {loading
+                ? "Processing..."
+                : event.paymentManagement === "platform"
+                ? "Continue to Payment"
+                : "Confirm Booking"}
+            </Button>
+          </div>
+        </form>
+
+        {paymentData && (
+          <div className="mt-4 p-4 border-t border-gray-200">
+            <PaystackButton
+              publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
+              email={user.email}
+              amount={paymentData.amount}
+              reference={paymentData.reference}
+              currency="KES"
+              metadata={{
+                bookingId: paymentData.bookingId,
+                eventId: event.id,
+                userId: user.uid,
+              }}
+              text="Pay Now"
+              onSuccess={handlePaymentSuccess}
+              onClose={() => setPaymentData(null)}
+              className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+            />
           </div>
         )}
-
-        <div className="pt-4 flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            className="bg-green-600 hover:bg-green-700"
-            disabled={loading}>
-            {loading
-              ? "Processing..."
-              : event.paymentManagement === "platform"
-              ? "Continue to Payment"
-              : "Confirm Booking"}
-          </Button>
-        </div>
-      </form>
-
-      {paymentData && (
-        <div className="mt-4 p-4 border-t border-gray-200">
-          <PaystackButton
-            publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
-            email={user.email}
-            amount={paymentData.amount}
-            reference={paymentData.reference}
-            currency="KES"
-            metadata={{
-              bookingId: paymentData.bookingId,
-              eventId: event.id,
-              userId: user.uid,
-            }}
-            text="Pay Now"
-            onSuccess={handlePaymentSuccess}
-            onClose={() => setPaymentData(null)}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-          />
-        </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
