@@ -1,131 +1,231 @@
-import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import {
-  doc,
-  getDoc,
-  updateDoc,
-  increment,
-  collection,
-  where,
-  getDocs,
-  query,
+	collection,
+	doc,
+	getDoc,
+	getDocs,
+	increment,
+	query,
+	Timestamp,
+	updateDoc,
+	where,
 } from "firebase/firestore";
-import { channel } from "diagnostics_channel";
-import { Timestamp } from 'firebase/firestore';
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  console.log("Received Paystack webhook...");
+	console.log("Received Paystack webhook...");
 
-  try {
-    const event = await req.json();
-    const eventType = event.event;
-    const hash = req.headers.get("x-paystack-signature");
+	try {
+		const event = await req.json();
+		const eventType = event.event;
+		const hash = req.headers.get("x-paystack-signature");
 
-    console.log("this is the received event");
-    console.log(event);
-    // TODO: Add signature verification here if needed
+		console.log("this is the received event");
+		console.log(event);
+		// TODO: Add signature verification here if needed
 
-    switch (eventType) {
-      case "charge.success": {
-        const reference = event.data.reference;
-        console.log("Processing charge.success for:", reference);
+		switch (eventType) {
+			case "charge.success": {
+				const reference = event.data.reference;
+				console.log("Processing charge.success for:", reference);
 
-        const paymentDocRef = doc(db, "payments", reference);
-        const paymentDocSnap = await getDoc(paymentDocRef);
+				const paymentDocRef = doc(db, "payments", reference);
+				const paymentDocSnap = await getDoc(paymentDocRef);
 
-        if (paymentDocSnap.exists()) {
-          const paymentData = paymentDocSnap.data();
+				if (paymentDocSnap.exists()) {
+					const paymentData = paymentDocSnap.data();
 
-          await updateDoc(paymentDocRef, {
-            status: "completed",
-            completedAt: new Date(),
-           paidAt: Timestamp.fromDate(new Date(event?.data?.paid_at)),
-            reference: event?.data?.reference,
-            channel: event?.data?.channel,
-            currency: event?.data?.currency,
-            customer: event?.data?.customer,
-          });
+					await updateDoc(paymentDocRef, {
+						status: "completed",
+						completedAt: new Date(),
+						paidAt: Timestamp.fromDate(
+							new Date(event?.data?.paid_at)
+						),
+						reference: event?.data?.reference,
+						channel: event?.data?.channel,
+						currency: event?.data?.currency,
+						customer: event?.data?.customer,
+					});
 
-          if (paymentData.bookingId) {
-            const bookingRef = doc(db, "bookings", paymentData.bookingId);
-            const bookingDoc = await getDoc(bookingRef);
+					if (paymentData.bookingId) {
+						const bookingRef = doc(
+							db,
+							"bookings",
+							paymentData.bookingId
+						);
+						const bookingDoc = await getDoc(bookingRef);
 
-            if (bookingDoc.exists()) {
-              const bookingData = bookingDoc.data();
-              const newAmountPaid =
-                (bookingData.amountPaid || 0) + paymentData.amount;
-              const newAmountDue = bookingData.totalAmount - newAmountPaid;
+						if (bookingDoc.exists()) {
+							const bookingData = bookingDoc.data();
+							const newAmountPaid =
+								(bookingData.amountPaid || 0) +
+								paymentData.amount;
+							const newAmountDue =
+								bookingData.totalAmount - newAmountPaid;
 
-              await updateDoc(bookingRef, {
-                amountPaid: newAmountPaid,
-                amountDue: newAmountDue,
-                paymentStatus: newAmountDue <= 0 ? "paid" : "partial",
-                status: "confirmed",
-                lastPaymentDate: new Date(),
-              });
+							await updateDoc(bookingRef, {
+								amountPaid: newAmountPaid,
+								amountDue: newAmountDue,
+								paymentStatus:
+									newAmountDue <= 0 ? "paid" : "partial",
+								status: "confirmed",
+								lastPaymentDate: new Date(),
+							});
 
-              if (paymentData.managedBy === "platform") {
-                await updateDoc(doc(db, "events", paymentData.eventId), {
-                  collectionBalance: increment(paymentData.organizerAmount),
-                });
-              }
-            }
-          } else if (paymentData.promotionId) {
-            await updateDoc(doc(db, "events", paymentData.eventId), {
-              isPromoted: true,
-              promotionId: paymentData.promotionId,
-              promotionStartDate: new Date(),
-            });
-          }
-        } else {
-          console.warn("No payment found for reference:", reference);
-        }
+							if (paymentData.managedBy === "platform") {
+								await updateDoc(
+									doc(db, "events", paymentData.eventId),
+									{
+										collectionBalance: increment(
+											paymentData.organizerAmount
+										),
+									}
+								);
+							}
+						}
+					} else if (paymentData.promotionId) {
+						await updateDoc(
+							doc(db, "events", paymentData.eventId),
+							{
+								isPromoted: true,
+								promotionId: paymentData.promotionId,
+								promotionStartDate: new Date(),
+							}
+						);
+					}
+				} else {
+					console.warn("No payment found for reference:", reference);
+				}
 
-        break;
-      }
+				break;
+			}
 
-      case "transfer.success": {
-        const reference = event.data.reference;
-        console.log("Processing transfer.success for:", reference);
+			case "transfer.success": {
+				const reference = event.data.reference;
+				console.log("Processing transfer.success for:", reference);
 
-        const withdrawalsRef = collection(db, "withdrawals");
-        const q = query(
-          withdrawalsRef,
-          where("transferReference", "==", reference)
-        );
-        const querySnapshot = await getDocs(q);
+				const withdrawalsRef = collection(db, "withdrawals");
+				const q = query(
+					withdrawalsRef,
+					where("transferReference", "==", reference)
+				);
+				const querySnapshot = await getDocs(q);
 
-        if (!querySnapshot.empty) {
-          const withdrawal = querySnapshot.docs[0];
-          const withdrawalData = withdrawal.data();
+				if (!querySnapshot.empty) {
+					const withdrawal = querySnapshot.docs[0];
+					const withdrawalData = withdrawal.data();
 
-          await updateDoc(doc(db, "withdrawals", withdrawal.id), {
-            status: "completed",
-            completedAt: new Date(),
-          });
+					await updateDoc(doc(db, "withdrawals", withdrawal.id), {
+						status: "completed",
+						completedAt: new Date(),
+					});
 
-          if (withdrawalData.eventReference) {
-            await updateDoc(doc(db, "events", withdrawalData.eventReference), {
-              collectionBalance: increment(-withdrawalData.amount),
-            });
-          }
-        } else {
-          console.warn("No withdrawal found for reference:", reference);
-        }
+					if (withdrawalData.eventReference) {
+						await updateDoc(
+							doc(db, "events", withdrawalData.eventReference),
+							{
+								collectionBalance: increment(
+									-withdrawalData.amount
+								),
+							}
+						);
+					}
+				} else {
+					console.warn(
+						"No withdrawal found for reference:",
+						reference
+					);
+				}
 
-        break;
-      }
+				break;
+			}
+			case "refund.processing": {
+				const reference = event.data.reference;
+				console.log("Processing refund.processing for:", reference);
 
-      default:
-        console.log("Unhandled Paystack event type:", eventType);
-    }
+				const refundsRef = collection(db, "refunds");
+				const q = query(
+					refundsRef,
+					where("refundReference", "==", reference)
+				);
+				const snapshot = await getDocs(q);
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return NextResponse.json(
-      { error: "Webhook handler failed" },
-      { status: 400 }
-    );
-  }
+				if (!snapshot.empty) {
+					const refundDoc = snapshot.docs[0];
+
+					await updateDoc(doc(db, "refunds", refundDoc.id), {
+						status: "processing",
+						updatedAt: new Date(),
+					});
+					console.log("Refund status updated to processing.");
+				} else {
+					console.warn("No refund found for reference:", reference);
+				}
+
+				break;
+			}
+
+			case "refund.processed": {
+				const reference = event.data.reference;
+				console.log("Processing refund.processed for:", reference);
+
+				const refundsRef = collection(db, "refunds");
+				const q = query(
+					refundsRef,
+					where("refundReference", "==", reference)
+				);
+				const snapshot = await getDocs(q);
+
+				if (!snapshot.empty) {
+					const refundDoc = snapshot.docs[0];
+
+					await updateDoc(doc(db, "refunds", refundDoc.id), {
+						status: "completed",
+						updatedAt: new Date(),
+					});
+					console.log("Refund status updated to completed.");
+				} else {
+					console.warn("No refund found for reference:", reference);
+				}
+
+				break;
+			}
+
+			case "refund.failed": {
+				const reference = event.data.reference;
+				console.log("Processing refund.failed for:", reference);
+
+				const refundsRef = collection(db, "refunds");
+				const q = query(
+					refundsRef,
+					where("refundReference", "==", reference)
+				);
+				const snapshot = await getDocs(q);
+
+				if (!snapshot.empty) {
+					const refundDoc = snapshot.docs[0];
+					await updateDoc(doc(db, "refunds", refundDoc.id), {
+						status: "failed",
+						updatedAt: new Date(),
+					});
+					console.log("Refund status updated to failed.");
+				} else {
+					console.warn("No refund found for reference:", reference);
+				}
+
+				break;
+			}
+
+			default:
+				console.log("Unhandled Paystack event type:", eventType);
+		}
+
+		return NextResponse.json({ received: true });
+	} catch (error) {
+		console.error("Webhook error:", error);
+		return NextResponse.json(
+			{ error: "Webhook handler failed" },
+			{ status: 400 }
+		);
+	}
 }
