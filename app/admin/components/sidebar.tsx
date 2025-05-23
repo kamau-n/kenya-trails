@@ -100,11 +100,11 @@ export default function Sidebar() {
                   <NavItem href="/admin" icon={Home}>
                     Dashboard
                   </NavItem>
-                  <NavItem href="/admin" icon={BarChart2}>
-                    Analytics
+                  <NavItem href="/admin/events" icon={BarChart2}>
+                    Events
                   </NavItem>
-                  <NavItem href="#" icon={Building2}>
-                    Organization
+                  <NavItem href="/admin/promotions" icon={Building2}>
+                    Promotions
                   </NavItem>
                   <NavItem href="#" icon={Folder}>
                     Projects
@@ -123,7 +123,7 @@ export default function Sidebar() {
                   <NavItem href="/admin/withdrawals" icon={Wallet}>
                     Withdrawals
                   </NavItem>
-                  <NavItem href="/admin/invoices" icon={Receipt}>
+                  <NavItem href="/admin/refunds" icon={Receipt}>
                     Refunds
                   </NavItem>
                   <NavItem href="admin/transactions" icon={Banknote}>
@@ -134,11 +134,11 @@ export default function Sidebar() {
 
               <div>
                 <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Team
+                  Users
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="users" icon={Users2}>
-                    Members
+                  <NavItem href="/admin/users" icon={Users2}>
+                    Users
                   </NavItem>
                   <NavItem href="/admin/users" icon={Shield}>
                     Permissions
