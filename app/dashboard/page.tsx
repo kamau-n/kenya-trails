@@ -37,7 +37,6 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-// import { PaystackButton } from "react-paystack";
 import {
 	Dialog,
 	DialogClose,
@@ -64,7 +63,11 @@ import {
 	query,
 	updateDoc,
 	where,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export type accountDetails = {
 	bankName: string;
@@ -127,6 +130,10 @@ export default function DashboardPage() {
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [eventToDelete, setEventToDelete] = useState<string | null>(null);
 	const [selectedBookingEvent, setSelectedBookingEvent] = useState<events>();
+	const [showCancelModal, setShowCancelModal] = useState(false);
+	const [cancelError, setCancelError] = useState("");
+	const [cancelSuccess, setCancelSuccess] = useState("");
+	const [cancelLoading, setCancelLoading] = useState(false);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -311,6 +318,70 @@ export default function DashboardPage() {
 			setPaymentData(null);
 		} catch (error) {
 			console.error("Error updating booking status:", error);
+		}
+	};
+
+	const handleCancelBooking = async (booking: booking) => {
+		setSelectedBooking(booking);
+		setShowCancelModal(true);
+		setCancelError("");
+		setCancelSuccess("");
+	};
+
+	const confirmCancelBooking = async () => {
+		if (!selectedBooking) return;
+
+		setCancelLoading(true);
+		try {
+			const bookingRef = doc(db, "bookings", selectedBooking.id);
+			const eventRef = doc(db, "events", selectedBooking.eventId);
+
+			// Update booking status
+			await updateDoc(bookingRef, {
+				status: "cancelled",
+				cancelledAt: new Date(),
+			});
+
+			// Restore available spaces
+			await updateDoc(eventRef, {
+				availableSpaces: increment(selectedBooking.numberOfPeople),
+			});
+
+			// If payment was made, create refund request
+			if (selectedBooking.amountPaid > 0) {
+				const refundAmount = selectedBooking.amountPaid * 0.95; // 95% refund
+				await addDoc(collection(db, "refunds"), {
+					bookingId: selectedBooking.id,
+					eventId: selectedBooking.eventId,
+					userId: user.uid,
+					amount: refundAmount,
+					originalAmount: selectedBooking.amountPaid,
+					status: "pending",
+					createdAt: serverTimestamp(),
+				});
+			}
+
+			setCancelSuccess("Booking cancelled successfully. If you made a payment, a refund request has been created.");
+			
+			// Update local state
+			setBookings(prevBookings =>
+				prevBookings.map(b =>
+					b.id === selectedBooking.id
+						? { ...b, status: "cancelled" }
+						: b
+				)
+			);
+
+			setTimeout(() => {
+				setShowCancelModal(false);
+				setSelectedBooking(null);
+			}, 2000);
+
+		} catch (error) {
+			console.error("Error cancelling booking:", error);
+			setCancelError("Failed to cancel booking. Please try again.");
+		} finally {
+			setCancelLoading(false);
 		}
 	};
 
@@ -596,6 +667,13 @@ export default function DashboardPage() {
 												>
 													<Download className="h-4 w-4" />
 													Receipt
+												</Button>
+												<Button
+													variant="destructive"
+													onClick={() => handleCancelBooking(booking)}
+													disabled={booking.status === "cancelled"}
+												>
+													Cancel Booking
 												</Button>
 											</div>
 										</div>
@@ -1019,18 +1097,75 @@ export default function DashboardPage() {
 				</DialogContent>
 			</Dialog>
 
-			{/* Delete Event Confirmation Modal */}
-			{/* <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent className="sm:max-w-md"> */}
-			{/*
-          <DialogHeader>
-            <DialogTitle>Delete Event</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this event? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="bg-red-50 p-4 rounded-lg border border-red-100 text-red-800 mb-4 */}
+			{/* Cancel Booking Modal */}
+			<Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Cancel Booking</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to cancel this booking? {selectedBooking?.amountPaid > 0 && "A refund request will be created for 95% of your payment."}
+						</DialogDescription>
+					</DialogHeader>
+					
+					{cancelError && (
+						<Alert variant="destructive">
+							<AlertDescription>{cancelError}</AlertDescription>
+						</Alert>
+					)}
+					
+					{cancelSuccess && (
+						<Alert>
+							<AlertDescription>{cancelSuccess}</AlertDescription>
+						</Alert>
+					)}
+
+					<div className="py-4">
+						{selectedBooking && (
+							<div className="bg-slate-50 p-4 rounded-lg mb-4">
+								<div className="grid grid-cols-2 gap-2 text-sm">
+									<div className="text-slate-600">Event:</div>
+									<div className="font-medium">
+										{selectedBooking.eventTitle}
+									</div>
+									<div className="text-slate-600">
+										Amount Paid:
+									</div>
+									<div className="font-medium">
+										KES {selectedBooking.amountPaid.toLocaleString()}
+									</div>
+									{selectedBooking.amountPaid > 0 && (
+										<>
+											<div className="text-slate-600">
+												Refund Amount (95%):
+											</div>
+											<div className="font-medium text-green-700">
+												KES {(selectedBooking.amountPaid * 0.95).toLocaleString()}
+											</div>
+										</>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowCancelModal(false)}
+							disabled={cancelLoading}
+						>
+							Keep Booking
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={confirmCancelBooking}
+							disabled={cancelLoading}
+						>
+							{cancelLoading ? "Cancelling..." : "Confirm Cancellation"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
