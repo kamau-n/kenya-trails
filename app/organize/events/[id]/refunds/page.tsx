@@ -163,7 +163,8 @@ export default function RefundsPage({ params }) {
                     {payments.map((payment) => (
                       <option key={payment.id} value={payment.id}>
                         Payment {payment.id.substring(0, 8)} - KSh{" "}
-                        {payment.amount.toLocaleString()}
+                        {payment.amount.toLocaleString()} -{" "}
+                        {payment.customer?.email}
                       </option>
                     ))}
                   </select>
