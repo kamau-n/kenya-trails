@@ -310,10 +310,12 @@ export default function AdminRefundsPage() {
 		switch (status) {
 			case "completed":
 				return <CheckCircle className="h-4 w-4 text-green-600" />;
-			case "processing":
+			case "initiated":
 				return (
 					<RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
 				);
+			case "processing:
+				return <Clock className="h-4 w-4 text-yellow-600" />;	
 			case "rejected":
 				return <XCircle className="h-4 w-4 text-red-600" />;
 			default:
@@ -684,7 +686,7 @@ export default function AdminRefundsPage() {
 												View Details
 											</Button>
 
-											{refund.status === "pending" && (
+											{refund.status === "initiated" && (
 												<div className="flex gap-2">
 													<Button
 														size="sm"
