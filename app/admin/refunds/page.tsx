@@ -88,7 +88,7 @@ export default function AdminRefundsPage() {
 	// Statistics
 	const [stats, setStats] = useState({
 		total: 0,
-		pending: 0,
+		initiated: 0,
 		processing: 0,
 		completed: 0,
 		rejected: 0,
@@ -425,10 +425,10 @@ export default function AdminRefundsPage() {
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-sm font-medium text-yellow-700">
-									Pending
+									Initiated
 								</p>
 								<p className="text-2xl font-bold text-yellow-900">
-									{stats.pending}
+									{stats.initiated}
 								</p>
 							</div>
 							<Clock className="h-8 w-8 text-yellow-600" />
@@ -523,7 +523,7 @@ export default function AdminRefundsPage() {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All Status</SelectItem>
-								<SelectItem value="pending">Pending</SelectItem>
+								<SelectItem value="initiated">Initiated</SelectItem>
 								<SelectItem value="processing">
 									Processing
 								</SelectItem>
