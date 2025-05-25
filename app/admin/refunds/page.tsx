@@ -314,7 +314,7 @@ export default function AdminRefundsPage() {
 				return (
 					<RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
 				);
-			case "processing:
+			case "processing":
 				return <Clock className="h-4 w-4 text-yellow-600" />;	
 			case "rejected":
 				return <XCircle className="h-4 w-4 text-red-600" />;
