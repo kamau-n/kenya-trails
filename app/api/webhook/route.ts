@@ -140,7 +140,7 @@ export async function POST(req: Request) {
 				break;
 			}
 			case "refund.processing": {
-				const reference = event.data.reference;
+				const reference = event.data.refund_reference;
 				console.log("Processing refund.processing for:", reference);
 
 				const refundsRef = collection(db, "refunds");
@@ -166,7 +166,7 @@ export async function POST(req: Request) {
 			}
 
 			case "refund.processed": {
-				const reference = event.data.reference;
+				const reference = event.data.refund_reference;
 				console.log("Processing refund.processed for:", reference);
 
 				const refundsRef = collection(db, "refunds");
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
 			}
 
 			case "refund.failed": {
-				const reference = event.data.reference;
+				const reference = event.data.refund_reference;
 				console.log("Processing refund.failed for:", reference);
 
 				const refundsRef = collection(db, "refunds");
