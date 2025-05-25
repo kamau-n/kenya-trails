@@ -140,7 +140,7 @@ export async function POST(req: Request) {
 				break;
 			}
 			case "refund.processing": {
-				const reference = event.data.refund_reference;
+				const reference = event.data.transaction_reference;
 				console.log("Processing refund.processing for:", reference);
 
 				const refundsRef = collection(db, "refunds");
@@ -156,6 +156,8 @@ export async function POST(req: Request) {
 					await updateDoc(doc(db, "refunds", refundDoc.id), {
 						status: "processing",
 						updatedAt: new Date(),
+						customer:event?.data?.customer,
+						currency:event?.data.currency,
 					});
 					console.log("Refund status updated to processing.");
 				} else {
@@ -166,7 +168,7 @@ export async function POST(req: Request) {
 			}
 
 			case "refund.processed": {
-				const reference = event.data.refund_reference;
+				const reference = event.data.transaction_reference;
 				console.log("Processing refund.processed for:", reference);
 
 				const refundsRef = collection(db, "refunds");
@@ -181,6 +183,8 @@ export async function POST(req: Request) {
 
 					await updateDoc(doc(db, "refunds", refundDoc.id), {
 						status: "completed",
+						customer:event?.data?.customer,
+						currency:event?.data.currency,
 						updatedAt: new Date(),
 					});
 					console.log("Refund status updated to completed.");
@@ -192,7 +196,7 @@ export async function POST(req: Request) {
 			}
 
 			case "refund.failed": {
-				const reference = event.data.refund_reference;
+				const reference = event.data.transaction_reference;
 				console.log("Processing refund.failed for:", reference);
 
 				const refundsRef = collection(db, "refunds");
@@ -206,6 +210,8 @@ export async function POST(req: Request) {
 					const refundDoc = snapshot.docs[0];
 					await updateDoc(doc(db, "refunds", refundDoc.id), {
 						status: "failed",
+						customer:event?.data?.customer,
+						currency:event?.data.currency,
 						updatedAt: new Date(),
 					});
 					console.log("Refund status updated to failed.");
