@@ -146,7 +146,7 @@ export async function POST(req: Request) {
 				const refundsRef = collection(db, "refunds");
 				const q = query(
 					refundsRef,
-					where("reference", "==", reference)
+					where("paymentId", "==", reference)
 				);
 				const snapshot = await getDocs(q);
 
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
 				const refundsRef = collection(db, "refunds");
 				const q = query(
 					refundsRef,
-					where("reference", "==", reference)
+					where("paymentId", "==", reference)
 				);
 				const snapshot = await getDocs(q);
 
@@ -202,7 +202,7 @@ export async function POST(req: Request) {
 				const refundsRef = collection(db, "refunds");
 				const q = query(
 					refundsRef,
-					where("reference", "==", reference)
+					where("paymentId", "==", reference)
 				);
 				const snapshot = await getDocs(q);
 
