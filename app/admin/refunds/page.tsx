@@ -170,7 +170,7 @@ export default function AdminRefundsPage() {
 	const calculateStats = (refundsData: refund[]) => {
 		const stats = {
 			total: refundsData.length,
-			pending: refundsData.filter((r) => r.status === "pending").length,
+			initiated: refundsData.filter((r) => r.status === "initiated").length,
 			processing: refundsData.filter((r) => r.status === "processing")
 				.length,
 			completed: refundsData.filter((r) => r.status === "completed")
