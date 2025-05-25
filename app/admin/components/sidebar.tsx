@@ -156,7 +156,7 @@ export default function Sidebar() {
 										Refunds
 									</NavItem>
 									<NavItem
-										href="admin/transactions"
+										href="/admin/transactions"
 										icon={Banknote}
 									>
 										Transactions
