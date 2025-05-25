@@ -34,6 +34,8 @@ export async function POST(req: Request) {
 			status: "pending",
 			createdAt: serverTimestamp(),
 			refundFor: "eventBooking",
+			customer:"",
+			currency:""
 		});
 
 		// Return payment reference for Paystack
