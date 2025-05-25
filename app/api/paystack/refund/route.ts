@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         transaction,
-        amount, // amount in kobo
+        amount * 100, // amount in kobo
       }),
     });
 

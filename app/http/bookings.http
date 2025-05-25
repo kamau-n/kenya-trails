@@ -1,0 +1,10 @@
+POST http://localhost:3000/api/bookings/cancel
+content-type: application/json
+
+{
+         "bookingId": "232342323",
+        "eventId": "234234234",
+        "numberOfPeople": 4,
+        "amountPaid": 3000,
+        "userId": "34234g34234",
+}
