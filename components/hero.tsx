@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Map, Users, Calendar, Star, Play, Award, Globe } from "lucide-react";
 
