@@ -184,8 +184,8 @@ export async function POST(req: NextRequest) {
           amount: individualRefundAmount,
           originalAmount: pay.amount ?? 0,
           paymentId: pay.id,
-          reference: pay.reference ?? "",
-          status: "pending",
+          reference: pay.id ?? "",
+          status: "initiated",
           reason: "Booking Cancellation",
           createdAt: serverTimestamp(),
         });
