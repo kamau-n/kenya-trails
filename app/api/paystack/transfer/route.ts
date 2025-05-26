@@ -78,7 +78,7 @@ const eventSnapshot = await getDoc(eventRef);
 
 
 
-    const event = eventDoc.data() as EventData;
+    const event = eventSnapshot.data() as EventData;
 
     console.log(event)
 
