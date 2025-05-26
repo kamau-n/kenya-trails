@@ -52,6 +52,8 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as WithdrawalRequest;
 
+    console.log("this is the request body", body);
+
     if (
       !body.withdrawalId ||
       !body.accountDetails?.accountName ||
@@ -71,13 +73,16 @@ export async function POST(req: Request) {
     );
 
     if (eventSnapshot.empty) {
+      console.log("event not found");
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
     const eventDoc = eventSnapshot.docs[0];
     const event = eventDoc.data() as EventData;
+    console.log("this is the event Data", event);
 
     if (event.collectionBalance < body.amount) {
+      console.log("insufficient balance");
       return NextResponse.json(
         { error: "Insufficient balance" },
         { status: 400 }
