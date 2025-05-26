@@ -67,10 +67,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const eventSnapshot = await getDocs(
-      query(collection(db, "events"), where("id", "==", body.eventId))
-    );
+const eventRef = doc(db, "events", body.eventId);
+const eventSnapshot = await getDoc(eventRef);
 
     if (eventSnapshot.empty) {
       console.log("event not found");
