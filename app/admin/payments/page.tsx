@@ -401,6 +401,8 @@ export default function PaymentsPage() {
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="refunded">Failed</SelectItem>
+                    <SelectItem value="cancelled">Failed</SelectItem>
                   </SelectContent>
                 </Select>
 

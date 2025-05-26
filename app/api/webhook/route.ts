@@ -149,7 +149,9 @@ export async function POST(req: Request) {
 
         if (!snapshot.empty) {
           const refundDoc = snapshot.docs[0];
+          const refundData = refundDoc.data();
 
+          // Update refund document
           await updateDoc(doc(db, "refunds", refundDoc.id), {
             status: "completed",
             customer: event?.data?.customer,
@@ -157,17 +159,29 @@ export async function POST(req: Request) {
             updatedAt: new Date(),
           });
           console.log("Refund status updated to completed.");
+
+          // Update the payment document
+          await updateDoc(doc(db, "payments", reference), {
+            status: "refunded",
+            refundedAt: new Date(),
+          });
+          console.log("Payment status updated to refunded for:", reference);
+
+          // Increment collection balance for the related event
+          if (refundData.eventId && refundData.originalAmount) {
+            const eventRef = doc(db, "events", refundData.eventId);
+            await updateDoc(eventRef, {
+              collectionBalance: increment(-refundData.originalAmount),
+            });
+            console.log(
+              `Event ${refundData.eventId} collectionBalance incremented by ${refundData.originalAmount}`
+            );
+          } else {
+            console.warn("Missing eventId or originalAmount in refund data.");
+          }
         } else {
           console.warn("No refund found for reference:", reference);
         }
-
-        // updated  the payment status to refunded
-
-        updateDoc(doc(db, "payments", reference), {
-          status: "refunded",
-          refundedAt: new Date(),
-        });
-        console.log("Payment status updated to refunded for:", reference);
 
         break;
       }
