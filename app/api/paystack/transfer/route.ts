@@ -77,10 +77,10 @@ const eventSnapshot = await getDoc(eventRef);
     }
 
 
-     const event = eventSnapshot.data() as EventData;
-      console.log(eventData);
 
     const event = eventDoc.data() as EventData;
+
+    console.log(event)
 
 
     if (event.collectionBalance < body.amount) {
