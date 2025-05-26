@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       amount,
       status: "pending",
       createdAt: serverTimestamp(),
+      refundedAt: null,
       managedBy: event.paymentManagement,
       platformFee: amount * (event.platformFee / 100),
       organizerAmount: amount * (1 - event.platformFee / 100),

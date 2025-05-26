@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Filter,
   X,
+  Wallet2,
 } from "lucide-react";
 import {
   Select,
@@ -147,7 +148,7 @@ export default function PaymentsPage() {
   const pendingPayments = payments.filter((p) => p.status === "pending").length;
   const failedPayments = payments.filter((p) => p.status === "failed").length;
   const cancelledPayments = payments.filter(
-    (p) => p.status === "cancelled"
+    (p) => p.status === "refunded" || p.status === "cancelled"
   ).length;
   const totalAmount = payments.reduce(
     (acc, p) => acc + (p.status === "completed" ? Number(p.amount) : 0),
@@ -211,10 +212,12 @@ export default function PaymentsPage() {
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "cancelled":
-        return <X className="h-4 w-4 text-red-600" />;
+
       case "failed":
         return <XCircle className="h-4 w-4 text-red-600" />;
+      case "refunded":
+        return <Wallet2 className="h-4 w-4 text-red-600" />;
+
       default:
         return <Clock className="h-4 w-4 text-gray-400" />;
     }
@@ -228,6 +231,8 @@ export default function PaymentsPage() {
         return `${baseClasses} bg-green-100 text-green-800`;
       case "pending":
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case "refunded":
+        return `${baseClasses} bg-red-100 text-red-800`;
       case "failed":
         return `${baseClasses} bg-red-100 text-red-800`;
       default:
@@ -334,9 +339,7 @@ export default function PaymentsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">
-                    Cancelled/Refunded
-                  </p>
+                  <p className="text-sm font-medium text-gray-500">Refunded</p>
                   <p className="text-2xl font-bold text-red-600">
                     {cancelledPayments}
                   </p>

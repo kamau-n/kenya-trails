@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     // Cancel each payment
     const updatePayments = paymentData.map((pay) =>
       updateDoc(doc(db, "payments", pay.id), {
-        status: "cancelled",
+        status: "onhold",
         cancelledAt: new Date(),
       })
     );
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     // Refund logic
     const refundIds: string[] = [];
     if (paymentData.length > 0 && amountPaid > 0) {
+      console.log("this are the payment data", paymentData);
       for (const pay of paymentData) {
         const individualRefundAmount = pay.amount ? pay.amount * 0.99 : 0;
 
@@ -76,10 +77,12 @@ export async function POST(req: NextRequest) {
           amount: individualRefundAmount,
           originalAmount: pay.amount ?? 0,
           paymentId: pay.id,
-          reference: pay.id ?? "",
+          reference: pay.id,
           status: "initiated",
           reason: "Booking Cancellation",
           createdAt: serverTimestamp(),
+          customer: "",
+          currency: "",
         });
 
         refundIds.push(refundDoc.id);

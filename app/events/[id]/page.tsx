@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -22,9 +22,9 @@ import { doc, getDoc } from "firebase/firestore";
 import BookingForm from "@/components/booking-form";
 import { event } from "@/app/types/types";
 
-export default function EventPage({ params }) {
+export default function EventPage(props: { params: Promise<{ id: string }> }) {
   const [copied, setCopied] = useState(false);
-  const { id } = params;
+  const { id } = use(props.params);
   const [event, setEvent] = useState<Partial<event>>();
   const [organizer, setOrganizer] = useState(null);
   const [loading, setLoading] = useState(true);
