@@ -314,6 +314,7 @@ export default function AdminWithdrawalsPage() {
 					withdrawalId,
 					accountDetails: withdrawalData.accountDetails,
 					amount: withdrawalData.amount,
+					eventId:withdrawalData.eventId,
 					source, // Include the selected source
 				}),
 			});
