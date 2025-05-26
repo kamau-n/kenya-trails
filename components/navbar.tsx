@@ -80,11 +80,11 @@ export default function Navbar() {
               <div className="relative">
                 <div className="absolute -inset-2 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500"></div>
                 <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-xl shadow-lg shadow-emerald-500/25 group-hover:shadow-emerald-500/40 transition-all duration-300 group-hover:scale-110">
-                  <Map className="h-6 w-6 text-white" />
+                  <Map className="md:h-6 md:w-6 h-4 w-4 text-white" />
                 </div>
               </div>
               <div className="ml-3">
-                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-poppins tracking-tight">
+                <span className="md:text-2xl text-lg font-bold bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-poppins tracking-tight">
                   Kenya Trails
                 </span>
                 <div className="h-0.5 w-0 bg-gradient-to-r from-emerald-400 to-teal-500 group-hover:w-full transition-all duration-500 rounded-full"></div>
@@ -106,7 +106,10 @@ export default function Navbar() {
                       : "text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/80 dark:hover:bg-emerald-500/10"
                   }`}>
                   {item.label}
-                  {!(pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"))) && (
+                  {!(
+                    pathname === item.href ||
+                    (item.href === "/admin" && pathname.startsWith("/admin"))
+                  ) && (
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   )}
                 </Link>
@@ -168,7 +171,9 @@ export default function Navbar() {
                           <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 mr-3 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/30 transition-colors duration-200">
                             <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          <span className="font-poppins font-medium">My Dashboard</span>
+                          <span className="font-poppins font-medium">
+                            My Dashboard
+                          </span>
                         </Link>
                       </DropdownMenuItem>
 
@@ -180,7 +185,9 @@ export default function Navbar() {
                             <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 mr-3 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/30 transition-colors duration-200">
                               <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <span className="font-poppins font-medium">Create Event</span>
+                            <span className="font-poppins font-medium">
+                              Create Event
+                            </span>
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -192,7 +199,9 @@ export default function Navbar() {
                             <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 mr-3 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/30 transition-colors duration-200">
                               <Settings className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <span className="font-poppins font-medium">Admin Dashboard</span>
+                            <span className="font-poppins font-medium">
+                              Admin Dashboard
+                            </span>
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -360,7 +369,6 @@ export default function Navbar() {
     </header>
   );
 }
-
 
 // "use client";
 

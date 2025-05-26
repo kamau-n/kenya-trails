@@ -384,7 +384,7 @@ export default function RefundsPage({ params }) {
                       </p>
                       <p className="text-sm text-gray-500">
                         Original Amount: KSh{" "}
-                        {refund.originalAmount.toLocaleString()}
+                        {refund?.originalAmount?.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">
                         Requested: {refund.createdAt?.toLocaleDateString()}

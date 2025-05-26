@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 // Table components will be custom styled
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Search, 
-  Download, 
-  ArrowUp, 
-  ArrowDown, 
+import {
+  Search,
+  Download,
+  ArrowUp,
+  ArrowDown,
   CreditCard,
   TrendingUp,
   Clock,
@@ -18,7 +18,8 @@ import {
   XCircle,
   Eye,
   RefreshCw,
-  Filter
+  Filter,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -27,71 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { isAfter, isBefore, parseISO } from "date-fns";
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState([
-    {
-      id: "pay_1234567890",
-      eventId: "evt_abc123",
-      userId: "usr_def456",
-      reference: "REF-2025-001",
-      channel: "M-Pesa",
-      currency: "KES",
-      amount: 2500,
-      status: "completed",
-      createdAt: new Date("2025-05-24T14:30:00"),
-      completedAt: new Date("2025-05-24T14:32:15")
-    },
-    {
-      id: "pay_1234567891",
-      eventId: "evt_abc124",
-      userId: "usr_def457",
-      reference: "REF-2025-002",
-      channel: "Bank Transfer",
-      currency: "KES",
-      amount: 5000,
-      status: "pending",
-      createdAt: new Date("2025-05-24T13:15:00"),
-      completedAt: null
-    },
-    {
-      id: "pay_1234567892",
-      eventId: "evt_abc125",
-      userId: "usr_def458",
-      reference: "REF-2025-003",
-      channel: "Card",
-      currency: "KES",
-      amount: 1200,
-      status: "failed",
-      createdAt: new Date("2025-05-24T12:00:00"),
-      completedAt: null
-    },
-    {
-      id: "pay_1234567893",
-      eventId: "evt_abc126",
-      userId: "usr_def459",
-      reference: "REF-2025-004",
-      channel: "M-Pesa",
-      currency: "KES",
-      amount: 3500,
-      status: "completed",
-      createdAt: new Date("2025-05-23T16:45:00"),
-      completedAt: new Date("2025-05-23T16:47:30")
-    },
-    {
-      id: "pay_1234567894",
-      eventId: "evt_abc127",
-      userId: "usr_def460",
-      reference: "REF-2025-005",
-      channel: "Bank Transfer",
-      currency: "KES",
-      amount: 7500,
-      status: "completed",
-      createdAt: new Date("2025-05-23T10:20:00"),
-      completedAt: new Date("2025-05-23T10:25:10")
-    }
-  ]);
-  
+  const [payments, setPayments] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -102,6 +45,28 @@ export default function PaymentsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const q = query(collection(db, "payments"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const paymentsData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+        completedAt: doc.data().completedAt?.toDate(),
+      }));
+      setPayments(paymentsData);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const currencyFormat = (num) =>
     new Intl.NumberFormat("en-KE", {
       style: "currency",
@@ -110,17 +75,44 @@ export default function PaymentsPage() {
     }).format(num);
 
   // Filtering logic
+  // Filtering with search, status, and date range
   const filtered = payments
     .filter(
       (payment) =>
         payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.eventId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.userId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+        payment.userId?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .filter((payment) =>
       statusFilter === "all" ? true : payment.status === statusFilter
-    );
+    )
+    .filter((payment) => {
+      if (!dateFrom && !dateTo) return true;
+      if (!payment.createdAt) return false;
+
+      const fromDate = dateFrom ? parseISO(dateFrom) : null;
+      const toDate = dateTo ? parseISO(dateTo) : null;
+      const created = payment.createdAt;
+
+      if (fromDate && toDate) {
+        return (
+          (isAfter(created, fromDate) ||
+            created.getTime() === fromDate.getTime()) &&
+          (isBefore(created, toDate) || created.getTime() === toDate.getTime())
+        );
+      }
+      if (fromDate) {
+        return (
+          isAfter(created, fromDate) || created.getTime() === fromDate.getTime()
+        );
+      }
+      if (toDate) {
+        return (
+          isBefore(created, toDate) || created.getTime() === toDate.getTime()
+        );
+      }
+      return true;
+    });
 
   // Sorting
   const sorted = filtered.sort((a, b) => {
@@ -149,10 +141,18 @@ export default function PaymentsPage() {
 
   // Statistics
   const totalPayments = payments.length;
-  const completedPayments = payments.filter(p => p.status === "completed").length;
-  const pendingPayments = payments.filter(p => p.status === "pending").length;
-  const failedPayments = payments.filter(p => p.status === "failed").length;
-  const totalAmount = payments.reduce((acc, p) => acc + (p.status === "completed" ? p.amount : 0), 0);
+  const completedPayments = payments.filter(
+    (p) => p.status === "completed"
+  ).length;
+  const pendingPayments = payments.filter((p) => p.status === "pending").length;
+  const failedPayments = payments.filter((p) => p.status === "failed").length;
+  const cancelledPayments = payments.filter(
+    (p) => p.status === "cancelled"
+  ).length;
+  const totalAmount = payments.reduce(
+    (acc, p) => acc + (p.status === "completed" ? Number(p.amount) : 0),
+    0
+  );
 
   // Toggle sort direction
   const toggleSort = (field) => {
@@ -167,7 +167,7 @@ export default function PaymentsPage() {
   const downloadPayments = () => {
     const headers = [
       "Payment ID",
-      "Event ID", 
+      "Event ID",
       "User ID",
       "Reference",
       "Channel",
@@ -211,6 +211,8 @@ export default function PaymentsPage() {
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-600" />;
+      case "cancelled":
+        return <X className="h-4 w-4 text-red-600" />;
       case "failed":
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
@@ -219,7 +221,8 @@ export default function PaymentsPage() {
   };
 
   const getStatusBadge = (status) => {
-    const baseClasses = "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses =
+      "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium";
     switch (status) {
       case "completed":
         return `${baseClasses} bg-green-100 text-green-800`;
@@ -238,18 +241,21 @@ export default function PaymentsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
-            <p className="text-gray-600 mt-1">Track and manage all payment transactions</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Payment Management
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Track and manage all payment transactions
+            </p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
-            <Button 
+            <Button
               onClick={downloadPayments}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-            >
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
@@ -262,8 +268,12 @@ export default function PaymentsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Total Payments</p>
-                  <p className="text-2xl font-bold text-blue-600">{totalPayments}</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    Total Payments
+                  </p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {totalPayments}
+                  </p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <CreditCard className="h-5 w-5 text-blue-600" />
@@ -277,7 +287,9 @@ export default function PaymentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{pendingPayments}</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {pendingPayments}
+                  </p>
                 </div>
                 <div className="p-2 bg-yellow-100 rounded-lg">
                   <Clock className="h-5 w-5 text-yellow-600" />
@@ -291,7 +303,9 @@ export default function PaymentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{completedPayments}</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {completedPayments}
+                  </p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -305,7 +319,9 @@ export default function PaymentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Failed</p>
-                  <p className="text-2xl font-bold text-red-600">{failedPayments}</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {failedPayments}
+                  </p>
                 </div>
                 <div className="p-2 bg-red-100 rounded-lg">
                   <XCircle className="h-5 w-5 text-red-600" />
@@ -318,8 +334,30 @@ export default function PaymentsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Total Amount</p>
-                  <p className="text-2xl font-bold text-green-600">{currencyFormat(totalAmount)}</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    Cancelled/Refunded
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {cancelledPayments}
+                  </p>
+                </div>
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <X className="h-5 w-5 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    Total Amount
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {currencyFormat(totalAmount)}
+                  </p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-lg">
                   <TrendingUp className="h-5 w-5 text-green-600" />
@@ -335,9 +373,11 @@ export default function PaymentsPage() {
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filters</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Filters
+                </span>
               </div>
-              
+
               <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
                 <div className="relative min-w-[250px]">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -362,15 +402,14 @@ export default function PaymentsPage() {
                 </Select>
 
                 {(searchTerm || statusFilter !== "all") && (
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
                       setSearchTerm("");
                       setStatusFilter("all");
                     }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
+                    className="text-gray-500 hover:text-gray-700">
                     Clear Filters
                   </Button>
                 )}
@@ -386,39 +425,57 @@ export default function PaymentsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr className="border-b border-gray-200">
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">Payment ID</th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">User & Event</th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">Reference</th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">Channel</th>
-                    <th 
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      Payment ID
+                    </th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      User & Event
+                    </th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      Reference
+                    </th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      Channel
+                    </th>
+                    <th
                       onClick={() => toggleSort("amount")}
-                      className="px-6 py-4 text-left cursor-pointer select-none font-semibold text-gray-900 hover:bg-gray-100"
-                    >
+                      className="px-6 py-4 text-left cursor-pointer select-none font-semibold text-gray-900 hover:bg-gray-100">
                       <div className="flex items-center gap-1">
                         Amount
-                        {sortField === "amount" && (
-                          sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                        )}
+                        {sortField === "amount" &&
+                          (sortOrder === "asc" ? (
+                            <ArrowUp className="h-4 w-4" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4" />
+                          ))}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">Status</th>
-                    <th 
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      Status
+                    </th>
+                    <th
                       onClick={() => toggleSort("createdAt")}
-                      className="px-6 py-4 text-left cursor-pointer select-none font-semibold text-gray-900 hover:bg-gray-100"
-                    >
+                      className="px-6 py-4 text-left cursor-pointer select-none font-semibold text-gray-900 hover:bg-gray-100">
                       <div className="flex items-center gap-1">
                         Request Date
-                        {sortField === "createdAt" && (
-                          sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                        )}
+                        {sortField === "createdAt" &&
+                          (sortOrder === "asc" ? (
+                            <ArrowUp className="h-4 w-4" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4" />
+                          ))}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">Actions</th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50 border-b border-gray-100">
+                    <tr
+                      key={payment.id}
+                      className="hover:bg-gray-50 border-b border-gray-100">
                       <td className="px-6 py-4">
                         <div className="font-mono text-sm text-gray-900">
                           {payment.id.substring(0, 12)}...
@@ -435,10 +492,14 @@ export default function PaymentsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-sm text-gray-900">{payment.reference}</div>
+                        <div className="font-medium text-sm text-gray-900">
+                          {payment.reference}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-200">
                           {payment.channel}
                         </Badge>
                       </td>
@@ -460,13 +521,16 @@ export default function PaymentsPage() {
                             month: "short",
                             year: "numeric",
                             hour: "2-digit",
-                            minute: "2-digit"
+                            minute: "2-digit",
                           })}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
@@ -481,15 +545,16 @@ export default function PaymentsPage() {
             {totalPages > 1 && (
               <div className="flex justify-between items-center p-4 border-t border-gray-200">
                 <div className="text-sm text-gray-500">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sorted.length)} of {sorted.length} payments
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, sorted.length)} of{" "}
+                  {sorted.length} payments
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  >
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}>
                     Previous
                   </Button>
                   <div className="flex items-center gap-1">
@@ -498,11 +563,12 @@ export default function PaymentsPage() {
                       return (
                         <Button
                           key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "ghost"}
+                          variant={
+                            currentPage === pageNum ? "default" : "ghost"
+                          }
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className="w-8 h-8 p-0"
-                        >
+                          className="w-8 h-8 p-0">
                           {pageNum}
                         </Button>
                       );
@@ -512,8 +578,9 @@ export default function PaymentsPage() {
                     variant="outline"
                     size="sm"
                     disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  >
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }>
                     Next
                   </Button>
                 </div>
