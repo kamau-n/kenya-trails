@@ -92,6 +92,23 @@ export type events = {
   accountDetails: accountDetails;
 };
 
+export type FirebaseUser = {
+  uid: string;
+  email: string | null;
+  emailVerified: boolean;
+  displayName: string | null;
+  photoURL: string | null;
+  phoneNumber: string | null;
+  providerId: string;
+  disabled?: boolean;
+  metadata?: {
+    creationTime: string;
+    lastSignInTime: string;
+  };
+  customClaims?: Record<string, any>; // e.g., { role: "admin" }
+  tokensValidAfterTime?: string;
+};
+
 export type booking = {
   id: string;
   eventId: string;
@@ -116,7 +133,7 @@ export type payments = {
 
 export default function DashboardPage() {
   const auth = useAuth();
-  const user = auth?.user;
+  const user: FirebaseUser = auth?.user;
   const authLoading = auth?.loading || false;
 
   const [bookings, setBookings] = useState<booking[]>([]);
