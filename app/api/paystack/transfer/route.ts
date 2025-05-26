@@ -1,71 +1,106 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
+interface WithdrawalRequest {
+  withdrawalId: string;
+  accountDetails: {
+    accountName: string;
+    accountNumber: string;
+  };
+  amount: number;
+  source: string;
+  eventId: string;
+}
+
+interface EventData {
+  id: string;
+  collectionBalance: number;
+}
+
 const generateUniqueReference = (): string => {
-  const timestamp = Date.now().toString(); // Current time in milliseconds
-  const randomPart = Math.random().toString(36).substring(2, 8); // Random alphanumeric string
+  const timestamp = Date.now().toString();
+  const randomPart = Math.random().toString(36).substring(2, 8);
   return `payout_kenya_trails_${timestamp}_${randomPart}`;
+};
+
+const callPaystack = async (endpoint: string, body: any) => {
+  const res = await fetch(`https://api.paystack.co/${endpoint}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!data.status) throw new Error(data.message);
+  return data;
 };
 
 export async function POST(req: Request) {
   try {
-    const { withdrawalId, accountDetails, amount, source } = await req.json();
+    const body = (await req.json()) as WithdrawalRequest;
 
-    // Create transfer recipient
-    const recipientResponse = await fetch(
-      "https://api.paystack.co/transferrecipient",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "kepss",
-          name: accountDetails.accountName,
-          account_number: accountDetails.accountNumber,
-          bank_code: "03",
-          currency: "KES",
-        }),
-      }
+    if (
+      !body.withdrawalId ||
+      !body.accountDetails?.accountName ||
+      !body.accountDetails?.accountNumber ||
+      !body.amount ||
+      !body.source ||
+      !body.eventId
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const eventSnapshot = await getDocs(
+      query(collection(db, "events"), where("id", "==", body.eventId))
     );
 
-    const recipientData = await recipientResponse.json();
-    console.log("this is the recipient response");
-    console.log(recipientData);
-    if (!recipientData.status) {
-      throw new Error(recipientData.message);
+    if (eventSnapshot.empty) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Initiate transfer
-    const transferResponse = await fetch("https://api.paystack.co/transfer", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        source: source,
-        recipient: recipientData.data.recipient_code,
-        reference: generateUniqueReference(),
-        amount: amount * 100, // Convert to kobo
-        reason: `Withdrawal payout - ${withdrawalId}`,
-      }),
+    const eventDoc = eventSnapshot.docs[0];
+    const event = eventDoc.data() as EventData;
+
+    if (event.collectionBalance < body.amount) {
+      return NextResponse.json(
+        { error: "Insufficient balance" },
+        { status: 400 }
+      );
+    }
+
+    const recipientData = await callPaystack("transferrecipient", {
+      type: "kepss",
+      name: body.accountDetails.accountName,
+      account_number: body.accountDetails.accountNumber,
+      bank_code: "03",
+      currency: "KES",
     });
 
-    const transferData = await transferResponse.json();
+    const transferData = await callPaystack("transfer", {
+      source: body.source,
+      recipient: recipientData.data.recipient_code,
+      reference: generateUniqueReference(),
+      amount: body.amount * 100, // KES cents
+      reason: `Withdrawal payout - ${body.withdrawalId}`,
+    });
 
-    console.log("this is the transfer response");
-    console.log(transferData);
-    if (!transferData.status) {
-      throw new Error(transferData.message);
-    }
-
-    // Update withdrawal status
-    await updateDoc(doc(db, "withdrawals", withdrawalId), {
+    await updateDoc(doc(db, "withdrawals", body.withdrawalId), {
       status: "processing",
       transferReference: transferData.data.reference,
       transferRecipientCode: recipientData.data.recipient_code,

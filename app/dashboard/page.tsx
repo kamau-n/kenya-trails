@@ -91,6 +91,9 @@ export type events = {
   paymentManagement: string;
   organizerId: string;
   accountDetails: accountDetails;
+  collectionBalance: number;
+  category: string;
+  duration: string;
 };
 
 export type FirebaseUser = {
