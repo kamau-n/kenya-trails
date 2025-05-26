@@ -13,6 +13,7 @@ import {
   TrendingUp,
   CheckCircle,
 } from "lucide-react";
+import OrganizersSection from "@/components/orrganizerSection";
 
 export default function OrganizePage() {
   const auth = useAuth();
@@ -301,17 +302,9 @@ export default function OrganizePage() {
       {/* Testimonials */}
       <section className="py-16 bg-green-50 rounded-xl">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="md:text-3xl text-2xl font-bold mb-4">
-              What Organizers Say
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Hear from guides and event organizers who are already using Kenya
-              Trails.
-            </p>
-          </div>
+          <OrganizersSection />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="bg-white">
                 <CardContent className="pt-6">
@@ -333,7 +326,7 @@ export default function OrganizePage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 

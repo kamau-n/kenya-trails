@@ -10,7 +10,8 @@ import {
   orderBy,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase"; // Adjust the import path based on your Firebase config location
+import { db } from "../firebase";
+// Adjust the import path based on your Firebase config location
 
 const FEEDBACK_COLLECTION = "feedback";
 

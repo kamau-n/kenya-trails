@@ -37,7 +37,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative bg-green-600 text-white">
+      {/* <div className="relative bg-green-600 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-3xl md:text-5xl font-bold mb-6">
@@ -55,7 +55,7 @@ export default function About() {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Stats Section */}
       {/* <div className="container mx-auto px-4 py-12">

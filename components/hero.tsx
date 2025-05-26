@@ -138,7 +138,7 @@ export default function EnhancedHero() {
 
             {/* Main Headline with Text Animation */}
             <div className="space-y-4">
-              <h1 className="md:text-5xl text-3xl lg:text-7xl font-black text-white leading-tight">
+              <h1 className="md:text-5xl text-3xl lg:text-6xl font-black text-white leading-tight">
                 Discover
                 <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent animate-pulse">
                   Wild Kenya
