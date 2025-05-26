@@ -831,84 +831,81 @@ export default function DashboardPage() {
                 )}
               </div>
             </TabsContent>
-
-            <TabsContent value="payments">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="md:text-2xl text-lg">
-                      {" "}
-                      Payments
-                    </CardTitle>
-                    <CardDescription>
-                      View and manage all your payments
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <div className="flex justify-center items-center py-12">
-                        <div className="animate-pulse text-lg text-slate-600">
-                          Loading payment data...
-                        </div>
-                      </div>
-                    ) : displayPayments.length === 0 ? (
-                      <div className="text-center py-12 border rounded-lg bg-slate-50">
-                        <CreditCard className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-600">
-                          No promotion payments found
-                        </p>
-                        <p className="text-slate-500 text-sm mt-2">
-                          Payments will appear here when you promote your events
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {displayPayments.map((payment) => (
-                          <div
-                            key={payment.id}
-                            className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors duration-200">
-                            <div className="space-y-2 mb-4 md:mb-0">
-                              <p className="font-medium text-slate-800">
-                                {payment.eventTitle}
-                              </p>
-                              <div className="flex items-center text-sm text-slate-600">
-                                <Calendar className="h-4 w-4 mr-2" />
-                                {formatDate(payment.createdAt)}
-                              </div>
-                              <div className="flex items-center text-sm text-slate-600">
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                KSh {payment.amount.toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <Badge
-                                className={
-                                  payment.status === "completed"
-                                    ? "bg-green-600"
-                                    : "bg-yellow-600"
-                                }>
-                                {payment.status}
-                              </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  downloadPaymentReceiptModern(payment)
-                                }>
-                                <Download className="h-4 w-4 mr-2" />
-                                Receipt
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
           </>
         )}
+
+        <TabsContent value="payments">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="md:text-2xl text-lg"> Payments</CardTitle>
+                <CardDescription>
+                  View and manage all your payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-pulse text-lg text-slate-600">
+                      Loading payment data...
+                    </div>
+                  </div>
+                ) : displayPayments.length === 0 ? (
+                  <div className="text-center py-12 border rounded-lg bg-slate-50">
+                    <CreditCard className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                    <p className="text-slate-600">
+                      No promotion payments found
+                    </p>
+                    <p className="text-slate-500 text-sm mt-2">
+                      Payments will appear here when you promote your events
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {displayPayments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors duration-200">
+                        <div className="space-y-2 mb-4 md:mb-0">
+                          <p className="font-medium text-slate-800">
+                            {payment.eventTitle}
+                          </p>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {formatDate(payment.createdAt)}
+                          </div>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            KSh {payment.amount.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Badge
+                            className={
+                              payment.status === "completed"
+                                ? "bg-green-600"
+                                : "bg-yellow-600"
+                            }>
+                            {payment.status}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              downloadPaymentReceiptModern(payment)
+                            }>
+                            <Download className="h-4 w-4 mr-2" />
+                            Receipt
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="profile">
           <Card className="border-slate-200 shadow-sm">
