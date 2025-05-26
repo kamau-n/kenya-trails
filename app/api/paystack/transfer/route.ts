@@ -7,6 +7,7 @@ import {
   query,
   updateDoc,
   where,
+  getDoc,
 } from "firebase/firestore";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
