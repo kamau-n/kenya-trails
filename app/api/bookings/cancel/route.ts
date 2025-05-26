@@ -15,7 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   const body = await req.json();
   console.log("This is a booking cancellation request", body);
-  const { bookingId, eventId, numberOfPeople, amountPaid, userId } = body;
+  const { bookingId, eventId, numberOfPeople, amountPaid, userId, userEmail } =
+    body;
 
   if (
     !bookingId ||
@@ -63,6 +64,18 @@ export async function POST(req: NextRequest) {
     );
     await Promise.all(updatePayments);
 
+    // fetch  the user with the userId
+
+    // const userQuery = query(
+    //   collection(db, "users"),
+    //   where("", "==", bookingId)
+    // );
+    // const paymentSnapshot = await getDocs(paymentsQuery);
+    // const paymentData = paymentSnapshot.docs.map((doc) => ({
+    //   id: doc.id,
+    //   ...doc.data(),
+    // }));
+
     // Refund logic
     const refundIds: string[] = [];
     if (paymentData.length > 0 && amountPaid > 0) {
@@ -82,6 +95,7 @@ export async function POST(req: NextRequest) {
           reason: "Booking Cancellation",
           createdAt: serverTimestamp(),
           customer: "",
+          userEmail: userEmail,
           currency: "",
         });
 

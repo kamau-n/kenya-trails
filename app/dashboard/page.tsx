@@ -336,6 +336,7 @@ export default function DashboardPage() {
         numberOfPeople: selectedBooking.numberOfPeople,
         amountPaid: selectedBooking.amountPaid,
         userId: user.uid,
+        userEmail: user?.email || " ",
       }),
     });
     const data: cancelResponse = await res.json();
