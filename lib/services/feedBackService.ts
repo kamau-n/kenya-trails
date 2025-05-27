@@ -1,209 +1,233 @@
-// services/feedbackService.js
+// lib/services/feedBackService.js
 import {
-	addDoc,
-	collection,
-	doc,
-	getDocs,
-	onSnapshot,
-	orderBy,
-	query,
-	serverTimestamp,
-	updateDoc,
-	where,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "@/lib/firebase"; // Adjust the import path based on your Firebase config location
 
-const COLLECTION_NAME = "organizerFeedback";
+const FEEDBACK_COLLECTION = "feedback";
 
-// Create new feedback
+/**
+ * Create new feedback entry
+ * @param {Object} feedbackData - The feedback data to save
+ * @param {string} feedbackData.organizerName - Name of the organizer
+ * @param {string} feedbackData.organization - Organization name (optional)
+ * @param {number} feedbackData.rating - Rating from 1-5
+ * @param {string} feedbackData.feedback - Feedback text
+ * @returns {Promise<string>} - Returns the document ID of the created feedback
+ */
 export const createFeedback = async (feedbackData) => {
-	try {
-		const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-			...feedbackData,
-			createdAt: serverTimestamp(),
-			updatedAt: serverTimestamp(),
-			status: "pending",
-		});
+  try {
+    // Validate required fields
+    if (
+      !feedbackData.organizerName ||
+      !feedbackData.rating ||
+      !feedbackData.feedback
+    ) {
+      throw new Error(
+        "Missing required fields: organizerName, rating, and feedback are required"
+      );
+    }
 
-		return {
-			id: docRef.id,
-			...feedbackData,
-			status: "pending",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		};
-	} catch (error) {
-		console.error("Error creating feedback:", error);
-		throw new Error("Failed to submit feedback. Please try again.");
-	}
+    // Validate rating range
+    if (feedbackData.rating < 1 || feedbackData.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+
+    // Prepare document data
+    const docData = {
+      organizerName: feedbackData.organizerName.trim(),
+      organization: feedbackData.organization?.trim() || "",
+      rating: Number(feedbackData.rating),
+      feedback: feedbackData.feedback.trim(),
+      status: "pending", // Default status
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    // Add document to Firestore
+    const docRef = await addDoc(collection(db, FEEDBACK_COLLECTION), docData);
+
+    console.log("Feedback created with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error creating feedback:", error);
+    throw new Error(`Failed to submit feedback: ${error.message}`);
+  }
 };
 
-// Get all feedback with optional filtering
-export const getAllFeedback = async (statusFilter = null) => {
-	try {
-		let q = query(
-			collection(db, COLLECTION_NAME),
-			orderBy("createdAt", "desc")
-		);
+/**
+ * Get all feedback entries
+ * @returns {Promise<Array>} - Returns array of all feedback entries
+ */
+export const getAllFeedback = async () => {
+  try {
+    const q = query(
+      collection(db, FEEDBACK_COLLECTION),
+      orderBy("createdAt", "desc")
+    );
 
-		if (statusFilter && statusFilter !== "all") {
-			q = query(q, where("status", "==", statusFilter));
-		}
+    const querySnapshot = await getDocs(q);
+    const feedbacks = [];
 
-		const querySnapshot = await getDocs(q);
-		interface FeedbackData {
-			name: string;
-			email: string;
-			message: string;
-			rating: number;
-			tourId?: string;
-			status?: "pending" | "approved" | "rejected";
-			createdAt?: Date | string;
-			updatedAt?: Date | string;
-		}
+    querySnapshot.forEach((doc) => {
+      feedbacks.push({
+        id: doc.id,
+        ...doc.data(),
+        // Convert Firestore timestamps to ISO strings for easier handling
+        createdAt:
+          doc.data().createdAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+        updatedAt:
+          doc.data().updatedAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+      });
+    });
 
-		interface Feedback extends FeedbackData {
-			id: string;
-		}
-
-		interface FeedbackStats {
-			total: number;
-			approved: number;
-			pending: number;
-			rejected: number;
-			averageRating: number;
-		}
-
-		querySnapshot.forEach((doc) => {
-			const data = doc.data();
-			feedbacks.push({
-				id: doc.id,
-				...data,
-				createdAt:
-					data.createdAt?.toDate()?.toISOString() ||
-					new Date().toISOString(),
-				updatedAt:
-					data.updatedAt?.toDate()?.toISOString() ||
-					new Date().toISOString(),
-			});
-		});
-
-		return feedbacks;
-	} catch (error) {
-		console.error("Error fetching feedback:", error);
-		throw new Error("Failed to load feedback. Please try again.");
-	}
+    return feedbacks;
+  } catch (error) {
+    console.error("Error fetching feedback:", error);
+    throw new Error(`Failed to fetch feedback: ${error.message}`);
+  }
 };
 
-// Get only approved feedback for public display
-export const getApprovedFeedback = async () => {
-	try {
-		const q = query(
-			collection(db, COLLECTION_NAME),
-			where("status", "==", "approved"),
-			orderBy("createdAt", "desc")
-		);
+/**
+ * Update feedback status (approve/reject)
+ * @param {string} feedbackId - The document ID of the feedback
+ * @param {string} status - New status: 'pending', 'approved', or 'rejected'
+ * @returns {Promise<void>}
+ */
+export const updateFeedbackStatus = async (feedbackId, status) => {
+  try {
+    // Validate status
+    const validStatuses = ["pending", "approved", "rejected"];
+    if (!validStatuses.includes(status)) {
+      throw new Error(
+        "Invalid status. Must be: pending, approved, or rejected"
+      );
+    }
 
-		const querySnapshot = await getDocs(q);
-		const approvedFeedbacks = [];
+    const feedbackRef = doc(db, FEEDBACK_COLLECTION, feedbackId);
 
-		querySnapshot.forEach((doc) => {
-			const data = doc.data();
-			approvedFeedbacks.push({
-				id: doc.id,
-				...data,
-				createdAt:
-					data.createdAt?.toDate()?.toISOString() ||
-					new Date().toISOString(),
-				updatedAt:
-					data.updatedAt?.toDate()?.toISOString() ||
-					new Date().toISOString(),
-			});
-		});
+    await updateDoc(feedbackRef, {
+      status: status,
+      updatedAt: serverTimestamp(),
+    });
 
-		return approvedFeedbacks;
-	} catch (error) {
-		console.error("Error fetching approved feedback:", error);
-		throw new Error("Failed to load testimonials. Please try again.");
-	}
+    console.log(`Feedback ${feedbackId} status updated to: ${status}`);
+  } catch (error) {
+    console.error("Error updating feedback status:", error);
+    throw new Error(`Failed to update feedback status: ${error.message}`);
+  }
 };
 
-// Update feedback status (approve/reject)
-export const updateFeedbackStatus = async (feedbackId, newStatus) => {
-	try {
-		const feedbackRef = doc(db, COLLECTION_NAME, feedbackId);
-		await updateDoc(feedbackRef, {
-			status: newStatus,
-			updatedAt: serverTimestamp(),
-		});
+/**
+ * Subscribe to real-time feedback updates
+ * @param {Function} callback - Callback function to handle feedback updates
+ * @returns {Function} - Unsubscribe function
+ */
+export const subscribeFeedbackUpdates = (callback) => {
+  try {
+    const q = query(
+      collection(db, FEEDBACK_COLLECTION),
+      orderBy("createdAt", "desc")
+    );
 
-		return { success: true };
-	} catch (error) {
-		console.error("Error updating feedback status:", error);
-		throw new Error("Failed to update feedback status. Please try again.");
-	}
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const feedbacks = [];
+
+        querySnapshot.forEach((doc) => {
+          feedbacks.push({
+            id: doc.id,
+            ...doc.data(),
+            // Convert Firestore timestamps to ISO strings
+            createdAt:
+              doc.data().createdAt?.toDate?.()?.toISOString() ||
+              new Date().toISOString(),
+            updatedAt:
+              doc.data().updatedAt?.toDate?.()?.toISOString() ||
+              new Date().toISOString(),
+          });
+        });
+
+        callback(feedbacks);
+      },
+      (error) => {
+        console.error("Error in feedback subscription:", error);
+        throw new Error(
+          `Failed to subscribe to feedback updates: ${error.message}`
+        );
+      }
+    );
+
+    return unsubscribe;
+  } catch (error) {
+    console.error("Error setting up feedback subscription:", error);
+    throw new Error(`Failed to set up real-time updates: ${error.message}`);
+  }
 };
 
-// Real-time listener for feedback updates (useful for admin dashboard)
-export const subscribeFeedbackUpdates = (callback, statusFilter = null) => {
-	try {
-		let q = collection(db, COLLECTION_NAME);
+/**
+ * Get feedback by status
+ * @param {string} status - Filter by status: 'pending', 'approved', or 'rejected'
+ * @returns {Promise<Array>} - Returns filtered feedback array
+ */
+export const getFeedbackByStatus = async (status) => {
+  try {
+    const validStatuses = ["pending", "approved", "rejected"];
+    if (!validStatuses.includes(status)) {
+      throw new Error("Invalid status filter");
+    }
 
-		if (statusFilter && statusFilter !== "all") {
-			q = query(q, where("status", "==", statusFilter));
-		}
+    const q = query(
+      collection(db, FEEDBACK_COLLECTION),
+      where("status", "==", status),
+      orderBy("createdAt", "desc")
+    );
 
-		q = query(q, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    const feedbacks = [];
 
-		return onSnapshot(q, (querySnapshot) => {
-			const feedbacks = [];
-			querySnapshot.forEach((doc) => {
-				const data = doc.data();
-				feedbacks.push({
-					id: doc.id,
-					...data,
-					createdAt:
-						data.createdAt?.toDate()?.toISOString() ||
-						new Date().toISOString(),
-					updatedAt:
-						data.updatedAt?.toDate()?.toISOString() ||
-						new Date().toISOString(),
-				});
-			});
-			callback(feedbacks);
-		});
-	} catch (error) {
-		console.error("Error setting up feedback listener:", error);
-		throw new Error("Failed to setup real-time updates.");
-	}
+    querySnapshot.forEach((doc) => {
+      feedbacks.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt:
+          doc.data().createdAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+        updatedAt:
+          doc.data().updatedAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+      });
+    });
+
+    return feedbacks;
+  } catch (error) {
+    console.error("Error fetching feedback by status:", error);
+    throw new Error(`Failed to fetch feedback: ${error.message}`);
+  }
 };
 
-// Get feedback statistics
-export const getFeedbackStats = async () => {
-	try {
-		const allFeedback = await getAllFeedback();
-		const approved = allFeedback.filter((f) => f.status === "approved");
-		const pending = allFeedback.filter((f) => f.status === "pending");
-		const rejected = allFeedback.filter((f) => f.status === "rejected");
-
-		const totalRating = approved.reduce(
-			(sum, feedback) => sum + feedback.rating,
-			0
-		);
-		const averageRating =
-			approved.length > 0
-				? (totalRating / approved.length).toFixed(1)
-				: 0;
-
-		return {
-			total: allFeedback.length,
-			approved: approved.length,
-			pending: pending.length,
-			rejected: rejected.length,
-			averageRating: parseFloat(averageRating),
-		};
-	} catch (error) {
-		console.error("Error fetching feedback stats:", error);
-		throw new Error("Failed to load feedback statistics.");
-	}
+/**
+ * Delete feedback (if needed for admin purposes)
+ * @param {string} feedbackId - The document ID to delete
+ * @returns {Promise<void>}
+ */
+export const deleteFeedback = async (feedbackId) => {
+  try {
+    await deleteDoc(doc(db, FEEDBACK_COLLECTION, feedbackId));
+    console.log("Feedback deleted:", feedbackId);
+  } catch (error) {
+    console.error("Error deleting feedback:", error);
+    throw new Error(`Failed to delete feedback: ${error.message}`);
+  }
 };

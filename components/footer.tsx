@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { Facebook, Instagram, Twitter, Mail, Map } from "lucide-react"
+import Link from "next/link";
+import { Facebook, Instagram, Twitter, Mail, Map } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -12,7 +12,8 @@ export default function Footer() {
               <span className="text-xl font-bold text-white">Kenya Trails</span>
             </div>
             <p className="mb-4">
-              Connecting adventure seekers with the best travel and hiking experiences across Kenya.
+              Connecting adventure seekers with the best travel and hiking
+              experiences across Kenya.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white">
@@ -24,7 +25,9 @@ export default function Footer() {
               <a href="#" className="text-gray-400 hover:text-white">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="mailto:info@kenyatrails.com" className="text-gray-400 hover:text-white">
+              <a
+                href="mailto:info@kenyatrails.com"
+                className="text-gray-400 hover:text-white">
                 <Mail className="h-5 w-5" />
               </a>
             </div>
@@ -39,17 +42,23 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/events?category=hiking" className="hover:text-white">
+                <Link
+                  href="/events?category=hiking"
+                  className="hover:text-white">
                   Hiking
                 </Link>
               </li>
               <li>
-                <Link href="/events?category=camping" className="hover:text-white">
+                <Link
+                  href="/events?category=camping"
+                  className="hover:text-white">
                   Camping
                 </Link>
               </li>
               <li>
-                <Link href="/events?category=safari" className="hover:text-white">
+                <Link
+                  href="/events?category=safari"
+                  className="hover:text-white">
                   Safari
                 </Link>
               </li>
@@ -70,12 +79,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/organize/resources" className="hover:text-white">
+                <Link href="/resources" className="hover:text-white">
                   Resources
                 </Link>
               </li>
               <li>
-                <Link href="/organize/faq" className="hover:text-white">
+                <Link href="/faqs" className="hover:text-white">
                   FAQ
                 </Link>
               </li>
@@ -101,7 +110,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-white">
+                <Link href="/policies" className="hover:text-white">
                   Privacy Policy
                 </Link>
               </li>
@@ -110,9 +119,11 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-sm text-center">
-          <p>&copy; {new Date().getFullYear()} Kenya Trails. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Kenya Trails. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

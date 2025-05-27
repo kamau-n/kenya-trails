@@ -31,6 +31,7 @@ import {
   CreditCard,
   Download,
   MapPin,
+  MessageCircle,
   Trash2,
   Users,
 } from "lucide-react";
@@ -536,6 +537,16 @@ export default function DashboardPage() {
             </Link>
           </Button>
         )}
+
+        <Button
+          asChild
+          variant="outline"
+          className="border-blue-300 text-blue-700 hover:bg-blue-50">
+          <Link href="/organizer/feedback">
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Feedback
+          </Link>
+        </Button>
 
         {user.userType === "traveler" && (
           <Button asChild className="bg-green-600 hover:bg-green-700">

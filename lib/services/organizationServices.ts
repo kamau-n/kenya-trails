@@ -1,438 +1,228 @@
-// Organization Service - Handles all organization-related API calls
-export interface PrivacyPolicy {
-	id: number;
-	title: string;
-	content: string;
-	lastUpdated: string;
-	status: "published" | "draft";
-	createdBy?: string;
-	version?: number;
-}
+// lib/firestore.js
+import {
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../firebase";
 
-export interface FAQ {
-	id: number;
-	question: string;
-	answer: string;
-	category: string;
-	status: "published" | "draft";
-	order?: number;
-	tags?: string[];
-	createdBy?: string;
-	lastUpdated?: string;
-}
+// Collection names
+const COLLECTIONS = {
+  PRIVACY_POLICIES: "privacy_policies",
+  FAQ: "faq",
+  RESOURCES: "resources",
+  FEEDBACK: "feedback",
+};
 
-export interface Resource {
-	id: number;
-	title: string;
-	description: string;
-	url: string;
-	category: string;
-	status: "published" | "draft";
-	fileType?: string;
-	downloadCount?: number;
-	createdBy?: string;
-	lastUpdated?: string;
-}
+// Generic CRUD operations
+export const firestoreService = {
+  // Create document
+  async create(collectionName, data) {
+    try {
+      const docRef = await addDoc(collection(db, collectionName), {
+        ...data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return { id: docRef.id, ...data };
+    } catch (error) {
+      console.error(`Error creating document in ${collectionName}:`, error);
+      throw error;
+    }
+  },
 
-export interface Organization {
-	id: number;
-	name: string;
-	slug: string;
-	privacyPolicies: PrivacyPolicy[];
-	faqs: FAQ[];
-	resources: Resource[];
-	settings: {
-		allowPublicAccess: boolean;
-		requireAuthentication: boolean;
-		enableVersioning: boolean;
-		moderationRequired: boolean;
-	};
-}
+  // Read all documents
+  async getAll(collectionName, orderField = "createdAt") {
+    try {
+      const q = query(
+        collection(db, collectionName),
+        orderBy(orderField, "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error(`Error fetching documents from ${collectionName}:`, error);
+      throw error;
+    }
+  },
 
-class OrganizationService {
-	private baseUrl = "/api/admin/organizations";
+  // Update document
+  async update(collectionName, id, data) {
+    try {
+      const docRef = doc(db, collectionName, id);
+      await updateDoc(docRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+      return { id, ...data };
+    } catch (error) {
+      console.error(`Error updating document in ${collectionName}:`, error);
+      throw error;
+    }
+  },
 
-	// Privacy Policies
-	async getPrivacyPolicies(organizationId: number): Promise<PrivacyPolicy[]> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/privacy-policies`
-		);
-		if (!response.ok) throw new Error("Failed to fetch privacy policies");
-		return response.json();
-	}
+  // Delete document
+  async delete(collectionName, id) {
+    try {
+      const docRef = doc(db, collectionName, id);
+      await deleteDoc(docRef);
+      return id;
+    } catch (error) {
+      console.error(`Error deleting document from ${collectionName}:`, error);
+      throw error;
+    }
+  },
 
-	async createPrivacyPolicy(
-		organizationId: number,
-		policy: Omit<PrivacyPolicy, "id" | "lastUpdated">
-	): Promise<PrivacyPolicy> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/privacy-policies`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(policy),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to create privacy policy");
-		return response.json();
-	}
+  // Subscribe to real-time updates
+  subscribe(collectionName, callback, orderField = "createdAt") {
+    const q = query(
+      collection(db, collectionName),
+      orderBy(orderField, "desc")
+    );
+    return onSnapshot(q, (querySnapshot) => {
+      const documents = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      callback(documents);
+    });
+  },
+};
 
-	async updatePrivacyPolicy(
-		organizationId: number,
-		policyId: number,
-		policy: Partial<PrivacyPolicy>
-	): Promise<PrivacyPolicy> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/privacy-policies/${policyId}`,
-			{
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(policy),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to update privacy policy");
-		return response.json();
-	}
+// Specific service functions for organization data
+export const organizationService = {
+  // Privacy Policies
+  async createPrivacyPolicy(data) {
+    return firestoreService.create(COLLECTIONS.PRIVACY_POLICIES, {
+      title: data.title,
+      content: data.content,
+      status: data.status || "draft",
+      lastUpdated: new Date().toISOString().split("T")[0],
+    });
+  },
 
-	async deletePrivacyPolicy(
-		organizationId: number,
-		policyId: number
-	): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/privacy-policies/${policyId}`,
-			{
-				method: "DELETE",
-			}
-		);
-		if (!response.ok) throw new Error("Failed to delete privacy policy");
-	}
+  async getPrivacyPolicies() {
+    return firestoreService.getAll(COLLECTIONS.PRIVACY_POLICIES, "updatedAt");
+  },
 
-	async publishPrivacyPolicy(
-		organizationId: number,
-		policyId: number
-	): Promise<PrivacyPolicy> {
-		return this.updatePrivacyPolicy(organizationId, policyId, {
-			status: "published",
-		});
-	}
+  async updatePrivacyPolicy(id, data) {
+    return firestoreService.update(COLLECTIONS.PRIVACY_POLICIES, id, {
+      ...data,
+      lastUpdated: new Date().toISOString().split("T")[0],
+    });
+  },
 
-	async draftPrivacyPolicy(
-		organizationId: number,
-		policyId: number
-	): Promise<PrivacyPolicy> {
-		return this.updatePrivacyPolicy(organizationId, policyId, {
-			status: "draft",
-		});
-	}
+  async deletePrivacyPolicy(id) {
+    return firestoreService.delete(COLLECTIONS.PRIVACY_POLICIES, id);
+  },
 
-	// FAQs
-	async getFAQs(organizationId: number, category?: string): Promise<FAQ[]> {
-		const url = category
-			? `${
-					this.baseUrl
-			  }/${organizationId}/faqs?category=${encodeURIComponent(category)}`
-			: `${this.baseUrl}/${organizationId}/faqs`;
+  // FAQ
+  async createFAQ(data) {
+    return firestoreService.create(COLLECTIONS.FAQ, {
+      question: data.question,
+      answer: data.answer,
+      category: data.category,
+      status: data.status || "draft",
+    });
+  },
 
-		const response = await fetch(url);
-		if (!response.ok) throw new Error("Failed to fetch FAQs");
-		return response.json();
-	}
+  async getFAQs() {
+    return firestoreService.getAll(COLLECTIONS.FAQ, "updatedAt");
+  },
 
-	async createFAQ(
-		organizationId: number,
-		faq: Omit<FAQ, "id" | "lastUpdated">
-	): Promise<FAQ> {
-		const response = await fetch(`${this.baseUrl}/${organizationId}/faqs`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(faq),
-		});
-		if (!response.ok) throw new Error("Failed to create FAQ");
-		return response.json();
-	}
+  async updateFAQ(id, data) {
+    return firestoreService.update(COLLECTIONS.FAQ, id, data);
+  },
 
-	async updateFAQ(
-		organizationId: number,
-		faqId: number,
-		faq: Partial<FAQ>
-	): Promise<FAQ> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/faqs/${faqId}`,
-			{
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(faq),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to update FAQ");
-		return response.json();
-	}
+  async deleteFAQ(id) {
+    return firestoreService.delete(COLLECTIONS.FAQ, id);
+  },
 
-	async deleteFAQ(organizationId: number, faqId: number): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/faqs/${faqId}`,
-			{
-				method: "DELETE",
-			}
-		);
-		if (!response.ok) throw new Error("Failed to delete FAQ");
-	}
+  // Resources
+  async createResource(data) {
+    return firestoreService.create(COLLECTIONS.RESOURCES, {
+      title: data.title,
+      description: data.description,
+      url: data.url,
+      category: data.category,
+      status: data.status || "draft",
+    });
+  },
 
-	async reorderFAQs(organizationId: number, faqIds: number[]): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/faqs/reorder`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ faqIds }),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to reorder FAQs");
-	}
+  async getResources() {
+    return firestoreService.getAll(COLLECTIONS.RESOURCES, "updatedAt");
+  },
 
-	async getFAQCategories(organizationId: number): Promise<string[]> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/faqs/categories`
-		);
-		if (!response.ok) throw new Error("Failed to fetch FAQ categories");
-		return response.json();
-	}
+  async updateResource(id, data) {
+    return firestoreService.update(COLLECTIONS.RESOURCES, id, data);
+  },
 
-	// Resources
-	async getResources(
-		organizationId: number,
-		category?: string
-	): Promise<Resource[]> {
-		const url = category
-			? `${
-					this.baseUrl
-			  }/${organizationId}/resources?category=${encodeURIComponent(
-					category
-			  )}`
-			: `${this.baseUrl}/${organizationId}/resources`;
+  async deleteResource(id) {
+    return firestoreService.delete(COLLECTIONS.RESOURCES, id);
+  },
 
-		const response = await fetch(url);
-		if (!response.ok) throw new Error("Failed to fetch resources");
-		return response.json();
-	}
+  // Feedback
+  async createFeedback(data) {
+    return firestoreService.create(COLLECTIONS.FEEDBACK, {
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+      status: "unread",
+      priority: data.priority || "medium",
+    });
+  },
 
-	async createResource(
-		organizationId: number,
-		resource: Omit<Resource, "id" | "lastUpdated" | "downloadCount">
-	): Promise<Resource> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/resources`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(resource),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to create resource");
-		return response.json();
-	}
+  async getFeedback() {
+    return firestoreService.getAll(COLLECTIONS.FEEDBACK, "createdAt");
+  },
 
-	async updateResource(
-		organizationId: number,
-		resourceId: number,
-		resource: Partial<Resource>
-	): Promise<Resource> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/resources/${resourceId}`,
-			{
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(resource),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to update resource");
-		return response.json();
-	}
+  async updateFeedback(id, data) {
+    return firestoreService.update(COLLECTIONS.FEEDBACK, id, data);
+  },
 
-	async deleteResource(
-		organizationId: number,
-		resourceId: number
-	): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/resources/${resourceId}`,
-			{
-				method: "DELETE",
-			}
-		);
-		if (!response.ok) throw new Error("Failed to delete resource");
-	}
+  async deleteFeedback(id) {
+    return firestoreService.delete(COLLECTIONS.FEEDBACK, id);
+  },
 
-	async uploadResourceFile(
-		organizationId: number,
-		resourceId: number,
-		file: File
-	): Promise<string> {
-		const formData = new FormData();
-		formData.append("file", file);
+  // Real-time subscriptions
+  subscribeToPrivacyPolicies(callback) {
+    return firestoreService.subscribe(
+      COLLECTIONS.PRIVACY_POLICIES,
+      callback,
+      "updatedAt"
+    );
+  },
 
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/resources/${resourceId}/upload`,
-			{
-				method: "POST",
-				body: formData,
-			}
-		);
+  subscribeToFAQs(callback) {
+    return firestoreService.subscribe(COLLECTIONS.FAQ, callback, "updatedAt");
+  },
 
-		if (!response.ok) throw new Error("Failed to upload file");
-		const result = await response.json();
-		return result.url;
-	}
+  subscribeToResources(callback) {
+    return firestoreService.subscribe(
+      COLLECTIONS.RESOURCES,
+      callback,
+      "updatedAt"
+    );
+  },
 
-	async getResourceCategories(organizationId: number): Promise<string[]> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/resources/categories`
-		);
-		if (!response.ok)
-			throw new Error("Failed to fetch resource categories");
-		return response.json();
-	}
+  subscribeToFeedback(callback) {
+    return firestoreService.subscribe(
+      COLLECTIONS.FEEDBACK,
+      callback,
+      "createdAt"
+    );
+  },
+};
 
-	// Organization Management
-	async getOrganization(organizationId: number): Promise<Organization> {
-		const response = await fetch(`${this.baseUrl}/${organizationId}`);
-		if (!response.ok) throw new Error("Failed to fetch organization");
-		return response.json();
-	}
-
-	async updateOrganizationSettings(
-		organizationId: number,
-		settings: Partial<Organization["settings"]>
-	): Promise<Organization> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/settings`,
-			{
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(settings),
-			}
-		);
-		if (!response.ok)
-			throw new Error("Failed to update organization settings");
-		return response.json();
-	}
-
-	// Bulk Operations
-	async bulkUpdateStatus(
-		organizationId: number,
-		type: "privacy" | "faq" | "resources",
-		ids: number[],
-		status: "published" | "draft"
-	): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/${type}/bulk-status`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ ids, status }),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to bulk update status");
-	}
-
-	async bulkDelete(
-		organizationId: number,
-		type: "privacy" | "faq" | "resources",
-		ids: number[]
-	): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/${type}/bulk-delete`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ ids }),
-			}
-		);
-		if (!response.ok) throw new Error("Failed to bulk delete items");
-	}
-
-	// Search and Filtering
-	async searchContent(
-		organizationId: number,
-		query: string,
-		type?: "privacy" | "faq" | "resources"
-	): Promise<{
-		privacy: PrivacyPolicy[];
-		faq: FAQ[];
-		resources: Resource[];
-	}> {
-		const params = new URLSearchParams({ query });
-		if (type) params.append("type", type);
-
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/search?${params}`
-		);
-		if (!response.ok) throw new Error("Failed to search content");
-		return response.json();
-	}
-
-	// Analytics
-	async getAnalytics(
-		organizationId: number,
-		dateRange?: { start: string; end: string }
-	): Promise<{
-		totalViews: number;
-		privacyPolicyViews: number;
-		faqViews: number;
-		resourceDownloads: number;
-		popularContent: Array<{
-			type: string;
-			id: number;
-			title: string;
-			views: number;
-		}>;
-	}> {
-		const params = new URLSearchParams();
-		if (dateRange) {
-			params.append("start", dateRange.start);
-			params.append("end", dateRange.end);
-		}
-
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/analytics?${params}`
-		);
-		if (!response.ok) throw new Error("Failed to fetch analytics");
-		return response.json();
-	}
-
-	// Version Management
-	async getVersionHistory(
-		organizationId: number,
-		type: "privacy" | "faq" | "resources",
-		itemId: number
-	): Promise<
-		Array<{
-			version: number;
-			createdAt: string;
-			createdBy: string;
-			changes: string[];
-		}>
-	> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/${type}/${itemId}/versions`
-		);
-		if (!response.ok) throw new Error("Failed to fetch version history");
-		return response.json();
-	}
-
-	async restoreVersion(
-		organizationId: number,
-		type: "privacy" | "faq" | "resources",
-		itemId: number,
-		version: number
-	): Promise<void> {
-		const response = await fetch(
-			`${this.baseUrl}/${organizationId}/${type}/${itemId}/versions/${version}/restore`,
-			{
-				method: "POST",
-			}
-		);
-		if (!response.ok) throw new Error("Failed to restore version");
-	}
-}
-
-export const organizationService = new OrganizationService();
+export { COLLECTIONS };
