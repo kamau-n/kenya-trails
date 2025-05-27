@@ -68,7 +68,7 @@ export default function Login() {
       const userCredential = await auth?.signIn(email, password);
       const user = userCredential?.user;
 
-      if (user && !user.emailVerified) {
+      if (user && !user.emailVerified && user.status === "active") {
         await auth?.signOut(); // force logout
         setError("Please verify your email before logging in.");
         return;

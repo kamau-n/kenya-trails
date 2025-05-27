@@ -32,6 +32,7 @@ export default function SignUp() {
     password: "",
     confirmPassword: "",
     userType: userTypeParam === "organizer" ? "organizer" : "traveler",
+    status: "active",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,7 +85,7 @@ export default function SignUp() {
         );
 
         // Optionally redirect to a "check your email" page
-        // router.push("/verify-email");
+        router.push("/login");
       }
     } catch (error) {
       console.error("Error during signup:", error);
