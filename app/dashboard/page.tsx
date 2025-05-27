@@ -1012,6 +1012,13 @@ export default function DashboardPage() {
                     className="border-slate-300 text-slate-700 hover:bg-slate-50">
                     Change Password
                   </Button>
+
+                  <Button
+                    onClick={handleDeactivateAccount}
+                    variant="destructive"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50">
+                    Delete Account
+                  </Button>
                 </div>
               </div>
             </CardContent>
