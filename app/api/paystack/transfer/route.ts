@@ -68,20 +68,17 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-const eventRef = doc(db, "events", body.eventId);
-const eventSnapshot = await getDoc(eventRef);
+    const eventRef = doc(db, "events", body.eventId);
+    const eventSnapshot = await getDoc(eventRef);
 
     if (!eventSnapshot.exists) {
       console.log("event not found");
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-
-
     const event = eventSnapshot.data() as EventData;
 
-    console.log(event)
-
+    console.log(event);
 
     if (event.collectionBalance < body.amount) {
       console.log("insufficient balance");
