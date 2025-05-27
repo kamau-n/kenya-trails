@@ -8,6 +8,7 @@ import {
   deleteDoc,
   orderBy,
   query,
+  where,
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
@@ -16,6 +17,7 @@ import { db } from "../firebase";
 // Collection names
 const COLLECTIONS = {
   PRIVACY_POLICIES: "privacy_policies",
+  TERMS_OF_SERVICE: "terms_of_service",
   FAQ: "faq",
   RESOURCES: "resources",
   FEEDBACK: "feedback",
@@ -24,7 +26,10 @@ const COLLECTIONS = {
 // Generic CRUD operations
 export const firestoreService = {
   // Create document
-  async create(collectionName, data) {
+  async create(collectionName: string, data: any) {
+    console.log("this is the data to create with");
+    console.log(collection);
+    console.log(data);
     try {
       const docRef = await addDoc(collection(db, collectionName), {
         ...data,
@@ -52,6 +57,33 @@ export const firestoreService = {
       }));
     } catch (error) {
       console.error(`Error fetching documents from ${collectionName}:`, error);
+      throw error;
+    }
+  },
+
+  // Read documents with filter
+  async getAllWithFilter(
+    collectionName,
+    filterField,
+    filterValue,
+    orderField = "createdAt"
+  ) {
+    try {
+      const q = query(
+        collection(db, collectionName),
+        where(filterField, "==", filterValue),
+        orderBy(orderField, "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error(
+        `Error fetching filtered documents from ${collectionName}:`,
+        error
+      );
       throw error;
     }
   },
@@ -97,6 +129,28 @@ export const firestoreService = {
       callback(documents);
     });
   },
+
+  // Subscribe with filter
+  subscribeWithFilter(
+    collectionName,
+    filterField,
+    filterValue,
+    callback,
+    orderField = "createdAt"
+  ) {
+    const q = query(
+      collection(db, collectionName),
+      where(filterField, "==", filterValue),
+      orderBy(orderField, "desc")
+    );
+    return onSnapshot(q, (querySnapshot) => {
+      const documents = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      callback(documents);
+    });
+  },
 };
 
 // Specific service functions for organization data
@@ -115,6 +169,15 @@ export const organizationService = {
     return firestoreService.getAll(COLLECTIONS.PRIVACY_POLICIES, "updatedAt");
   },
 
+  async getPublishedPrivacyPolicies() {
+    return firestoreService.getAllWithFilter(
+      COLLECTIONS.PRIVACY_POLICIES,
+      "status",
+      "published",
+      "updatedAt"
+    );
+  },
+
   async updatePrivacyPolicy(id, data) {
     return firestoreService.update(COLLECTIONS.PRIVACY_POLICIES, id, {
       ...data,
@@ -124,6 +187,44 @@ export const organizationService = {
 
   async deletePrivacyPolicy(id) {
     return firestoreService.delete(COLLECTIONS.PRIVACY_POLICIES, id);
+  },
+
+  // Terms of Service
+  async createTermsOfService(data) {
+    console.log("this is the data for creating a service");
+    return firestoreService.create(COLLECTIONS.TERMS_OF_SERVICE, {
+      title: data.title,
+      content: data.content,
+      version: data.version || "1.0",
+      effectiveDate:
+        data.effectiveDate || new Date().toISOString().split("T")[0],
+      status: data.status || "draft",
+      lastUpdated: new Date().toISOString().split("T")[0],
+    });
+  },
+
+  async getTermsOfService() {
+    return firestoreService.getAll(COLLECTIONS.TERMS_OF_SERVICE, "updatedAt");
+  },
+
+  async getPublishedTermsOfService() {
+    return firestoreService.getAllWithFilter(
+      COLLECTIONS.TERMS_OF_SERVICE,
+      "status",
+      "published",
+      "updatedAt"
+    );
+  },
+
+  async updateTermsOfService(id, data) {
+    return firestoreService.update(COLLECTIONS.TERMS_OF_SERVICE, id, {
+      ...data,
+      lastUpdated: new Date().toISOString().split("T")[0],
+    });
+  },
+
+  async deleteTermsOfService(id) {
+    return firestoreService.delete(COLLECTIONS.TERMS_OF_SERVICE, id);
   },
 
   // FAQ
@@ -138,6 +239,15 @@ export const organizationService = {
 
   async getFAQs() {
     return firestoreService.getAll(COLLECTIONS.FAQ, "updatedAt");
+  },
+
+  async getPublishedFAQs() {
+    return firestoreService.getAllWithFilter(
+      COLLECTIONS.FAQ,
+      "status",
+      "published",
+      "updatedAt"
+    );
   },
 
   async updateFAQ(id, data) {
@@ -161,6 +271,15 @@ export const organizationService = {
 
   async getResources() {
     return firestoreService.getAll(COLLECTIONS.RESOURCES, "updatedAt");
+  },
+
+  async getPublishedResources() {
+    return firestoreService.getAllWithFilter(
+      COLLECTIONS.RESOURCES,
+      "status",
+      "published",
+      "updatedAt"
+    );
   },
 
   async updateResource(id, data) {
@@ -204,6 +323,14 @@ export const organizationService = {
     );
   },
 
+  subscribeToTermsOfService(callback) {
+    return firestoreService.subscribe(
+      COLLECTIONS.TERMS_OF_SERVICE,
+      callback,
+      "updatedAt"
+    );
+  },
+
   subscribeToFAQs(callback) {
     return firestoreService.subscribe(COLLECTIONS.FAQ, callback, "updatedAt");
   },
@@ -221,6 +348,47 @@ export const organizationService = {
       COLLECTIONS.FEEDBACK,
       callback,
       "createdAt"
+    );
+  },
+
+  // Subscribe to published content only
+  subscribeToPublishedPrivacyPolicies(callback) {
+    return firestoreService.subscribeWithFilter(
+      COLLECTIONS.PRIVACY_POLICIES,
+      "status",
+      "published",
+      callback,
+      "updatedAt"
+    );
+  },
+
+  subscribeToPublishedTermsOfService(callback) {
+    return firestoreService.subscribeWithFilter(
+      COLLECTIONS.TERMS_OF_SERVICE,
+      "status",
+      "published",
+      callback,
+      "updatedAt"
+    );
+  },
+
+  subscribeToPublishedFAQs(callback) {
+    return firestoreService.subscribeWithFilter(
+      COLLECTIONS.FAQ,
+      "status",
+      "published",
+      callback,
+      "updatedAt"
+    );
+  },
+
+  subscribeToPublishedResources(callback) {
+    return firestoreService.subscribeWithFilter(
+      COLLECTIONS.RESOURCES,
+      "status",
+      "published",
+      callback,
+      "updatedAt"
     );
   },
 };

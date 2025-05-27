@@ -1064,7 +1064,7 @@ export default function AdminWithdrawalsPage() {
                     </label>
                     <p className="text-sm text-gray-900 font-medium">
                       ${selectedWithdrawal.amount.toLocaleString()}{" "}
-                      {selectedWithdrawal.currency || "USD"}
+                      {selectedWithdrawal.currency || "KES"}
                     </p>
                   </div>
                 </div>

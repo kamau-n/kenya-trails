@@ -153,8 +153,30 @@ export default function DashboardPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [cancelSuccess, setCancelSuccess] = useState("");
+
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [deactivateLoading, setDeactivateLoading] = useState(false);
   const router = useRouter();
+
+  const handleDeactivateAccount = async () => {
+    setDeactivateLoading(true);
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        accountStatus: "deactivated",
+        deactivatedAt: new Date(),
+      });
+
+      // Sign out the user after deactivation
+      await auth.signOut();
+      router.push("/login?message=account-deactivated");
+    } catch (error) {
+      console.error("Error deactivating account:", error);
+      alert("Failed to deactivate account. Please try again.");
+    } finally {
+      setDeactivateLoading(false);
+      setShowDeactivateModal(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;

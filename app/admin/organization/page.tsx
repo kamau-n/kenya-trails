@@ -2,6 +2,7 @@
 
 import { organizationService } from "@/lib/services/organizationServices";
 import { Edit, Eye, Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { renderToReadableStream } from "next/dist/server/app-render/entry-base";
 import { useEffect, useState } from "react";
 
 const AdminOrganizationsPage = () => {
@@ -14,12 +15,14 @@ const AdminOrganizationsPage = () => {
   // Sample data - in real app would come from database
   const [organizationData, setOrganizationData] = useState({
     privacy: [],
+    terms: [],
     faq: [],
     resources: [],
   });
 
   const [newItem, setNewItem] = useState({
     privacy: { title: "", content: "" },
+    terms: { title: "", content: "", version: "", effectiveDate: "" },
     faq: { question: "", answer: "", category: "" },
     resources: { title: "", description: "", url: "", category: "" },
   });
@@ -31,14 +34,17 @@ const AdminOrganizationsPage = () => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [privacyPolicies, faqs, resources] = await Promise.all([
-        organizationService.getPrivacyPolicies(),
-        organizationService.getFAQs(),
-        organizationService.getResources(),
-      ]);
+      const [privacyPolicies, termsOfService, faqs, resources] =
+        await Promise.all([
+          organizationService.getPrivacyPolicies(),
+          organizationService.getTermsOfService(),
+          organizationService.getFAQs(),
+          organizationService.getResources(),
+        ]);
 
       setOrganizationData({
         privacy: privacyPolicies,
+        terms: termsOfService,
         faq: faqs,
         resources: resources,
       });
@@ -50,6 +56,7 @@ const AdminOrganizationsPage = () => {
     }
   };
   const handleAdd = async (type) => {
+    console.log("Am to add a new value", type);
     if (
       !newItem[type] ||
       Object.values(newItem[type]).some((val) => !val.trim())
@@ -70,6 +77,10 @@ const AdminOrganizationsPage = () => {
             newItem[type]
           );
           break;
+        case "terms":
+          createdItem = await organizationService.createTermsOfService(
+            newItem[type]
+          );
         case "faq":
           createdItem = await organizationService.createFAQ(newItem[type]);
           break;
@@ -124,6 +135,9 @@ const AdminOrganizationsPage = () => {
             itemData
           );
           break;
+        case "terms":
+          await organizationService.deleteTermsOfService(id);
+          break;
         case "faq":
           updatedItem = await organizationService.updateFAQ(id, itemData);
           break;
@@ -163,6 +177,9 @@ const AdminOrganizationsPage = () => {
         case "privacy":
           await organizationService.deletePrivacyPolicy(id);
           break;
+        case "terms":
+          await organizationService.deleteTermsOfService(id);
+          break;
         case "faq":
           await organizationService.deleteFAQ(id);
           break;
@@ -197,6 +214,11 @@ const AdminOrganizationsPage = () => {
       switch (type) {
         case "privacy":
           await organizationService.updatePrivacyPolicy(id, {
+            status: newStatus,
+          });
+          break;
+        case "terms":
+          await organizationService.updateTermsOfService(id, {
             status: newStatus,
           });
           break;
@@ -316,6 +338,146 @@ const AdminOrganizationsPage = () => {
               </div>
             </div>
             <p className="text-gray-700 line-clamp-3">{policy.content}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderTermsTab = () => (
+    <div className="space-y-6">
+      {/* Add New Terms of Service */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h3 className="text-lg font-semibold mb-4">Add New Terms of Service</h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Terms Title"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={newItem.terms.title}
+              onChange={(e) =>
+                setNewItem((prev) => ({
+                  ...prev,
+                  terms: {
+                    ...prev.terms,
+                    title: e.target.value,
+                  },
+                }))
+              }
+            />
+            <input
+              type="text"
+              placeholder="Version (e.g., 1.0, 2.1)"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={newItem.terms.version}
+              onChange={(e) =>
+                setNewItem((prev) => ({
+                  ...prev,
+                  terms: {
+                    ...prev.terms,
+                    version: e.target.value,
+                  },
+                }))
+              }
+            />
+          </div>
+          <input
+            type="date"
+            placeholder="Effective Date"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={newItem.terms.effectiveDate}
+            onChange={(e) =>
+              setNewItem((prev) => ({
+                ...prev,
+                terms: {
+                  ...prev.terms,
+                  effectiveDate: e.target.value,
+                },
+              }))
+            }
+          />
+          <textarea
+            placeholder="Terms Content"
+            rows={6}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={newItem.terms.content}
+            onChange={(e) =>
+              setNewItem((prev) => ({
+                ...prev,
+                terms: {
+                  ...prev.terms,
+                  content: e.target.value,
+                },
+              }))
+            }
+          />
+          <button
+            onClick={() => {
+              console.log("am adding terms");
+              handleAdd("terms_of_service");
+            }}
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            {loading ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Plus size={20} />
+            )}
+            Add Terms
+          </button>
+        </div>
+      </div>
+
+      {/* Terms of Service List */}
+      <div className="space-y-4">
+        {organizationData.terms.map((terms) => (
+          <div
+            key={terms.id}
+            className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-lg font-semibold">{terms.title}</h4>
+                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    v{terms.version}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 space-y-1">
+                  <p>Effective Date: {terms.effectiveDate}</p>
+                  <p>Last updated: {terms.lastUpdated || "N/A"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${
+                    terms.status === "published"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}>
+                  {terms.status}
+                </span>
+                <button
+                  onClick={() => toggleStatus("terms", terms.id)}
+                  disabled={loading}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50">
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleEdit("terms", terms)}
+                  disabled={loading}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50">
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete("terms", terms.id)}
+                  disabled={loading}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+            <p className="text-gray-700 line-clamp-3">{terms.content}</p>
           </div>
         ))}
       </div>
@@ -606,6 +768,11 @@ const AdminOrganizationsPage = () => {
                   count: organizationData.privacy.length,
                 },
                 {
+                  id: "terms",
+                  label: "Terms Of Service",
+                  count: organizationData.terms.length,
+                },
+                {
                   id: "faq",
                   label: "FAQ",
                   count: organizationData.faq.length,
@@ -636,6 +803,7 @@ const AdminOrganizationsPage = () => {
 
         {/* Tab Content */}
         {activeTab === "privacy" && renderPrivacyTab()}
+        {activeTab === "terms" && renderTermsTab()}
         {activeTab === "faq" && renderFAQTab()}
         {activeTab === "resources" && renderResourcesTab()}
       </div>
