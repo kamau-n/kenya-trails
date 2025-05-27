@@ -34,8 +34,8 @@ export default function FeaturedEvents() {
         const q = query(
           eventsRef,
           where("date", ">=", now),
-          orderBy("date", "asc"),
-          limit(3)
+          where("isPromoted", "==", true),
+          orderBy("date", "asc")
         );
 
         const querySnapshot = await getDocs(q);
