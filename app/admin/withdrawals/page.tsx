@@ -310,7 +310,7 @@ export default function AdminWithdrawalsPage() {
           withdrawalId,
           accountDetails: withdrawalData.accountDetails,
           amount: withdrawalData.amount,
-          eventId: withdrawalData.eventId,
+          eventId: withdrawalData.eventReference,
           source, // Include the selected source
         }),
       });
