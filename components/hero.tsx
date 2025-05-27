@@ -78,7 +78,7 @@ export default function EnhancedHero() {
   return (
     <div
       ref={heroRef}
-      className="relative mt-3 md:mt-8 py-3  flex items-center rounded overflow-hidden bg-black">
+      className="relative mt-2 md:mt-8 py-3  flex items-center rounded overflow-hidden bg-black">
       {/* Dynamic Background with Parallax */}
       <div className="absolute inset-0 z-0">
         {images.map((image, index) => (
