@@ -183,7 +183,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
     <div className="container mx-auto px-4 py-8">
       {showBookingForm && (
         <BookingForm
-          open={() => void}
+          open={() => {}}
           event={event}
           onSuccess={handleBookingSuccess}
           onClose={() => {
