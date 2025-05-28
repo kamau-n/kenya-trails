@@ -472,14 +472,14 @@ export default function BookingFormModal({
               <PaystackButton
                 publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
                 email={user.email}
-                amount={paymentData.amount}
+                amount={paymenttData.amount}
                 reference={paymentData.reference}
                 currency="KES"
                 metadata={{
                   bookingId: bookingId,
                   eventId: event.id,
                   userId: user.uid,
-                  user: user,
+                  user: JSON.stringify(user),
                 }}
                 text="Pay with Paystack"
                 onSuccess={handlePaymentSuccess}
