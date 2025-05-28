@@ -38,6 +38,10 @@ export async function POST(req: Request) {
       platformFee: amount * (event.platformFee / 100),
       organizerAmount: amount * (1 - event.platformFee / 100),
       paymentFor: "eventBooking",
+      logs: {},
+      user: null,
+      authorization: {},
+      paymentReference: "",
     });
 
     // Return payment reference for Paystack
