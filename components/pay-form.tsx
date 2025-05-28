@@ -4,8 +4,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getPaystack } from "@/lib/paystack";
+import { FirebaseUser } from "@/app/dashboard/page";
+import { metadata } from "@/app/layout";
 
-export default function PaymentForm({ amount, onSuccess }) {
+type PaymentForm = {
+  amount: string;
+  onSuccess: () => void;
+  user: FirebaseUser;
+};
+
+export default function PaymentForm({ amount, onSuccess, user }: PaymentForm) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +30,7 @@ export default function PaymentForm({ amount, onSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, user }),
       });
 
       const { reference } = await response.json();
@@ -31,7 +39,9 @@ export default function PaymentForm({ amount, onSuccess }) {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         amount: amount * 100, // Convert to kobo
-        email: "customer@email.com", // Get from user context
+        email: user.email,
+        metadata: user,
+        // Get from user context
         reference,
         onSuccess: () => {
           onSuccess();

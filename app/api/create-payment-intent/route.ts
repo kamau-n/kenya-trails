@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   console.log("Posting payment intent with the following body");
   console.log(req);
   try {
-    const { amount, eventId, promotionId, userId } = await req.json();
+    const { amount, eventId, promotionId, userId, user } = await req.json();
 
     // Store payment record in Firebase
     const paymentDoc = await addDoc(collection(db, "payments"), {
@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       promotionId,
       channel: "",
       currency: "",
+      transactionCode: "",
+      user,
       customer: "",
       paidAt: serverTimestamp(),
       reference: "",
@@ -22,6 +24,8 @@ export async function POST(req: Request) {
       status: "pending",
       createdAt: serverTimestamp(),
       paymentFor: "eventPromtion",
+      logs: {},
+      authorization: {},
     });
 
     // Return payment reference for Paystack
