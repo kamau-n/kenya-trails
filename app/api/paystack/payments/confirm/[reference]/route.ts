@@ -120,45 +120,36 @@ export async function GET(req: Request, { params }: Params) {
               type: "event_promotion",
             })
           );
-        } else {
-          console.log(
-            "No Payment Reference was found, money left as unallocated"
-          );
-          const paymentDoc = await addDoc(collection(db, "payments"), {
-            eventId: "",
-            promotionId: "",
-            channel: responseData.data.channel,
-            currency: responseData.data.currency,
-            transactionCode: "",
-            user: {},
-            customer: responseData.data.customer,
-            paidAt: serverTimestamp(),
-            reference: "",
-            userId: "",
-            amount: responseData.data.amount,
-            status: "unallocated",
-            createdAt: serverTimestamp(),
-            paymentFor: "eventPromtion",
-            logs: {},
-            authorization: {},
-          });
-
-          return new Response(
-            JSON.stringify({
-              status: 201,
-              message: "No Payments Ref Found, Payment Saved as Unallocated",
-            })
-          );
         }
       } else {
         // create an unallocated payment with status unallocated
 
-        console.warn("No payment found for reference:", reference);
+        console.log(
+          "No Payment Reference was found, money left as unallocated"
+        );
+        const paymentDoc = await addDoc(collection(db, "payments"), {
+          eventId: "",
+          promotionId: "",
+          channel: responseData.data.channel,
+          currency: responseData.data.currency,
+          transactionCode: "",
+          user: {},
+          customer: responseData.data.customer,
+          paidAt: serverTimestamp(),
+          reference: "",
+          userId: "",
+          amount: responseData.data.amount,
+          status: "unallocated",
+          createdAt: serverTimestamp(),
+          paymentFor: "eventPromtion",
+          logs: {},
+          authorization: {},
+        });
 
         return new Response(
           JSON.stringify({
-            status: 500,
-            message: "No Payment Transaction  found",
+            status: 201,
+            message: "No Payments Ref Found, Payment Saved as Unallocated",
           })
         );
       }

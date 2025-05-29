@@ -335,6 +335,7 @@ export default function EventPaymentsPage({ params }) {
         status: "pending",
         createdAt: serverTimestamp(),
         accountDetails: event?.accountDetails,
+        withDrawalType: "eventRelated",
       });
 
       setSuccess("Withdrawal request submitted successfully");

@@ -1,11 +1,13 @@
 import { db } from "@/lib/firebase";
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   increment,
   query,
+  serverTimestamp,
   Timestamp,
   updateDoc,
   where,
@@ -111,6 +113,24 @@ export async function POST(req: Request) {
             });
           }
         } else {
+          await addDoc(collection(db, "withdrawals"), {
+            organizerId: "",
+            organizerName: "",
+            transferReference: event?.data?.reference,
+            eventReference: "",
+            transferRecipientCode: "",
+            amount: event?.data?.amount,
+            recipient: event?.data.recipient,
+            platformFee: "",
+            netAmount: "",
+            status: "completed",
+            createdAt: serverTimestamp(),
+            accountDetails: event?.accountDetails,
+            withDrawalType: "nonEventRelated",
+          });
+
+          // create non event Withdrawal
+
           console.warn("No withdrawal found for reference:", reference);
         }
 
