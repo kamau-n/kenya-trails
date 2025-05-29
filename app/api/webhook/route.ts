@@ -43,9 +43,8 @@ export async function POST(req: Request) {
             channel: event?.data?.channel,
             currency: event?.data?.currency,
             customer: event?.data?.customer,
-            user: event?.metadata?.user,
-            logs: event?.log,
-            authorization: event.authorization,
+            logs: event?.data?.log,
+            authorization: event?.data?.authorization,
           });
 
           if (paymentData.bookingId) {

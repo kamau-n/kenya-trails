@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,8 +69,13 @@ export function AuthProvider({ children }) {
         password
       );
 
+      const actionCodeSettings = {
+        url: "https://kenyatrails.co.ke/login", // 👈 redirect URL after verification
+        handleCodeInApp: false,
+      };
+
       await updateProfile(userCredential.user, { displayName });
-      await sendEmailVerification(userCredential.user);
+      await sendEmailVerification(userCredential.user, actionCodeSettings);
 
       await setDoc(doc(db, "users", userCredential.user.uid), {
         email,
@@ -179,8 +183,7 @@ export function AuthProvider({ children }) {
     try {
       await firebaseSignOut(auth);
       // navigate to login page
-      router.push("/login")
-      
+      router.push("/login");
     } catch (error) {
       throw error;
     }
