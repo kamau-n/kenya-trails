@@ -16,6 +16,7 @@ import {
 	Users2,
 	Video,
 	Wallet,
+	Wallet2,
 } from "lucide-react";
 
 import { Home } from "lucide-react";
@@ -160,6 +161,12 @@ export default function Sidebar() {
 										icon={Banknote}
 									>
 										Transactions
+									</NavItem>
+										<NavItem
+										href="/admin/operations"
+										icon={Wallet2}
+									>
+										Operations
 									</NavItem>
 								</div>
 							</div>
