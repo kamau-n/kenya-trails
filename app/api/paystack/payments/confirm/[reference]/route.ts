@@ -138,7 +138,7 @@ export async function GET(req: Request, { params }: Params) {
           paidAt: serverTimestamp(),
           reference: "",
           userId: "",
-          amount: responseData.data.amount,
+          amount: responseData.data.amount/100,
           status: "unallocated",
           createdAt: serverTimestamp(),
           paymentFor: "eventPromtion",
@@ -148,7 +148,7 @@ export async function GET(req: Request, { params }: Params) {
 
         return new Response(
           JSON.stringify({
-            status: 201,
+            status: 200,
             message: "No Payments Ref Found, Payment Saved as Unallocated",
           })
         );
