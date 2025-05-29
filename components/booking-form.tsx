@@ -472,7 +472,7 @@ export default function BookingFormModal({
               <PaystackButton
                 publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
                 email={user.email}
-                amount={paymenttData.amount}
+                amount={paymentData.amount}
                 reference={paymentData.reference}
                 currency="KES"
                 metadata={{
