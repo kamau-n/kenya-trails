@@ -42,6 +42,11 @@ export default function SignUp() {
   const auth = useAuth();
   const router = useRouter();
 
+  const actionCodeSettings = {
+  url: 'https://kenyatrails.co.ke/login', // 👈 redirect URL after verification
+  handleCodeInApp: false
+};
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
