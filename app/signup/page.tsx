@@ -19,7 +19,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, CheckCircle, Mail } from "lucide-react";
 
 export default function SignUp() {
   const searchParams = useSearchParams();
@@ -36,8 +36,16 @@ export default function SignUp() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  
   const auth = useAuth();
   const router = useRouter();
+
+  const actionCodeSettings = {
+  url: 'https://kenyatrails.co.ke/login', // 👈 redirect URL after verification
+  handleCodeInApp: false
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,12 +88,9 @@ export default function SignUp() {
           { merge: true }
         );
 
-        setError(
-          "Account created! Please check your email and verify it before logging in."
-        );
-
-        // Optionally redirect to a "check your email" page
-        router.push("/login");
+        // Show success state instead of redirecting immediately
+        setUserEmail(formData.email);
+        setRegistrationSuccess(true);
       }
     } catch (error) {
       console.error("Error during signup:", error);
@@ -94,6 +99,67 @@ export default function SignUp() {
       setLoading(false);
     }
   };
+
+  const handleContinueToLogin = () => {
+    router.push(redirectPath ? `/login?redirect=${redirectPath}` : "/login");
+  };
+
+  // If registration was successful, show confirmation screen
+  if (registrationSuccess) {
+    return (
+      <div className="container mx-auto px-4 py-16 flex justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl text-green-800">Account Created!</CardTitle>
+            <CardDescription>
+              We've sent a verification email to your inbox
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-blue-200 bg-blue-50">
+              <Mail className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800">Check your email</AlertTitle>
+              <AlertDescription className="text-blue-700">
+                We've sent a verification link to <strong>{userEmail}</strong>. 
+                Please check your email and click the verification link before logging in.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2 text-sm text-gray-600">
+              <p><strong>What's next?</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Check your email inbox (and spam folder)</li>
+                <li>Click the verification link in the email</li>
+                <li>Return here and log in to start exploring</li>
+              </ol>
+            </div>
+
+            <div className="text-center text-sm text-gray-500">
+              Didn't receive the email? Check your spam folder or try signing up again.
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-3">
+            <Button 
+              onClick={handleContinueToLogin}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              Continue to Login
+            </Button>
+            <Button 
+              variant="outline" 
+              asChild 
+              className="w-full"
+            >
+              <Link href="/">Return to Home</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   // If we're in demo mode, show a special message
   if (auth?.demoMode) {
