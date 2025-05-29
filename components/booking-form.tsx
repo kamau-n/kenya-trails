@@ -479,7 +479,6 @@ export default function BookingFormModal({
                   bookingId: bookingId,
                   eventId: event.id,
                   userId: user.uid,
-                  user: JSON.stringify(user),
                 }}
                 text="Pay with Paystack"
                 onSuccess={handlePaymentSuccess}
