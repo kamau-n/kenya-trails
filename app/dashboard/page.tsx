@@ -30,6 +30,8 @@ import {
   CheckCircle,
   CreditCard,
   Download,
+  Edit,
+  Edit2,
   MapPin,
   MessageCircle,
   Trash2,
@@ -94,6 +96,7 @@ export type events = {
   collectionBalance: number;
   category: string;
   duration: string;
+  isPromoted: boolean;
 };
 
 export type FirebaseUser = {
@@ -802,6 +805,16 @@ export default function DashboardPage() {
                           }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="absolute top-2 left-2 h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600"
+                          onClick={() => {
+                            router.push(`/events/${event.id}/edit`);
+                          }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg line-clamp-1">
@@ -837,23 +850,24 @@ export default function DashboardPage() {
                           <Button asChild variant="outline">
                             <Link href={`/events/${event.id}`}>View</Link>
                           </Button>
-                          <Button
-                            asChild
-                            variant="outline"
-                            className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">
-                            <Link href={`/events/${event.id}/promote`}>
-                              Promote
-                            </Link>
-                          </Button>
 
-                          <Button asChild variant="outline">
+                          {event?.isPromoted && (
+                            <Button
+                              asChild
+                              variant="outline"
+                              className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">
+                              <Link href={`/events/${event.id}/promote`}>
+                                Promote
+                              </Link>
+                            </Button>
+                          )}
+
+                          {/* <Button asChild variant="outline">
                             <Link href={`/organize/events/${event.id}/refunds`}>
                               Create Refunds
                             </Link>
-                          </Button>
-                          <Button asChild variant="outline">
-                            <Link href={`/events/${event.id}/edit`}>Edit</Link>
-                          </Button>
+                          </Button> */}
+
                           <Button
                             asChild
                             className="bg-green-600 hover:bg-green-700">
