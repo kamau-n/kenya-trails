@@ -504,6 +504,7 @@ export default function DashboardPage() {
       amount: payment.amount,
       reference: payment.reference || `PAY-${payment.id.substring(0, 8)}`,
       status: payment.status,
+      paymentFor: payment.paymentFor,
       createdAt: new Date(payment.createdAt),
       userEmail: user.email,
       userName: user.displayName,

@@ -23,6 +23,7 @@ export interface PaymentReceiptData {
   createdAt: Date;
   userEmail: string;
   userName?: string;
+  paymentFor?: string;
 }
 
 export class ModernReceiptGenerator {
@@ -328,8 +329,13 @@ export class ModernReceiptGenerator {
 
     // Payment Information Section
     currentY = this.addSectionTitle("PAYMENT INFORMATION", currentY);
-    currentY = this.addInfoRow("Service:", "Event Promotion", currentY, true);
-    currentY = this.addInfoRow("Event:", payment.eventTitle, currentY, true);
+    currentY = this.addInfoRow("Service:", payment?.paymentFor, currentY, true);
+    // currentY = this.addInfoRow(
+    //   "Event:",
+    //   payment.eventTitle || "Event",
+    //   currentY,
+    //   true
+    // );
     currentY = this.addInfoRow(
       "Payment Reference:",
       payment.reference,
@@ -405,6 +411,7 @@ export const downloadBookingReceipt = (booking: BookingReceiptData): void => {
 };
 
 export const downloadPaymentReceipt = (payment: PaymentReceiptData): void => {
+  console.log(payment);
   const generator = new ModernReceiptGenerator();
   generator.generatePaymentReceipt(payment);
   generator.save(`payment-receipt-${payment.id.substring(0, 8)}.pdf`);
