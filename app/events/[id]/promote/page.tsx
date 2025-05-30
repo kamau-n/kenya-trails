@@ -8,10 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { PaystackButton } from "react-paystack";
+import { FirebaseUser } from "@/app/dashboard/page";
+import { useAuth } from "@/components/auth-provider";
 
 const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
 export default function PromoteEventPage({ params }) {
+  const auth = useAuth();
+  const user: FirebaseUser = auth?.user;
   const { id } = params;
   const [promotions, setPromotions] = useState([]);
   const [event, setEvent] = useState(null);
@@ -59,6 +63,7 @@ export default function PromoteEventPage({ params }) {
           eventId: id,
           promotionId: promotion.id,
           userId: event?.organizerId || "anonymous",
+          user: user,
         }),
       });
 

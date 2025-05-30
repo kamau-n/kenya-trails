@@ -174,7 +174,7 @@ export default function DashboardPage() {
       alert("Failed to deactivate account. Please try again.");
     } finally {
       setDeactivateLoading(false);
-      setShowDeactivateModal(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -597,13 +597,14 @@ export default function DashboardPage() {
                 className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
                 My Events
               </TabsTrigger>
-              <TabsTrigger
-                value="payments"
-                className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
-                Payments
-              </TabsTrigger>
             </>
           )}
+
+          <TabsTrigger
+            value="payments"
+            className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">
+            Payments
+          </TabsTrigger>
           <TabsTrigger
             value="profile"
             className="data-[state=active]:bg-green-50 md:text-lg text-xs data-[state=active]:text-green-800">

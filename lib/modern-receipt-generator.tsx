@@ -66,7 +66,7 @@ export class ModernReceiptGenerator {
     this.doc.setTextColor(this.darkGray);
     this.doc.text("Kenya Trails Ltd.", 20, 50);
     this.doc.text("P.O. Box 12345, Nairobi, Kenya", 20, 55);
-    this.doc.text("Phone: +254 700 123 456", 20, 60);
+    this.doc.text("Phone: +254 759 155 650", 20, 60);
     this.doc.text("Email: info@kenyatrails.com", 20, 65);
     this.doc.text("Website: www.kenyatrails.com", 20, 70);
   }
@@ -115,7 +115,7 @@ export class ModernReceiptGenerator {
 
     this.doc.setTextColor(this.secondaryColor);
     this.doc.setFont("helvetica", bold ? "bold" : "normal");
-    // this.doc.text(value, 100, y);
+    this.doc.text(value, 100, y);
 
     return y + 6;
   }
@@ -217,6 +217,7 @@ export class ModernReceiptGenerator {
   }
 
   generateBookingReceipt(booking: BookingReceiptData): void {
+    console.log(booking);
     this.doc = new jsPDF();
 
     // Add watermark first (behind content)
