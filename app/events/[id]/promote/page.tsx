@@ -154,14 +154,14 @@ export default function PromoteEventPage({ params }) {
       <div className="container mx-auto px-4 py-8 lg:py-12">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-12">
+{/*           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
               Choose Your Promotion Package
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Select the package that best fits your event's needs and budget. All packages include our core promotion features.
             </p>
-          </div>
+          </div> */}
 
           {/* Promotion Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
