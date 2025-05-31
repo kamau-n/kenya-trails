@@ -851,7 +851,7 @@ export default function DashboardPage() {
                             <Link href={`/events/${event.id}`}>View</Link>
                           </Button>
 
-                          {event?.isPromoted && (
+                          {!event?.isPromoted && (
                             <Button
                               asChild
                               variant="outline"
