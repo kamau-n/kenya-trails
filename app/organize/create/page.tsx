@@ -56,6 +56,7 @@ export default function CreateEventPage() {
       bankName: "",
       accountNumber: "",
       accountName: "",
+      accountCode: "",
     },
     platformFee: 5,
   });
@@ -206,6 +207,9 @@ export default function CreateEventPage() {
             ? formData.accountDetails
             : null,
         collectionBalance: 0,
+        isPromoted: false,
+        promotionId: null,
+        promotionStartDate: null,
       };
 
       await addDoc(collection(db, "events"), eventData);
@@ -790,12 +794,16 @@ export default function CreateEventPage() {
               className="space-y-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="manual" id="manual" />
-                <Label htmlFor="manual">I'll manage payments myself</Label>
+                <Label htmlFor="manual">
+                  I'll manage payments myself(Bookings will be paid directly to
+                  me but i can still track and update them from here){" "}
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="platform" id="platform" />
                 <Label htmlFor="platform">
-                  Let the platform manage payments (5% fee)
+                  Let the platform manage payments (6% fee) (Let us manage all
+                  booking payments , track all payments an balances )
                 </Label>
               </div>
             </RadioGroup>
