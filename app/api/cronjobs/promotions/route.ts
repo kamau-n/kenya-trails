@@ -2,6 +2,7 @@ import { db } from "@/lib/firebase";
 import {
   collection,
   doc,
+  documentId,
   getDocs,
   query,
   updateDoc,
@@ -9,106 +10,115 @@ import {
 } from "firebase/firestore";
 import { NextResponse } from "next/server";
 
-type PromotionCron = {};
-
 export async function GET(req: Request) {
-  // search for all promoted events
+  try {
+    // Step 1: Find all promoted events
+    const eventQuery = query(
+      collection(db, "events"),
+      where("isPromoted", "==", true)
+    );
+    const eventSnapshot = await getDocs(eventQuery);
+    const events = eventSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
-  const eventQuery = query(
-    collection(db, "events"),
-    where("isPromoted", "==", true)
-  );
-
-  const eventSnapshot = await getDocs(eventQuery);
-
-  // extract the data
-  const events = eventSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-  // If there are no promoted events, return early
-  if (events.length === 0) {
-    return new NextResponse(
-      JSON.stringify({
+    if (events.length === 0) {
+      return NextResponse.json({
         status: 200,
         message: "No promoted events found",
-      }),
-      { status: 200 }
-    );
-  }
-  // Log the events found
-  console.log("Found promoted events:", events);
+      });
+    }
 
-  // now let  us get the promotions packages for these events (promotionId)
+    console.log(`Found ${events.length} promoted events`);
 
-  const promotionIds = events.map((event) => event.promotionId).filter(Boolean);
-  if (promotionIds.length === 0) {
-    return new NextResponse(
-      JSON.stringify({
+    // Step 2: Collect promotion IDs
+    const promotionIds = events
+      .map((event) => event.promotionId)
+      .filter((id): id is string => typeof id === "string");
+
+    if (promotionIds.length === 0) {
+      return NextResponse.json({
         status: 200,
-        message: "No promotion packages found for the promoted events",
-      }),
-      { status: 200 }
+        message: "No promotion IDs found",
+      });
+    }
+
+    console.log(`Looking up ${promotionIds.length} promotion packages`);
+
+    // Step 3: Batch Firestore queries (limit: 10 IDs per batch)
+    const promotionIdCopy = [...promotionIds];
+    const batches = [];
+
+    while (promotionIdCopy.length) {
+      const batch = promotionIdCopy.splice(0, 10);
+      const q = query(
+        collection(db, "promotions"),
+        where(documentId(), "in", batch)
+      );
+      batches.push(getDocs(q));
+    }
+
+    const snapshots = await Promise.all(batches);
+    const promotions = snapshots.flatMap((snapshot) =>
+      snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     );
-  }
-  const promotionQuery = query(
-    collection(db, "promotions"),
-    where("id", "in", promotionIds)
-  );
-  const promotionSnapshot = await getDocs(promotionQuery);
-  // extract the data
-  const promotions = promotionSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-  // Log the promotions found
-  console.log("Found promotions:", promotions);
-  // If there are no promotions, return early
-  if (promotions.length === 0) {
-    return new NextResponse(
-      JSON.stringify({
+
+    if (promotions.length === 0) {
+      return NextResponse.json({
         status: 200,
         message: "No promotions found for the promoted events",
-      }),
-      { status: 200 }
-    );
-  }
+      });
+    }
 
-  // loop throught the events and promotions to check if the promotion has expired , if yes, set isPromoted to false and remove the promotionId from the event
-  const currentDate = new Date();
-  for (const event of events) {
-    const promotion = promotions.find(
-      (promo) => promo.id === event.promotionId
-    );
+    console.log(`Loaded ${promotions.length} promotions`);
 
-    // promotion has no end date, it just has number of days
-    if (promotion && promotion.numberOfDays) {
-      const promotionEndDate = new Date(
-        event.promotionStartDate.toDate().getTime() +
-          promotion.numberOfDays * 24 * 60 * 60 * 1000
+    // Step 4: Determine expired promotions
+    const currentDate = new Date();
+    const updatePromises: Promise<void>[] = [];
+
+    for (const event of events) {
+      const promotion = promotions.find(
+        (promo) => promo.id === event.promotionId
       );
-      if (promotionEndDate < currentDate) {
-        console.log(
-          `Promotion ${promotion.id} for event ${event.id} has expired`
-        );
-        // Update the event to remove the promotion
+      const startDate = event.promotionStartDate?.toDate?.();
+      console.log("promotion start date", startDate);
 
-        await updateDoc(doc(db, "events", event.id), {
-          isPromoted: false,
-          promotionId: null,
-          promotionStartDate: null,
-        });
+      if (promotion && promotion.duration && startDate) {
+        console.log("I have all the data");
+        const endDate = new Date(
+          startDate.getTime() + promotion.duration * 86400000
+        );
+
+        console.log("this is the end date", endDate);
+        if (endDate < currentDate) {
+          console.log(
+            `Expiring promotion ${promotion.id} for event ${event.id}`
+          );
+          updatePromises.push(
+            updateDoc(doc(db, "events", event.id), {
+              isPromoted: false,
+              promotionId: null,
+              promotionStartDate: null,
+            })
+          );
+        }
       }
     }
-  }
-  // Log the completion of the cron job
-  console.log("Promotion cron job completed successfully");
-  // Return a success response
 
-  return new NextResponse(
-    JSON.stringify({
+    await Promise.all(updatePromises);
+
+    console.log("Promotion cron job completed successfully");
+
+    return NextResponse.json({
       status: 200,
       message: "Job has run successfully",
-    })
-  );
+    });
+  } catch (error) {
+    console.error("Error running promotion cron job:", error);
+    return NextResponse.json(
+      { status: 500, message: "Internal server error", error: String(error) },
+      { status: 500 }
+    );
+  }
 }
