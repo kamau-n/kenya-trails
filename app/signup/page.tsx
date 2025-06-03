@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { InfoIcon, CheckCircle, Mail } from "lucide-react";
 
@@ -34,18 +34,14 @@ export default function SignUp() {
     userType: userTypeParam === "organizer" ? "organizer" : "traveler",
     status: "active",
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  
+
   const auth = useAuth();
   const router = useRouter();
-
-  const actionCodeSettings = {
-  url: 'https://kenyatrails.co.ke/login', // 👈 redirect URL after verification
-  handleCodeInApp: false
-};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +53,12 @@ export default function SignUp() {
     setError("");
     setLoading(true);
 
-    // Validation
+    if (!acceptedTerms) {
+      setError("You must accept the Terms of Service and Privacy Policy.");
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -71,7 +72,6 @@ export default function SignUp() {
     }
 
     try {
-      // Create user with Firebase Auth
       const user = await auth?.signUp(
         formData.email,
         formData.password,
@@ -79,16 +79,19 @@ export default function SignUp() {
       );
 
       if (user) {
-        // Update user document with user type
         await setDoc(
           doc(db, "users", user.uid),
           {
             userType: formData.userType,
+            status: formData.status,
+            name: formData.name,
+            email: formData.email,
+            createdAt: serverTimestamp(),
+            ipAddress: "fetch-from-server-or-cloud-function",
           },
           { merge: true }
         );
 
-        // Show success state instead of redirecting immediately
         setUserEmail(formData.email);
         setRegistrationSuccess(true);
       }
@@ -104,7 +107,6 @@ export default function SignUp() {
     router.push(redirectPath ? `/login?redirect=${redirectPath}` : "/login");
   };
 
-  // If registration was successful, show confirmation screen
   if (registrationSuccess) {
     return (
       <div className="container mx-auto px-4 py-16 flex justify-center">
@@ -113,7 +115,9 @@ export default function SignUp() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl text-green-800">Account Created!</CardTitle>
+            <CardTitle className="text-2xl text-green-800">
+              Account Created!
+            </CardTitle>
             <CardDescription>
               We've sent a verification email to your inbox
             </CardDescription>
@@ -121,38 +125,37 @@ export default function SignUp() {
           <CardContent className="space-y-4">
             <Alert className="border-blue-200 bg-blue-50">
               <Mail className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800">Check your email</AlertTitle>
+              <AlertTitle className="text-blue-800">
+                Check your email
+              </AlertTitle>
               <AlertDescription className="text-blue-700">
-                We've sent a verification link to <strong>{userEmail}</strong>. 
-                Please check your email and click the verification link before logging in.
+                We've sent a verification link to <strong>{userEmail}</strong>.
+                Please check your email and click the verification link before
+                logging in.
               </AlertDescription>
             </Alert>
-            
             <div className="space-y-2 text-sm text-gray-600">
-              <p><strong>What's next?</strong></p>
+              <p>
+                <strong>What's next?</strong>
+              </p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
                 <li>Check your email inbox (and spam folder)</li>
                 <li>Click the verification link in the email</li>
                 <li>Return here and log in to start exploring</li>
               </ol>
             </div>
-
             <div className="text-center text-sm text-gray-500">
-              Didn't receive the email? Check your spam folder or try signing up again.
+              Didn't receive the email? Check your spam folder or try signing up
+              again.
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-3">
-            <Button 
+            <Button
               onClick={handleContinueToLogin}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
+              className="w-full bg-green-600 hover:bg-green-700">
               Continue to Login
             </Button>
-            <Button 
-              variant="outline" 
-              asChild 
-              className="w-full"
-            >
+            <Button variant="outline" asChild className="w-full">
               <Link href="/">Return to Home</Link>
             </Button>
           </CardFooter>
@@ -161,7 +164,6 @@ export default function SignUp() {
     );
   }
 
-  // If we're in demo mode, show a special message
   if (auth?.demoMode) {
     return (
       <div className="container mx-auto px-4 py-16 flex justify-center">
@@ -180,15 +182,12 @@ export default function SignUp() {
               <AlertTitle>Firebase credentials not found</AlertTitle>
               <AlertDescription>
                 To use authentication features, you need to configure your
-                Firebase credentials. Please add your Firebase configuration to
-                the environment variables.
+                Firebase credentials.
               </AlertDescription>
             </Alert>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Required environment variables:
-              </p>
-              <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
+            <div className="space-y-4 text-sm text-gray-600">
+              <p>Required environment variables:</p>
+              <ul className="list-disc pl-5 space-y-1">
                 <li>NEXT_PUBLIC_FIREBASE_API_KEY</li>
                 <li>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
                 <li>NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
@@ -294,6 +293,31 @@ export default function SignUp() {
                     <Label htmlFor="organizer">Organize and host events</Label>
                   </div>
                 </RadioGroup>
+              </div>
+
+              <div className="flex items-start space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1"
+                />
+                <label htmlFor="terms" className="text-gray-700">
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
+                    className="text-green-600 hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/policies"
+                    className="text-green-600 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </label>
               </div>
 
               <Button
