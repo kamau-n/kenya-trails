@@ -871,7 +871,7 @@ export default function DashboardPage() {
                           <Button
                             asChild
                             className="bg-green-600 hover:bg-green-700">
-                            {event.paymentManagement !== "platform" ? (
+                            {event.paymentManagement === "platform" ? (
                               <Link
                                 href={`/organize/events/${event.id}/payments`}>
                                 Manage Payments
