@@ -877,7 +877,8 @@ export default function DashboardPage() {
                                 Manage Payments
                               </Link>
                             ) : (
-                              <Link href={`/events/${event.id}/payments`}>
+                              <Link
+                                href={`/organize/events/${event.id}/bookings`}>
                                 Manage Payments
                               </Link>
                             )}
