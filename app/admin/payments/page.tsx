@@ -431,9 +431,6 @@ export default function PaymentsPage() {
                 <thead className="bg-gray-50">
                   <tr className="border-b border-gray-200">
                     <th className="px-6 py-4 text-left font-semibold text-gray-900">
-                      Payment ID
-                    </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-900">
                       User & Event
                     </th>
                     <th className="px-6 py-4 text-left font-semibold text-gray-900">
@@ -481,11 +478,6 @@ export default function PaymentsPage() {
                     <tr
                       key={payment.id}
                       className="hover:bg-gray-50 border-b border-gray-100">
-                      <td className="px-6 py-4">
-                        <div className="font-mono text-sm text-gray-900">
-                          {payment.id.substring(0, 12)}...
-                        </div>
-                      </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <div className="text-sm font-medium text-gray-900">
