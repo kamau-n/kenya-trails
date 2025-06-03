@@ -39,6 +39,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [paySource, setPaysource] = useState("all");
   const [sortField, setSortField] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,7 +77,7 @@ export default function PaymentsPage() {
     }).format(num);
 
   // Filtering logic
-  // Filtering with search, status, and date range
+  // Filtering with search, status, source,and date range
   const filtered = payments
     .filter(
       (payment) =>
@@ -87,6 +88,9 @@ export default function PaymentsPage() {
     .filter((payment) =>
       statusFilter === "all" ? true : payment.status === statusFilter
     )
+    .filter((payment) => {
+      paySource === "all" ? true : payment.paymentFor === paySource;
+    })
     .filter((payment) => {
       if (!dateFrom && !dateTo) return true;
       if (!payment.createdAt) return false;
@@ -392,6 +396,17 @@ export default function PaymentsPage() {
                   />
                 </div>
 
+                <Select value={paySource} onValueChange={setPaysource}>
+                  <SelectTrigger className="w-[140px] border-gray-300">
+                    <SelectValue placeholder="All Payments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="eventsBookings">Bookings</SelectItem>
+                    <SelectItem value="eventsPromotions">Promotions</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] border-gray-300">
                     <SelectValue placeholder="All Status" />
@@ -413,6 +428,7 @@ export default function PaymentsPage() {
                     onClick={() => {
                       setSearchTerm("");
                       setStatusFilter("all");
+                      setPaysource("all");
                     }}
                     className="text-gray-500 hover:text-gray-700">
                     Clear Filters
@@ -485,6 +501,9 @@ export default function PaymentsPage() {
                           </div>
                           <div className="text-xs text-gray-500">
                             Event: {payment.eventId}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Ref: {payment.id}
                           </div>
                         </div>
                       </td>
