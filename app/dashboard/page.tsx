@@ -871,10 +871,16 @@ export default function DashboardPage() {
                           <Button
                             asChild
                             className="bg-green-600 hover:bg-green-700">
-                            <Link
-                              href={`/organize/events/${event.id}/payments`}>
-                              Manage Payments
-                            </Link>
+                            {event.paymentManagement !== "platform" ? (
+                              <Link
+                                href={`/organize/events/${event.id}/payments`}>
+                                Manage Payments
+                              </Link>
+                            ) : (
+                              <Link href={`/events/${event.id}/payments`}>
+                                Manage Payments
+                              </Link>
+                            )}
                           </Button>
                         </div>
                       </CardFooter>
