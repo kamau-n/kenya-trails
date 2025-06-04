@@ -373,7 +373,7 @@ export default function EventBookingsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="container mx-auto md:px-4  px-2 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
@@ -439,7 +439,7 @@ export default function EventBookingsPage({ params }) {
                 <p className="text-sm font-medium text-gray-600">
                   Total Bookings
                 </p>
-                <p className="text-2xl font-bold">{totalBookings}</p>
+                <p className="md:text-2xl text-xl font-bold">{totalBookings}</p>
               </div>
               <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <Users className="h-4 w-4 text-blue-600" />
@@ -455,7 +455,7 @@ export default function EventBookingsPage({ params }) {
                 <p className="text-sm font-medium text-gray-600">
                   Total People
                 </p>
-                <p className="text-2xl font-bold">{totalPeople}</p>
+                <p className="md:text-2xl text-xl font-bold">{totalPeople}</p>
               </div>
               <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
                 <TrendingUp className="h-4 w-4 text-purple-600" />
@@ -469,7 +469,7 @@ export default function EventBookingsPage({ params }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="md:text-2xl text-xl font-bold text-green-600">
                   {formatCurrency(totalRevenue)}
                 </p>
               </div>
@@ -485,7 +485,7 @@ export default function EventBookingsPage({ params }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="md:text-2xl text-xl font-bold text-yellow-600">
                   {formatCurrency(pendingPayments)}
                 </p>
               </div>

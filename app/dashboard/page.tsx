@@ -715,14 +715,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="bg-slate-50 mt-2">
+                  <CardFooter className="bg-slate-50 p-2 mt-2">
                     <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
                       <Button asChild variant="outline">
                         <Link href={`/events/${booking.eventId}`}>
                           View Event
                         </Link>
                       </Button>
-                      <div className="flex gap-2">
+                      <div className="flex justify-between gap-2">
                         {booking.amountDue > 0 &&
                           platformManagedEvents.includes(booking.eventId) && (
                             <Button
@@ -738,13 +738,13 @@ export default function DashboardPage() {
                           <Download className="h-4 w-4" />
                           Receipt
                         </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleCancelBooking(booking)}
-                          disabled={booking.status === "cancelled"}>
-                          Cancel Booking
-                        </Button>
                       </div>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleCancelBooking(booking)}
+                        disabled={booking.status === "cancelled"}>
+                        Cancel Booking
+                      </Button>
                     </div>
                   </CardFooter>
                 </Card>
