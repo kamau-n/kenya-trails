@@ -23,7 +23,7 @@ import {
 import { Calendar, MapPin, Users, Search, Plus } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { event } from "@/app/types/types";
+import { events } from "@/app/dashboard/page";
 
 export default function OrganizerEventsPage() {
   const auth = useAuth();
@@ -31,7 +31,7 @@ export default function OrganizerEventsPage() {
   const authLoading = auth?.loading || false;
   const router = useRouter();
 
-  const [events, setEvents] = useState<event[]>([]);
+  const [events, setEvents] = useState<events[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
@@ -231,16 +231,23 @@ export default function OrganizerEventsPage() {
                     <Link href={`/events/${event.id}`}>View</Link>
                   </Button>
 
-                  <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <Link href={`/events/${event.id}/promote`}>
-                      Promote Event
-                    </Link>
-                  </Button>
-
+                  {!event.isPromoted && (
+                    <Button asChild className="bg-green-600 hover:bg-green-700">
+                      <Link href={`/events/${event.id}/promote`}>
+                        Promote Event
+                      </Link>
+                    </Button>
+                  )}
                   <Button asChild>
-                    <Link href={`/organize/events/${event.id}/bookings`}>
-                      Manage Bookings
-                    </Link>
+                    {event.paymentManagement === "platform" ? (
+                      <Link href={`/organize/events/${event.id}/payments`}>
+                        Manage Bookings
+                      </Link>
+                    ) : (
+                      <Link href={`/organize/events/${event.id}/bookings`}>
+                        Manage Bookings
+                      </Link>
+                    )}
                   </Button>
                 </CardFooter>
               </Card>
