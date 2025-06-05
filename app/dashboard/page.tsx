@@ -72,6 +72,7 @@ import {
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cancelResponse } from "../api/bookings/cancel/route";
+import EnhancedProfileTab from "@/components/profiletab";
 
 export type accountDetails = {
   bankName: string;
@@ -967,7 +968,13 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card className="border-slate-200 shadow-sm">
+          <EnhancedProfileTab
+            auth={auth}
+            deactivateLoading={deactivateLoading}
+            handleDeactivateAccount={handleDeactivateAccount}
+            user={user}
+          />
+          {/* <Card className="border-slate-200 shadow-sm">
             <CardHeader className="bg-slate-50">
               <CardTitle className="md:text-2xl text-lg">
                 Profile Information
@@ -1045,7 +1052,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </TabsContent>
       </Tabs>
 
