@@ -88,9 +88,9 @@ export default function PaymentsPage() {
     .filter((payment) =>
       statusFilter === "all" ? true : payment.status === statusFilter
     )
-    .filter((payment) => {
-      paySource === "all" ? true : payment.paymentFor === paySource;
-    })
+    // .filter((payment) => {
+    //   paySource === "all" ? true : payment.paymentFor === paySource;
+    // })
     .filter((payment) => {
       if (!dateFrom && !dateTo) return true;
       if (!payment.createdAt) return false;
