@@ -35,7 +35,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PaystackButton } from "react-paystack";
 
 export type user = {
@@ -70,6 +70,7 @@ export default function BookingFormModal({
   const [error, setError] = useState("");
   const [paymentData, setPaymentData] = useState(null);
   const [bookingId, setBookingId] = useState("");
+  const [isPaystackOpen, setIsPaystackOpen] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -99,6 +100,7 @@ export default function BookingFormModal({
   const remainingAmount = totalAmount - paymentAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("this is the step", step);
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -167,6 +169,8 @@ export default function BookingFormModal({
 
   const handlePaymentSuccess = async (reference: any) => {
     setStep("processing");
+
+    setIsPaystackOpen(false);
     try {
       await updateDoc(doc(db, "events", event.id), {
         availableSpaces: increment(-formData.numberOfPeople),
@@ -183,6 +187,19 @@ export default function BookingFormModal({
   const handlePaymentClose = () => {
     setStep("details");
     setPaymentData(null);
+    setIsPaystackOpen(false);
+  };
+
+  // Handle Paystack popup open
+  const handlePaystackOpen = () => {
+    console.log("am opening paystack module");
+    // setIsPaystackOpen(true);
+  };
+
+  // Handle Paystack popup close
+  const handlePaystackPopupClose = () => {
+    setIsPaystackOpen(false);
+    // Optionally go back to payment step or stay on current step
   };
 
   const resetForm = () => {
@@ -195,6 +212,7 @@ export default function BookingFormModal({
     setError("");
     setPaymentData(null);
     setBookingId("");
+    setIsPaystackOpen(false);
   };
 
   const handleClose = () => {
@@ -202,10 +220,13 @@ export default function BookingFormModal({
     onClose();
   };
 
+  // Close this modal when Paystack opens
+  const shouldShowModal = open && !isPaystackOpen;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={shouldShowModal} onOpenChange={handleClose}>
       <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl mx-4 max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
+        <DialogHeader className="pb-3">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg sm:text-xl font-semibold">
               {step === "details" && "Book Your Adventure"}
@@ -299,7 +320,7 @@ export default function BookingFormModal({
                         paymentOption: value,
                       }))
                     }
-                    className="space-y-3">
+                    className="flex flex-row justify-between p-2">
                     <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                       <RadioGroupItem value="full" id="full" />
                       <div className="flex-1">
@@ -333,7 +354,7 @@ export default function BookingFormModal({
               )}
 
             {/* Special Requirements */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label
                 htmlFor="specialRequirements"
                 className="text-sm font-medium">
@@ -346,14 +367,14 @@ export default function BookingFormModal({
                 onChange={handleChange}
                 placeholder="Any dietary restrictions, medical conditions, or special requests..."
                 className="resize-none"
-                rows={3}
+                rows={2}
               />
             </div>
 
             <Separator />
 
             {/* Booking Summary */}
-            <div className="space-y-3 bg-gray-50 rounded-lg p-4">
+            <div className="space-y-3 bg-gray-50 rounded-lg p-3">
               <h4 className="font-semibold text-gray-900">Booking Summary</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -480,9 +501,13 @@ export default function BookingFormModal({
                   eventId: event.id,
                   userId: user.uid,
                 }}
+                onClick={() => {
+                  "i have been clicked";
+                }}
                 text="Pay with Paystack"
                 onSuccess={handlePaymentSuccess}
-                onClose={handlePaymentClose}
+                onClose={handlePaystackPopupClose}
+                onStart={handlePaystackOpen}
                 className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
               />
 
@@ -493,6 +518,11 @@ export default function BookingFormModal({
                 Back to Details
               </Button>
             </div>
+
+            {/* Hidden Paystack button that will open in a popup/iframe */}
+            {isPaystackOpen && (
+              <div className="fixed inset-0 z-50 bg-black/50" />
+            )}
           </div>
         )}
 
