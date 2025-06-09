@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PaystackButton } from "react-paystack";
+import PayButton from "./paystack/paybutton";
 
 export type user = {
   uid: string;
@@ -193,12 +194,12 @@ export default function BookingFormModal({
   // Handle Paystack popup open
   const handlePaystackOpen = () => {
     console.log("am opening paystack module");
-    // setIsPaystackOpen(true);
+    setIsPaystackOpen(false);
   };
 
   // Handle Paystack popup close
   const handlePaystackPopupClose = () => {
-    setIsPaystackOpen(false);
+    onClose();
     // Optionally go back to payment step or stay on current step
   };
 
@@ -225,7 +226,7 @@ export default function BookingFormModal({
 
   return (
     <Dialog open={shouldShowModal} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl mx-4 max-h-[95vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl mx-auto md:mx-4 max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg sm:text-xl font-semibold">
@@ -244,7 +245,7 @@ export default function BookingFormModal({
         </DialogHeader>
 
         {/* Event Summary Card - Always Visible */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-6">
+        {/* <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base line-clamp-2">
@@ -272,7 +273,7 @@ export default function BookingFormModal({
               <p className="text-xs sm:text-sm text-gray-500">per person</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -320,7 +321,7 @@ export default function BookingFormModal({
                         paymentOption: value,
                       }))
                     }
-                    className="flex flex-row justify-between p-2">
+                    className="flex-col md:flex-row md:justify-between p-2">
                     <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                       <RadioGroupItem value="full" id="full" />
                       <div className="flex-1">
@@ -490,7 +491,21 @@ export default function BookingFormModal({
             </div>
 
             <div className="space-y-3">
-              <PaystackButton
+              <PayButton
+                amount={paymentData.amount}
+                reference={paymentData.reference}
+                email={user.email}
+                metadata={{
+                  bookingId: bookingId,
+                  eventId: event.id,
+                  userId: user.uid,
+                }}
+                onClose={handlePaystackPopupClose}
+                onSuccess={handlePaymentSuccess}
+                onStart={handlePaystackPopupClose}
+              />
+
+              {/* <PaystackButton
                 publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
                 email={user.email}
                 amount={paymentData.amount}
@@ -509,7 +524,7 @@ export default function BookingFormModal({
                 onClose={handlePaystackPopupClose}
                 onStart={handlePaystackOpen}
                 className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-              />
+              /> */}
 
               <Button
                 variant="outline"

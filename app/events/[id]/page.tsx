@@ -193,7 +193,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
       )}
       <div className="container mx-auto px-4 py-8">
         {/* Event Header */}
-        <div className="relative h-80 md:h-96 rounded-xl overflow-hidden mb-8">
+        <div className="relative h-72 md:h-96 rounded-xl overflow-hidden mb-8">
           <img
             src={event.imageUrl || "/placeholder.svg?height=600&width=1200"}
             alt={event.title}
@@ -202,7 +202,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
             <div className="p-6 md:p-8 w-full">
               <Badge className="mb-4 bg-green-600">{event.category}</Badge>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
                 {event.title}
               </h1>
               <div className="flex flex-wrap gap-4 text-white">
@@ -236,14 +236,16 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
 
               <TabsContent value="details" className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">
+                  <h2 className="md:text-2xl text-xl font-bold mb-4">
                     About This Adventure
                   </h2>
                   <p className="text-gray-700">{event.description}</p>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3">Meeting Point</h3>
+                  <h3 className="md:text-xl font-semibold mb-3">
+                    Meeting Point
+                  </h3>
                   <div className="flex items-start">
                     <MapPin className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
                     <p>{event.meetingPoint}</p>
@@ -252,7 +254,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-xl font-semibold mb-3">
+                    <h3 className="md:text-xl font-semibold mb-3">
                       What's Included
                     </h3>
                     <ul className="space-y-2">
@@ -266,7 +268,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-semibold mb-3">
+                    <h3 className="md:text-xl font-semibold mb-3">
                       What's Not Included
                     </h3>
                     <ul className="space-y-2">
@@ -285,7 +287,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
                     console.log("this is the organizer", organizer);
                     router.push(`/organizer/${event.organizerId}`);
                   }}>
-                  <h3 className="text-xl font-semibold mb-3">Organizer</h3>
+                  <h3 className="md:text-xl font-semibold mb-3">Organizer</h3>
                   <div className="flex items-start">
                     <User className="h-5 w-5 text-gray-600 mr-2 mt-0.5" />
                     <div>
@@ -395,7 +397,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="md:text-2xl text-xl font-bold text-green-600">
                         KSh {event.price?.toLocaleString()}
                       </p>
                       <p className="text-gray-600">per person</p>
