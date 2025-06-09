@@ -8,9 +8,9 @@ interface Props {
   email: string;
   reference: string;
   metadata: any;
-  onSuccess: () => void;
-  onClose: () => void;
-  onStart?: () => void;
+  onSuccess?: () => {};
+  onClose?: () => {};
+  onStart?: () => {};
 }
 
 export default function PayButton({
@@ -25,6 +25,8 @@ export default function PayButton({
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
+
+    console.log(onClose)
     loadPaystackScript().then(() => {
       setScriptLoaded(true);
     });
@@ -43,7 +45,7 @@ export default function PayButton({
       metadata,
       callback: async () => {
         console.log("succefull payment");
-        onSuccess();
+        onSuccess?();
       },
       onClose,
     });

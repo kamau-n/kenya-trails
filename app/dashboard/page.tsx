@@ -73,70 +73,17 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cancelResponse } from "../api/bookings/cancel/route";
 import EnhancedProfileTab from "@/components/profiletab";
+import {
+  booking,
+  events,
+  FirebaseUser,
+  payments,
+} from "../types/dashboardtypes";
 
 export type accountDetails = {
   bankName: string;
   accountNumber: string;
   accountName: string;
-};
-export type events = {
-  toDate: Date;
-  title: string;
-  location: string;
-  fromDate: Date;
-  availableSpaces: number;
-  totaSpaces: number;
-  date: Date;
-  price: number;
-  totalSpaces: number;
-  id: string;
-  imageUrl: string;
-  paymentManagement: string;
-  organizerId: string;
-  accountDetails: accountDetails;
-  collectionBalance: number;
-  category: string;
-  duration: string;
-  isPromoted: boolean;
-};
-
-export type FirebaseUser = {
-  uid: string;
-  email: string | null;
-  emailVerified: boolean;
-  displayName: string | null;
-  photoURL: string | null;
-  phoneNumber: string | null;
-  providerId: string;
-  disabled?: boolean;
-  metadata?: {
-    creationTime: string;
-    lastSignInTime: string;
-  };
-  customClaims?: Record<string, any>; // e.g., { role: "admin" }
-  tokensValidAfterTime?: string;
-};
-
-export type booking = {
-  id: string;
-  eventId: string;
-  eventTitle: string;
-  paymentStatus: string;
-  amountPaid: number;
-  totalAmount: number;
-  bookingDate: Date;
-  amountDue: number;
-  numberOfPeople: number;
-  userName: string;
-};
-
-export type payments = {
-  amount: number;
-  reference: string;
-  status: string;
-  createdAt: Date;
-  eventTitle: string;
-  id: string;
 };
 
 export default function DashboardPage() {
@@ -525,9 +472,6 @@ export default function DashboardPage() {
       .map((ev) => ev.id);
   }
 
-  console.log("this are the  platform managed events", platformManagedEvents);
-  console.log("this are all the bookings", bookings);
-
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://js.paystack.co/v1/inline.js";
@@ -740,12 +684,12 @@ export default function DashboardPage() {
                           Receipt
                         </Button>
                       </div>
-                      <Button
+                      {/* <Button
                         variant="destructive"
                         onClick={() => handleCancelBooking(booking)}
                         disabled={booking.status === "cancelled"}>
                         Cancel Booking
-                      </Button>
+                      </Button> */}
                     </div>
                   </CardFooter>
                 </Card>
@@ -913,11 +857,9 @@ export default function DashboardPage() {
                 ) : displayPayments.length === 0 ? (
                   <div className="text-center py-12 border rounded-lg bg-slate-50">
                     <CreditCard className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-600">
-                      No promotion payments found
-                    </p>
+                    <p className="text-slate-600">No payments found</p>
                     <p className="text-slate-500 text-sm mt-2">
-                      Payments will appear here when you promote your events
+                      Payments for events and promotions will appear here
                     </p>
                   </div>
                 ) : (
