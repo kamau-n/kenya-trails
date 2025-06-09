@@ -1,5 +1,6 @@
 "use client";
 import { loadPaystackScript } from "@/lib/paystack";
+import { doc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -7,7 +8,7 @@ interface Props {
   email: string;
   reference: string;
   metadata: any;
-  onSuccess: (response: any) => void;
+  onSuccess: () => void;
   onClose: () => void;
   onStart?: () => void;
 }
@@ -40,8 +41,9 @@ export default function PayButton({
       currency: "KES",
       ref: reference,
       metadata,
-      callback: () => {
+      callback: async () => {
         console.log("succefull payment");
+        onSuccess();
       },
       onClose,
     });
