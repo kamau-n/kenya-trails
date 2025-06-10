@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 
-export const downloadAllBookings = async (bookings, event) => {
+export const downloadAllBookings = async (bookings: any, event: any) => {
   try {
     const jsPDF = (await import("jspdf")).default;
     const doc = new jsPDF();
@@ -82,11 +82,12 @@ export const downloadAllBookings = async (bookings, event) => {
 
       // Column headers with proper spacing for PDF width
       doc.text("CUSTOMER", 25, yPosition);
-      doc.text("DATE", 75, yPosition);
-      doc.text("TOTAL", 105, yPosition);
-      doc.text("PAID", 130, yPosition);
-      doc.text("DUE", 150, yPosition);
-      doc.text("STATUS", 170, yPosition);
+      doc.text("DATE", 55, yPosition);
+      doc.text("TOTAL", 85, yPosition);
+      doc.text("PEOPLE", 105, yPosition);
+      doc.text("PAID", 135, yPosition);
+      doc.text("DUE", 160, yPosition);
+      doc.text("STATUS", 180, yPosition);
 
       yPosition += 18;
     };
@@ -119,12 +120,13 @@ export const downloadAllBookings = async (bookings, event) => {
       doc.text(customerName, 25, yPosition);
 
       // Date
-      doc.text(bookingDate, 75, yPosition);
+      doc.text(bookingDate, 55, yPosition);
 
       // Amounts with proper formatting - aligned with headers
-      doc.text(booking.totalAmount.toLocaleString(), 105, yPosition);
-      doc.text(booking.amountPaid.toLocaleString(), 130, yPosition);
-      doc.text(booking.amountDue.toLocaleString(), 150, yPosition);
+      doc.text(booking.totalAmount.toLocaleString(), 85, yPosition);
+      doc.text(booking.numberOfPeople.toLocaleString(), 105, yPosition);
+      doc.text(booking.amountPaid.toLocaleString(), 135, yPosition);
+      doc.text(booking.amountDue.toLocaleString(), 160, yPosition);
 
       // Status with modern styling
       const statusText = booking.paymentStatus.toUpperCase();
@@ -143,7 +145,7 @@ export const downloadAllBookings = async (bookings, event) => {
 
       doc.setTextColor(...statusColor);
       doc.setFont("helvetica", "bold");
-      doc.text(statusText, 170, yPosition);
+      doc.text(statusText, 180, yPosition);
 
       yPosition += rowHeight;
     };
@@ -301,11 +303,27 @@ export const downloadBookingsAsExcel = async (
   bookings: any,
   totalCollections: any,
   collectionBalance: any,
-  totalDue: any
+  totalDue: any,
+  paidBookings: any,
+  pendingBookings: any,
+  partialBookings: any
 ) => {
   try {
-    // Prepare data for Excel
-    const excelData = filteredBookings().map((booking, index) => ({
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Prepare booking data - ensure each booking is unique and not duplicated
+    const uniqueBookings = filteredBookings().reduce((acc, booking) => {
+      // Check if booking already exists in accumulator
+      const existingBooking = acc.find((b) => b.id === booking.id);
+      if (!existingBooking) {
+        acc.push(booking);
+      }
+      return acc;
+    }, []);
+
+    // Prepare data for Excel with proper structure
+    const excelData = uniqueBookings.map((booking, index) => ({
       "S/N": index + 1,
       "Booking ID": booking.id,
       "Customer Name": booking.userName,
@@ -321,59 +339,75 @@ export const downloadBookingsAsExcel = async (
       Phone: booking.userPhone || "N/A",
     }));
 
-    // Create workbook and worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
+    // Create summary worksheet
+    const summaryData = [
+      ["Event Summary"],
+      ["Event Name", event.title],
+      ["Event Date", new Date(event.date?.seconds * 1000).toLocaleDateString()],
+      ["Total Bookings", bookings.length],
+      ["Total Collections", `KSh ${totalCollections.toLocaleString()}`],
+      ["Available Balance", `KSh ${collectionBalance.toLocaleString()}`],
+      ["Pending Payments", `KSh ${totalDue.toLocaleString()}`],
+      ["Paid Bookings", paidBookings],
+      ["Partially Paid", partialBookings],
+      ["Pending Bookings", pendingBookings],
+      [],
+      ["Payment Statistics"],
+      [
+        "Collection Rate",
+        `${
+          totalCollections + totalDue > 0
+            ? Math.round(
+                (totalCollections / (totalCollections + totalDue)) * 100
+              )
+            : 0
+        }%`,
+      ],
+      ["Generated On", new Date().toLocaleString()],
+    ];
 
-    // Set column widths
-    const colWidths = [
+    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+
+    // Set column widths for summary
+    summaryWs["!cols"] = [
+      { wch: 20 }, // Labels
+      { wch: 30 }, // Values
+    ];
+
+    // Create bookings worksheet with clean data
+    const bookingsWs = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths for bookings
+    bookingsWs["!cols"] = [
       { wch: 5 }, // S/N
-      { wch: 15 }, // Booking ID
-      { wch: 20 }, // Customer Name
-      { wch: 25 }, // Email
+      { wch: 20 }, // Booking ID
+      { wch: 25 }, // Customer Name
+      { wch: 30 }, // Email
       { wch: 15 }, // Booking Date
       { wch: 12 }, // Number of People
-      { wch: 15 }, // Total Amount
-      { wch: 15 }, // Amount Paid
-      { wch: 15 }, // Balance Due
+      { wch: 18 }, // Total Amount
+      { wch: 18 }, // Amount Paid
+      { wch: 18 }, // Balance Due
       { wch: 15 }, // Payment Status
       { wch: 15 }, // Phone
     ];
-    ws["!cols"] = colWidths;
 
-    // Add summary row at the top
-    XLSX.utils.sheet_add_aoa(
-      ws,
-      [
-        [`Event: ${event.title}`],
-        [`Date: ${new Date(event.date?.seconds * 1000).toLocaleDateString()}`],
-        [`Total Bookings: ${bookings.length}`],
-        [`Total Collections: KSh ${totalCollections.toLocaleString()}`],
-        [`Available Balance: KSh ${collectionBalance.toLocaleString()}`],
-        [`Pending Payments: KSh ${totalDue.toLocaleString()}`],
-        [], // Empty row
-      ],
-      { origin: "A1" }
-    );
-
-    // Adjust data starting row
-    XLSX.utils.sheet_add_json(ws, excelData, { origin: "A9" });
-
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    // Add worksheets to workbook
+    XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+    XLSX.utils.book_append_sheet(wb, bookingsWs, "Bookings");
 
     // Generate filename
-    const fileName = `${event.title
-      .replace(/[^a-z0-9]/gi, "_")
-      .toLowerCase()}_bookings_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const eventTitle = event.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    const currentDate = new Date().toISOString().split("T")[0];
+    const fileName = `${eventTitle}_bookings_${currentDate}.xlsx`;
 
     // Save file
     XLSX.writeFile(wb, fileName);
 
-    //setSuccess("Excel report downloaded successfully!");
+    // setSuccess('Excel report downloaded successfully!');
   } catch (error) {
     console.error("Error generating Excel:", error);
-    // setError("Failed to generate Excel report");
+    //  setError('Failed to generate Excel report');
   } finally {
     // setIsDownloading(false);
   }

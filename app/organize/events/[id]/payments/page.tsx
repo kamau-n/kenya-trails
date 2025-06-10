@@ -472,7 +472,10 @@ export default function EventPaymentsPage({ params }) {
                                   bookings,
                                   totalCollections,
                                   collectionBalance,
-                                  totalDue
+                                  totalDue,
+                                  paidBookings,
+                                  pendingBookings,
+                                  partialBookings
                                 );
                           }}
                           disabled={
