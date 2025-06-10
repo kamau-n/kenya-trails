@@ -122,11 +122,11 @@ export default function EnhancedHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 md:px-12 mx-auto px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 md:px-12 px-6  lg:px-8">
+        <div className="flex flex-col md:flex-row md:justify-between ">
           <div className="space-y-8">
             {/* Badge with glow effect */}
-            <div className="flex items-center gap-3">
+            <div className="flex  gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-50 animate-pulse"></div>
                 {/* <div className="relative bg-emerald-600 text-white px-6 py-2 rounded-full md:text-sm text-xs font-semibold flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function EnhancedHero() {
             </div>
 
             {/* Main Headline with Text Animation */}
-            <div className="space-y-4">
+            <div className="space-y-4 ">
               <h1 className="md:text-5xl text-3xl lg:text-6xl font-black text-white leading-tight">
                 Discover
                 <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent animate-pulse">
@@ -187,7 +187,7 @@ export default function EnhancedHero() {
                 className="group md:px-8 px-4 py-4 border-2 border-white/30 backdrop-blur-sm rounded-xl text-white font-semibold text-sm md:text-lg transition-all duration-300 hover:bg-white/10 hover:border-emerald-400">
                 <div className="flex items-center justify-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Plan Your Journey
+                  Create Your Event
                 </div>
               </button>
             </div>
