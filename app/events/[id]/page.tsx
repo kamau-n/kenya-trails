@@ -43,6 +43,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
   }, []);
 
   // Create share links based on current URL and event data
+  // Create share links based on current URL and event data
   const getShareLinks = () => {
     if (!event || !currentUrl) return {};
 
@@ -52,9 +53,23 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
       event.description || "Join us for this incredible event!"
     );
 
+    // Create a short share message
+    const shareMessage = encodeURIComponent(
+      `🎉 ${event.title}\n📅 ${formatDate(event.date)}\n📍 ${
+        event.location
+      }\n💰 KSh ${event.price?.toLocaleString()}\n\nCheck it out: ${currentUrl}`
+    );
+
+    // Create a shorter message for platforms with character limits
+    const shortShareMessage = encodeURIComponent(
+      `Check out this amazing event: ${event.title} - ${currentUrl}`
+    );
+
     return {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
       twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+      whatsapp: `https://wa.me/?text=${shareMessage}`,
+      tiktok: `https://www.tiktok.com/upload?text=${shortShareMessage}`,
       youtube: `https://www.youtube.com/results?search_query=${encodedTitle}`,
       discord: `https://discord.com/channels/@me`,
     };
@@ -63,29 +78,44 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
   const handleShare = (platform) => {
     const shareLinks = getShareLinks();
 
-    if (platform === "discord") {
-      // For Discord, we'll copy the link since there's no direct share URL
+    if (platform === "discord" || platform === "tiktok") {
+      // For Discord and TikTok, we'll copy the link since there's no direct share URL for Discord
+      // and TikTok's share URL is limited
       copyToClipboard();
-      alert("Link copied! You can now paste it in Discord.");
+      const platformName = platform === "discord" ? "Discord" : "TikTok";
+      alert(`Link copied! You can now paste it in ${platformName}.`);
       return;
     }
 
     if (shareLinks[platform]) {
-      window.open(shareLinks[platform], "_blank", "width=600,height=400");
+      // Open in a new window with specific dimensions for better UX
+      const windowFeatures =
+        platform === "whatsapp"
+          ? "width=800,height=600,scrollbars=yes,resizable=yes"
+          : "width=600,height=400,scrollbars=yes,resizable=yes";
+
+      window.open(shareLinks[platform], "_blank", windowFeatures);
     }
   };
-
   const copyToClipboard = async () => {
     if (!currentUrl) return;
 
+    // Create a formatted message for copying
+    const shareText = `🎉 ${event?.title || "Amazing Event"}
+📅 ${event?.date ? formatDate(event.date) : "Date TBD"}
+📍 ${event?.location || "Location TBD"}
+💰 KSh ${event?.price?.toLocaleString() || "0"}
+
+Check it out: ${currentUrl}`;
+
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       // Fallback for older browsers
       const textArea = document.createElement("textarea");
-      textArea.value = currentUrl;
+      textArea.value = shareText;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand("copy");
@@ -496,6 +526,36 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
                         fill="currentColor"
                         viewBox="0 0 24 24">
                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                      </svg>
+                    </Button>
+
+                    {/* WhatsApp */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full hover:bg-green-50 hover:border-green-300"
+                      onClick={() => handleShare("whatsapp")}
+                      title="Share on WhatsApp">
+                      <svg
+                        className="h-4 w-4 text-green-600"
+                        fill="currentColor"
+                        viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488z" />
+                      </svg>
+                    </Button>
+
+                    {/* TikTok */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full hover:bg-gray-50 hover:border-gray-300"
+                      onClick={() => handleShare("tiktok")}
+                      title="Share on TikTok">
+                      <svg
+                        className="h-4 w-4 text-gray-800"
+                        fill="currentColor"
+                        viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
                       </svg>
                     </Button>
 
