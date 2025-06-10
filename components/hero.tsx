@@ -122,9 +122,9 @@ export default function EnhancedHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 md:px-12 px-6  lg:px-8">
+      <div className="relative z-10 md:px-12 px-6  w-full lg:px-8">
         <div className="flex flex-col md:flex-row md:justify-between ">
-          <div className="space-y-8">
+          <div className="space-y-8 ">
             {/* Badge with glow effect */}
             <div className="flex  gap-3">
               <div className="relative">
@@ -209,7 +209,7 @@ export default function EnhancedHero() {
           </div>
 
           {/* Right Side - Interactive Feature Cards */}
-          <div className="space-y-6 lg:pl-8">
+          <div className="space-y-6 md:py-8 w-1/2 ">
             <div className="space-y-4">
               {[
                 {

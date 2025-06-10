@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CalendarIcon, Plus, Trash2, Upload } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -45,7 +46,7 @@ export default function CreateEventPage() {
     totalSpaces: "",
     category: "",
     difficulty: "Moderate",
-    duration: "",
+
     included: [""],
     notIncluded: [""],
     requirements: [""],
@@ -72,6 +73,13 @@ export default function CreateEventPage() {
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [selectedAccountCode, setSelectedCode] = useState();
 
+  // New state for calendar popovers and single day event
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
+  const [paymentDeadlineOpen, setPaymentDeadlineOpen] = useState(false);
+  const [isSingleDayEvent, setIsSingleDayEvent] = useState(false);
+  const [calculatedDays, setCalculatedDays] = useState(1);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -86,7 +94,49 @@ export default function CreateEventPage() {
   };
 
   const handleDateChange = (name, date) => {
-    setFormData((prev) => ({ ...prev, [name]: date }));
+    setFormData((prev) => {
+      const newFormData = { ...prev, [name]: date };
+
+      // Auto-close the appropriate popover
+      if (name === "date") {
+        setStartDateOpen(false);
+        // If single day event, set end date to same as start date
+        if (isSingleDayEvent) {
+          newFormData.endDate = date;
+        }
+      } else if (name === "endDate") {
+        setEndDateOpen(false);
+      } else if (name === "paymentDeadline") {
+        setPaymentDeadlineOpen(false);
+      }
+
+      return newFormData;
+    });
+  };
+
+  // Calculate days when dates change
+  useEffect(() => {
+    if (formData.date && formData.endDate) {
+      const days = differenceInDays(formData.endDate, formData.date) + 1;
+      setCalculatedDays(days > 0 ? days : 1);
+      formData.duration = calculatedDays.toString;
+    } else if (isSingleDayEvent) {
+      setCalculatedDays(1);
+      formData.duration = calculatedDays.toString;
+    }
+  }, [formData.date, formData.endDate, isSingleDayEvent]);
+
+  // Handle single day event toggle
+  const handleSingleDayToggle = (checked) => {
+    setIsSingleDayEvent(checked);
+    if (checked) {
+      // Set end date to same as start date
+      setFormData((prev) => ({
+        ...prev,
+        endDate: prev.date,
+      }));
+      setCalculatedDays(1);
+    }
   };
 
   const handleArrayChange = (name, index, value) => {
@@ -186,6 +236,8 @@ export default function CreateEventPage() {
         }
       }
 
+      console.log(formData.accountDetails);
+
       const eventData = {
         ...formData,
         price: Number(formData.price),
@@ -195,6 +247,10 @@ export default function CreateEventPage() {
         totalSpaces: Number(formData.totalSpaces),
         availableSpaces: Number(formData.totalSpaces),
         itinerary,
+        duration:
+          calculatedDays === 1
+            ? calculatedDays + " day"
+            : calculatedDays + " days",
         images: imageUrls,
         imageUrl: imageUrls.length > 0 ? imageUrls[0] : null,
         createdAt: serverTimestamp(),
@@ -211,6 +267,8 @@ export default function CreateEventPage() {
         promotionId: null,
         promotionStartDate: null,
       };
+
+      console.log(eventData);
 
       await addDoc(collection(db, "events"), eventData);
 
@@ -245,7 +303,7 @@ export default function CreateEventPage() {
           Event Created Successfully!
         </h1>
         <p className="mb-8">Your event has been created and is now live.</p>
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild>
             <Link href="/organize/events">Manage Your Events</Link>
           </Button>
@@ -265,7 +323,7 @@ export default function CreateEventPage() {
 
         console.log("this is the response from paystack", data);
         if (data.status) {
-          setBanks(data.data); // 'data' contains the array of banks
+          setBanks(data.data);
         }
       } catch (e) {
         console.error("Failed to fetch banks:", e);
@@ -279,7 +337,7 @@ export default function CreateEventPage() {
 
   return (
     <div className="md:px-12 mx-auto px-4 py-8">
-      <h1 className="md:text-3xl text-lg px-1 font-bold mb-8">
+      <h1 className="md:text-3xl text-2xl px-1 font-bold mb-8">
         Create a New Event
       </h1>
 
@@ -291,10 +349,12 @@ export default function CreateEventPage() {
         )}
 
         {/* Basic Information */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">
+            Basic Information
+          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-2">
               <Label htmlFor="title">Event Title*</Label>
               <Input
@@ -325,6 +385,7 @@ export default function CreateEventPage() {
                   <SelectItem value="Camping">Camping</SelectItem>
                   <SelectItem value="Cycling">Cycling</SelectItem>
                   <SelectItem value="Cultural">Cultural</SelectItem>
+                  <SelectItem value="Gaming">Gaming</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -343,7 +404,7 @@ export default function CreateEventPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
             <div className="space-y-2">
               <Label htmlFor="location">Location*</Label>
               <Input
@@ -369,28 +430,44 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+          {/* Single Day Event Checkbox */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="singleDay"
+                checked={isSingleDayEvent}
+                onCheckedChange={handleSingleDayToggle}
+              />
+              <Label htmlFor="singleDay" className="text-sm font-medium">
+                This is a single day event
+              </Label>
+            </div>
+          </div>
+
+          {/* Date Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             <div className="space-y-2">
               <Label>Start Date*</Label>
-              <Popover>
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? (
-                      format(formData.date, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {formData.date
+                        ? format(formData.date, "PPP")
+                        : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.date}
                     onSelect={(date) => handleDateChange("date", date)}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -398,36 +475,55 @@ export default function CreateEventPage() {
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Popover>
+              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate ? (
-                      format(formData.endDate, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    className={`w-full justify-start text-left font-normal ${
+                      isSingleDayEvent
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={isSingleDayEvent}>
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {formData.endDate
+                        ? format(formData.endDate, "PPP")
+                        : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate}
-                    onSelect={(date) => handleDateChange("endDate", date)}
-                    initialFocus
-                  />
-                </PopoverContent>
+                {!isSingleDayEvent && (
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.endDate}
+                      onSelect={(date) => handleDateChange("endDate", date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                      disabled={(date) => formData.date && date < formData.date}
+                    />
+                  </PopoverContent>
+                )}
               </Popover>
             </div>
+
+            {/* <div className="space-y-2">
+              <Label>Number of Days</Label>
+              <Input
+                value={calculatedDays}
+                readOnly
+                className="bg-gray-100 text-gray-600"
+                placeholder="Auto-calculated"
+              />
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="duration">Duration*</Label>
               <Input
                 id="duration"
                 name="duration"
-                value={formData.duration}
+                value={calculatedDays}
                 onChange={handleChange}
                 placeholder="e.g. 3 days"
                 required
@@ -435,7 +531,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="difficulty">Difficulty Level</Label>
               <Select
@@ -482,7 +578,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
             <div className="space-y-2">
               <Label htmlFor="totalSpaces">Total Spaces*</Label>
               <Input
@@ -498,20 +594,22 @@ export default function CreateEventPage() {
 
             <div className="space-y-2">
               <Label>Payment Deadline</Label>
-              <Popover>
+              <Popover
+                open={paymentDeadlineOpen}
+                onOpenChange={setPaymentDeadlineOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.paymentDeadline ? (
-                      format(formData.paymentDeadline, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {formData.paymentDeadline
+                        ? format(formData.paymentDeadline, "PPP")
+                        : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.paymentDeadline}
@@ -519,6 +617,7 @@ export default function CreateEventPage() {
                       handleDateChange("paymentDeadline", date)
                     }
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -527,7 +626,7 @@ export default function CreateEventPage() {
 
           <div className="mt-4 space-y-2">
             <Label>Payment Methods*</Label>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4">
               {["M-Pesa", "Bank Transfer", "Cash", "Credit Card"].map(
                 (method) => (
                   <div key={method} className="flex items-center">
@@ -538,7 +637,9 @@ export default function CreateEventPage() {
                       onChange={() => handlePaymentMethodChange(method)}
                       className="mr-2"
                     />
-                    <Label htmlFor={`payment-${method}`}>{method}</Label>
+                    <Label htmlFor={`payment-${method}`} className="text-sm">
+                      {method}
+                    </Label>
                   </div>
                 )
               )}
@@ -546,9 +647,9 @@ export default function CreateEventPage() {
           </div>
         </div>
 
-        {/* Itinerary */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">Itinerary</h2>
+        {/* ... keep existing code (Itinerary section) */}
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">Itinerary</h2>
 
           {itinerary.map((day, index) => (
             <div
@@ -567,7 +668,7 @@ export default function CreateEventPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                 <div className="space-y-2">
                   <Label htmlFor={`itinerary-${index}-title`}>Title</Label>
                   <Input
@@ -607,11 +708,13 @@ export default function CreateEventPage() {
           </Button>
         </div>
 
-        {/* Inclusions and Requirements */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* ... keep existing code (Inclusions and Requirements, Images, Payment Management sections) */}
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             <div>
-              <h2 className="text-xl font-semibold mb-4">What's Included</h2>
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">
+                What's Included
+              </h2>
 
               {formData.included.map((item, index) => (
                 <div key={index} className="flex items-center mb-2">
@@ -646,7 +749,7 @@ export default function CreateEventPage() {
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">
                 What's Not Included
               </h2>
 
@@ -684,7 +787,9 @@ export default function CreateEventPage() {
           </div>
 
           <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">
+              Requirements
+            </h2>
 
             {formData.requirements.map((item, index) => (
               <div key={index} className="flex items-center mb-2">
@@ -720,14 +825,16 @@ export default function CreateEventPage() {
         </div>
 
         {/* Images */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">Event Images</h2>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">
+            Event Images
+          </h2>
 
           <div className="mb-4">
             <Label htmlFor="images" className="block mb-2">
               Upload Images
             </Label>
-            <div className="flex items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <Input
                 id="images"
                 type="file"
@@ -742,7 +849,7 @@ export default function CreateEventPage() {
                 <Upload className="h-4 w-4 mr-2" />
                 Select Images
               </Label>
-              <span className="ml-4 text-sm text-gray-500">
+              <span className="text-sm text-gray-500">
                 {images.length} {images.length === 1 ? "image" : "images"}{" "}
                 selected
               </span>
@@ -753,7 +860,7 @@ export default function CreateEventPage() {
           </div>
 
           {images.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
               {images.map((image, index) => (
                 <div key={index} className="relative">
                   <img
@@ -781,8 +888,10 @@ export default function CreateEventPage() {
         </div>
 
         {/* Payment Management Section */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">Payment Management</h2>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">
+            Payment Management
+          </h2>
 
           <div className="space-y-4">
             <Label>How would you like to manage payments?</Label>
@@ -792,18 +901,22 @@ export default function CreateEventPage() {
                 setFormData((prev) => ({ ...prev, paymentManagement: value }))
               }
               className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="manual" id="manual" />
-                <Label htmlFor="manual">
-                  I'll manage payments myself(Bookings will be paid directly to
-                  me but i can still track and update them from here){" "}
+              <div className="flex items-start space-x-2">
+                <RadioGroupItem value="manual" id="manual" className="mt-1" />
+                <Label htmlFor="manual" className="text-sm leading-relaxed">
+                  I'll manage payments myself (Bookings will be paid directly to
+                  me but I can still track and update them from here)
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="platform" id="platform" />
-                <Label htmlFor="platform">
+              <div className="flex items-start space-x-2">
+                <RadioGroupItem
+                  value="platform"
+                  id="platform"
+                  className="mt-1"
+                />
+                <Label htmlFor="platform" className="text-sm leading-relaxed">
                   Let the platform manage payments (6% fee) (Let us manage all
-                  booking payments , track all payments an balances )
+                  booking payments, track all payments and balances)
                 </Label>
               </div>
             </RadioGroup>
@@ -811,7 +924,7 @@ export default function CreateEventPage() {
             {formData.paymentManagement === "platform" && (
               <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-medium">Collection Account Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="bankName">Bank Name</Label>
                     <select
@@ -819,16 +932,19 @@ export default function CreateEventPage() {
                       className="w-full p-2 border rounded"
                       value={formData.accountDetails.bankName}
                       onChange={(e) => {
-                        // Find the selected bank to get its code
                         const selectedBank = banks.find(
                           (bank) => bank.name === e.target.value
                         );
-                        // Update the account code if a bank is found
                         if (selectedBank) {
                           setSelectedCode(selectedBank.code);
+                          formData.accountDetails.accountCode =
+                            selectedBank.code;
+                          console.log(
+                            "am setting the account code",
+                            selectedBank
+                          );
                         }
 
-                        // Update form data as before
                         setFormData((prev) => ({
                           ...prev,
                           accountDetails: {
@@ -870,7 +986,7 @@ export default function CreateEventPage() {
                     <Label htmlFor="accountCode">Account Code</Label>
                     <Input
                       id="accountCode"
-                      value={selectedAccountCode}
+                      value={formData.accountDetails.accountCode}
                       required
                       disabled
                     />
@@ -894,14 +1010,14 @@ export default function CreateEventPage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Platform fee: 5% of each booking payment
+                  Platform fee: 6% of each booking payment
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col sm:flex-row justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
