@@ -79,6 +79,7 @@ import {
   FirebaseUser,
   payments,
 } from "../types/dashboardtypes";
+import PayButton from "@/components/paystack/paybutton";
 
 export type accountDetails = {
   bankName: string;
@@ -1027,7 +1028,31 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex justify-center">
-                <PaystackButton
+                <PayButton
+                  email={user.email}
+                  amount={paymentData.amount}
+                  reference={paymentData.reference}
+                  currency="KES"
+                  metadata={{
+                    bookingId: selectedBooking.id,
+                    eventId: selectedBooking.eventId,
+                    userId: user.uid,
+                  }}
+                  onSuccess={() => {
+                    updateBookingStatus(
+                      selectedBooking.id,
+                      selectedBooking.amountDue
+                    );
+                  }}
+                  onStart={() => {
+                    setShowPaymentModal(false);
+                  }}
+                  onClose={() => {
+                    setShowPaymentModal(false);
+                    setSelectedBooking(null);
+                  }}
+                />
+                {/* <PaystackButton
                   publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
                   email={user.email}
                   amount={paymentData.amount}
@@ -1050,7 +1075,7 @@ export default function DashboardPage() {
                     setSelectedBooking(null);
                   }}
                   className="bg-green-600 text-white py-3 px-6 rounded hover:bg-green-700 w-full"
-                />
+                /> */}
               </div>
             </div>
           )}

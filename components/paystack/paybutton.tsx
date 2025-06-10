@@ -32,8 +32,13 @@ export default function PayButton({
   }, []);
   const handlePay = () => {
     // Optional: close your modal here
-    onStart?.();
+    onStart;
     console.log(" Am to close the modal");
+
+    console.log(typeof onStart);
+    if (typeof onStart === "function") {
+      onStart();
+    }
 
     const paystack = (window as any).PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
