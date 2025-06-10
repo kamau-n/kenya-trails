@@ -226,7 +226,7 @@ export default function OrganizerEventsPage() {
                   </div>
                 </CardContent>
 
-                <CardFooter className="flex flex-row justify-between  ">
+                <CardFooter className="flex flex-wrap justify-between gap-2 ">
                   <Button asChild variant="outline">
                     <Link href={`/events/${event.id}`}>View</Link>
                   </Button>
