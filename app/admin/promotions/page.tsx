@@ -42,17 +42,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Package, 
-  DollarSign, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Package,
+  DollarSign,
   Calendar,
   Star,
   Search,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
@@ -84,9 +84,10 @@ export default function PromotionsPage() {
   }, []);
 
   useEffect(() => {
-    const filtered = promotions.filter(promotion =>
-      promotion.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promotion.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = promotions.filter(
+      (promotion) =>
+        promotion.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        promotion.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredPromotions(filtered);
   }, [searchTerm, promotions]);
@@ -113,10 +114,15 @@ export default function PromotionsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form
-    if (!formData.name.trim() || !formData.description.trim() || 
-        !formData.price || !formData.duration || !formData.features.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.description.trim() ||
+      !formData.price ||
+      !formData.duration ||
+      !formData.features.trim()
+    ) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -135,7 +141,10 @@ export default function PromotionsPage() {
       };
 
       if (editingPromotion) {
-        await updateDoc(doc(db, "promotions", editingPromotion.id), promotionData);
+        await updateDoc(
+          doc(db, "promotions", editingPromotion.id),
+          promotionData
+        );
         toast({
           title: "Success",
           description: "Promotion package updated successfully!",
@@ -147,7 +156,7 @@ export default function PromotionsPage() {
           description: "New promotion package added successfully!",
         });
       }
-      
+
       fetchPromotions();
       resetForm();
       setIsDialogOpen(false);
@@ -203,16 +212,21 @@ export default function PromotionsPage() {
   };
 
   const formatFeatures = (features) => {
-    return features.split('\n').filter(f => f.trim()).map((feature, index) => (
-      <span key={index} className="inline-block">
-        • {feature.trim()}
-        {index < features.split('\n').filter(f => f.trim()).length - 1 && <br />}
-      </span>
-    ));
+    return features
+      .split("\n")
+      .filter((f) => f.trim())
+      .map((feature, index) => (
+        <span key={index} className="inline-block">
+          • {feature.trim()}
+          {index < features.split("\n").filter((f) => f.trim()).length - 1 && (
+            <br />
+          )}
+        </span>
+      ));
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="md:px-12 mx-auto px-4 py-8 max-w-7xl">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
@@ -224,16 +238,15 @@ export default function PromotionsPage() {
             Manage your promotional offerings and packages
           </p>
         </div>
-        
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               className="bg-blue-600 hover:bg-blue-700 shadow-lg"
               onClick={() => {
                 resetForm();
                 setIsDialogOpen(true);
-              }}
-            >
+              }}>
               <Plus className="h-4 w-4 mr-2" />
               Add New Package
             </Button>
@@ -242,16 +255,17 @@ export default function PromotionsPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                {editingPromotion ? "Edit Promotion Package" : "Add New Promotion Package"}
+                {editingPromotion
+                  ? "Edit Promotion Package"
+                  : "Add New Promotion Package"}
               </DialogTitle>
               <DialogDescription>
-                {editingPromotion 
+                {editingPromotion
                   ? "Update the details of your promotion package"
-                  : "Create a new promotion package for your customers"
-                }
+                  : "Create a new promotion package for your customers"}
               </DialogDescription>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-4">
                 <div>
@@ -338,8 +352,7 @@ export default function PromotionsPage() {
                   onClick={() => {
                     resetForm();
                     setIsDialogOpen(false);
-                  }}
-                >
+                  }}>
                   Cancel
                 </Button>
                 <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
@@ -355,14 +368,16 @@ export default function PromotionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Packages</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Packages
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{promotions.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Price</CardTitle>
@@ -370,25 +385,37 @@ export default function PromotionsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              KSh {promotions.length > 0 
-                ? Math.round(promotions.reduce((sum, p) => sum + parseFloat(p.price || 0), 0) / promotions.length)
-                : 0
-              }
+              KSh{" "}
+              {promotions.length > 0
+                ? Math.round(
+                    promotions.reduce(
+                      (sum, p) => sum + parseFloat(p.price || 0),
+                      0
+                    ) / promotions.length
+                  )
+                : 0}
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Duration</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average Duration
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {promotions.length > 0 
-                ? Math.round(promotions.reduce((sum, p) => sum + parseInt(p.duration || 0), 0) / promotions.length)
-                : 0
-              } days
+              {promotions.length > 0
+                ? Math.round(
+                    promotions.reduce(
+                      (sum, p) => sum + parseInt(p.duration || 0),
+                      0
+                    ) / promotions.length
+                  )
+                : 0}{" "}
+              days
             </div>
           </CardContent>
         </Card>
@@ -438,19 +465,17 @@ export default function PromotionsPage() {
                 {searchTerm ? "No packages found" : "No packages yet"}
               </h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm 
+                {searchTerm
                   ? "Try adjusting your search terms"
-                  : "Get started by creating your first promotion package"
-                }
+                  : "Get started by creating your first promotion package"}
               </p>
               {!searchTerm && (
-                <Button 
+                <Button
                   onClick={() => {
                     resetForm();
                     setIsDialogOpen(true);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
+                  className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Package
                 </Button>
@@ -461,11 +486,15 @@ export default function PromotionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold">Package Details</TableHead>
+                    <TableHead className="font-semibold">
+                      Package Details
+                    </TableHead>
                     <TableHead className="font-semibold">Pricing</TableHead>
                     <TableHead className="font-semibold">Duration</TableHead>
                     <TableHead className="font-semibold">Features</TableHead>
-                    <TableHead className="font-semibold text-right">Actions</TableHead>
+                    <TableHead className="font-semibold text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -473,7 +502,9 @@ export default function PromotionsPage() {
                     <TableRow key={promotion.id} className="hover:bg-gray-50">
                       <TableCell className="py-4">
                         <div>
-                          <div className="font-medium text-gray-900">{promotion.name}</div>
+                          <div className="font-medium text-gray-900">
+                            {promotion.name}
+                          </div>
                           <div className="text-sm text-gray-600 mt-1 max-w-xs">
                             {promotion.description}
                           </div>
@@ -481,8 +512,11 @@ export default function PromotionsPage() {
                       </TableCell>
                       <TableCell className="py-4">
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            KSh {parseFloat(promotion.price || 0).toLocaleString()}
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800">
+                            KSh{" "}
+                            {parseFloat(promotion.price || 0).toLocaleString()}
                           </Badge>
                         </div>
                       </TableCell>
@@ -503,35 +537,35 @@ export default function PromotionsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(promotion)}
-                            className="h-8 w-8 p-0"
-                          >
+                            className="h-8 w-8 p-0">
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          
+
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Package</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Delete Package
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to delete "{promotion.name}"? 
-                                  This action cannot be undone.
+                                  Are you sure you want to delete "
+                                  {promotion.name}"? This action cannot be
+                                  undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(promotion.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
+                                  className="bg-red-600 hover:bg-red-700">
                                   Delete Package
                                 </AlertDialogAction>
                               </AlertDialogFooter>

@@ -1,6 +1,5 @@
 "use client";
 
-import { FirebaseUser } from "@/app/dashboard/page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -168,7 +167,7 @@ export default function BookingFormModal({
     }
   };
 
-  const handlePaymentSuccess = async (reference: any) => {
+  const handlePaymentSuccess = async () => {
     setStep("processing");
 
     setIsPaystackOpen(false);

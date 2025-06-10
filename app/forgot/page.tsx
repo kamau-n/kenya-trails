@@ -43,7 +43,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center">
+    <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Reset Password</CardTitle>

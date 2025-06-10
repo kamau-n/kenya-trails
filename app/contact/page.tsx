@@ -51,7 +51,7 @@ export default function Contact() {
       <div className="absolute top-1/3 right-1/4 w-10 h-10 bg-white bg-opacity-10 rounded-full blur-sm"></div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-white max-w-3xl">
+      <div className="relative z-10 md:px-12 mx-auto px-4 text-white max-w-3xl">
         <div className="flex flex-col items-center mb-12">
           <span className="px-4 py-1 bg-white bg-opacity-20 rounded-full text-sm font-medium mb-4">
             Contact Us

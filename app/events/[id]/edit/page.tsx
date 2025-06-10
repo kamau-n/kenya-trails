@@ -137,15 +137,15 @@ export default function EditEventPage({ params }) {
   };
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Loading...</div>;
+    return <div className="md:px-12 mx-auto px-4 py-8">Loading...</div>;
   }
 
   if (!event) {
-    return <div className="container mx-auto px-4 py-8">Event not found</div>;
+    return <div className="md:px-12 mx-auto px-4 py-8">Event not found</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="md:px-12 mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Edit Event</h1>
         <Button

@@ -115,7 +115,7 @@ const TermsOfServicePage = () => {
   if (termsData.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
-        <div className="container mx-auto px-4 py-16">
+        <div className="md:px-12 mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -141,7 +141,7 @@ const TermsOfServicePage = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 text-white">
-        <div className="container mx-auto px-4 py-16">
+        <div className="md:px-12 mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
               <Shield className="w-8 h-8" />
@@ -180,7 +180,7 @@ const TermsOfServicePage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="md:px-12 mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           {/* Current Terms */}
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">

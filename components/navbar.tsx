@@ -72,7 +72,7 @@ export default function Navbar() {
           ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl shadow-emerald-500/5 border-b border-emerald-100/20 dark:border-emerald-500/10"
           : "bg-transparent"
       }`}>
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className=" md:px-8 px-4 mx-auto  sm:px-6">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
@@ -275,7 +275,7 @@ export default function Navbar() {
       {/* Mobile Navigation - Enhanced Design */}
       {isMobileOpen && (
         <div className="md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-emerald-100/50 dark:border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
-          <div className="container mx-auto px-4 py-6 space-y-2">
+          <div className="md:px-12 mx-auto px-4 py-6 space-y-2">
             {/* Main Nav Links */}
             {navItems.map((item) => (
               <Link
@@ -444,7 +444,7 @@ export default function Navbar() {
 //           ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md"
 //           : "bg-transparent"
 //       }`}>
-//       <div className="container mx-auto px-4 sm:px-6">
+//       <div className="md:px-12 mx-auto px-4 sm:px-6">
 //         <div className="flex h-16 items-center justify-between">
 //           {/* Logo */}
 //           <div className="flex-shrink-0">
@@ -630,7 +630,7 @@ export default function Navbar() {
 //       {/* Mobile Navigation - Basic Dropdown */}
 //       {isMobileOpen && (
 //         <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-md">
-//           <div className="container mx-auto px-4 py-3 space-y-3">
+//           <div className="md:px-12 mx-auto px-4 py-3 space-y-3">
 //             {/* Main Nav Links */}
 //             {navItems.map((item) => (
 //               <Link

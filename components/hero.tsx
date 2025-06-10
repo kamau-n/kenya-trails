@@ -122,7 +122,7 @@ export default function EnhancedHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 container mx-auto px-6 lg:px-8">
+      <div className="relative z-10 md:px-12 mx-auto px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             {/* Badge with glow effect */}

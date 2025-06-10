@@ -481,7 +481,7 @@ export default function DashboardPage() {
 
   if (authLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+      <div className="md:px-12 mx-auto px-4 py-16 flex items-center justify-center">
         <div className="animate-pulse text-xl font-medium">Loading...</div>
       </div>
     );
@@ -492,7 +492,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 ">
+    <div className="md:px-12 mx-auto px-4 py-8 ">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-50 p-6 rounded-lg shadow-sm">
         <div>
           <h1 className="md:text-3xl lg:text-3xl text-xl font-bold text-slate-800">

@@ -38,7 +38,7 @@ export default function About() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       {/* <div className="relative bg-green-600 text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="md:px-12 mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-3xl md:text-5xl font-bold mb-6">
               Our Passion for{" "}
@@ -58,7 +58,7 @@ export default function About() {
       </div> */}
 
       {/* Stats Section */}
-      {/* <div className="container mx-auto px-4 py-12">
+      {/* <div className="md:px-12 mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {stats.map((stat, index) => (
             <div
@@ -76,7 +76,7 @@ export default function About() {
       </div> */}
 
       {/* Tabbed Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="md:px-12 mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {/* Tab Navigation */}
           <div className="flex border-b overflow-x-auto">
@@ -237,7 +237,7 @@ export default function About() {
       </div>
 
       {/* CTA Section */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="md:px-12 mx-auto px-4 py-12">
         <div className="bg-green-600 rounded-xl p-6 md:p-12 text-center text-white">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Ready for Your Kenyan Adventure?

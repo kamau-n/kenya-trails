@@ -354,7 +354,7 @@ export default function EventBookingsPage({ params }) {
 
   if (authLoading || loading) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
           <div className="h-4 bg-gray-200 rounded w-1/4 mx-auto"></div>
@@ -373,7 +373,7 @@ export default function EventBookingsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto md:px-4  px-2 py-6 space-y-6">
+    <div className="md:px-12 mx-auto md:px-4  px-2 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">

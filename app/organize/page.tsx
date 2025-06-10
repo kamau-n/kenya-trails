@@ -100,7 +100,7 @@ export default function OrganizePage() {
   ];
 
   return (
-    <div className="container mx-auto px-4  py-8">
+    <div className="md:px-12 mx-auto px-4  py-8">
       {/* Hero Section */}
       <div className="relative py-20 rounded-lg md:py-32 overflow-hidden my-8">
         {/* Background Image */}
@@ -114,7 +114,7 @@ export default function OrganizePage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 text-center">
+        <div className="relative z-10 md:px-12 mx-auto px-4 text-center">
           <h1 className="text-2xl md:text-6xl font-bold text-white mb-6">
             Become an <span className="text-green-400">Event Organizer</span>
           </h1>
@@ -172,7 +172,7 @@ export default function OrganizePage() {
 
       {/* How It Works Section */}
       <section id="how-it-works" className="py-16 bg-gray-50 rounded-xl">
-        <div className="container mx-auto px-4">
+        <div className="md:px-12 mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -301,7 +301,7 @@ export default function OrganizePage() {
 
       {/* Testimonials */}
       <section className="py-16 bg-green-50 rounded-xl">
-        <div className="container mx-auto px-4">
+        <div className="md:px-12 mx-auto px-4">
           <OrganizersSection />
 
           {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

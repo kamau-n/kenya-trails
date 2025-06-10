@@ -125,7 +125,7 @@
 //   }
 
 //   return (
-//     <div className="container mx-auto px-4 py-8">
+//     <div className="md:px-12 mx-auto px-4 py-8">
 //       <Card>
 //         <CardHeader>
 //           <CardTitle>Manage Refunds</CardTitle>
@@ -348,7 +348,7 @@ export default function RefundsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="md:px-12 mx-auto px-4 py-8">
       <Card>
         <CardHeader>
           <CardTitle>Manage Refunds</CardTitle>

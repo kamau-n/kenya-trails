@@ -67,20 +67,20 @@ export default function Sidebar() {
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="h-full flex flex-col">
           <Link
-            href="https://kokonutui.com/"
+            href="#/"
             target="_blank"
             rel="noopener noreferrer"
             className="h-16 px-6 flex items-center border-b border-gray-200 dark:border-[#1F1F23]">
             <div className="flex items-center gap-3">
               <Image
-                src="https://kokonutui.com/logo.svg"
+                src="#/logo.svg"
                 alt="Acme"
                 width={32}
                 height={32}
                 className="flex-shrink-0 hidden dark:block"
               />
               <Image
-                src="https://kokonutui.com/logo-black.svg"
+                src="#/logo-black.svg"
                 alt="Acme"
                 width={32}
                 height={32}

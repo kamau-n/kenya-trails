@@ -561,7 +561,7 @@ export default function AdminWithdrawalsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
+      <div className="md:px-12 mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto" />
           <p className="mt-4">Loading withdrawal requests...</p>

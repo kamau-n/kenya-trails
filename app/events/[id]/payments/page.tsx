@@ -82,7 +82,7 @@ export default function ManagePaymentsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="md:px-12 mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Update Payment</h1>
 
       {error && (

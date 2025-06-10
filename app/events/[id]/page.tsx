@@ -159,7 +159,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <p>Loading event details...</p>
       </div>
     );
@@ -167,7 +167,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
 
   if (!event) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Event not found</h1>
         <p className="mb-8">
           The event you're looking for doesn't exist or has been removed.
@@ -191,7 +191,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
           }}
         />
       )}
-      <div className="container mx-auto px-4 py-8">
+      <div className="md:px-12 mx-auto px-4 py-8">
         {/* Event Header */}
         <div className="relative h-72 md:h-96 rounded-xl overflow-hidden mb-8">
           <img

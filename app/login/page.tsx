@@ -118,7 +118,7 @@ export default function Login() {
 
   if (auth?.demoMode) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
+      <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">
@@ -148,7 +148,7 @@ export default function Login() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center">
+    <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
       <Suspense fallback={null}>
         <SuspendedRedirect onReady={setRedirectPath} />
       </Suspense>

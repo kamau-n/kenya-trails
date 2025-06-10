@@ -109,7 +109,7 @@ export default function SignUp() {
 
   if (registrationSuccess) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
+      <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
@@ -166,7 +166,7 @@ export default function SignUp() {
 
   if (auth?.demoMode) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
+      <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">
@@ -208,7 +208,7 @@ export default function SignUp() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center">
+    <div className="md:px-12 mx-auto px-4 py-16 flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Create an account</CardTitle>

@@ -147,7 +147,7 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-10 space-y-8">
+      <div className="md:px-12 mx-auto py-10 space-y-8">
         {/* Stats Cards Skeleton */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {[...Array(5)].map((_, i) => (
@@ -189,7 +189,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
+    <div className="md:px-12 mx-auto py-10 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

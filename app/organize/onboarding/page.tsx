@@ -1,24 +1,31 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { doc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { CheckCircle } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { CheckCircle } from "lucide-react";
 
 export default function OrganizerOnboarding() {
-  const auth = useAuth()
-  const user = auth?.user
-  const router = useRouter()
+  const auth = useAuth();
+  const user = auth?.user;
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     bio: "",
@@ -27,25 +34,25 @@ export default function OrganizerOnboarding() {
     organization: "",
     website: "",
     certifications: "",
-  })
-  const [step, setStep] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
+  });
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
       if (!user) {
-        throw new Error("You must be logged in to complete onboarding")
+        throw new Error("You must be logged in to complete onboarding");
       }
 
       // Update user profile with organizer details
@@ -55,43 +62,43 @@ export default function OrganizerOnboarding() {
           onboardingCompleted: true,
           onboardingDate: new Date(),
         },
-      })
+      });
 
-      setSuccess(true)
+      setSuccess(true);
       setTimeout(() => {
-        router.push("/organize/create")
-      }, 3000)
+        router.push("/organize/create");
+      }, 3000);
     } catch (error) {
-      console.error("Error during onboarding:", error)
-      setError(error.message)
+      console.error("Error during onboarding:", error);
+      setError(error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const nextStep = () => {
-    setStep(step + 1)
-  }
+    setStep(step + 1);
+  };
 
   const prevStep = () => {
-    setStep(step - 1)
-  }
+    setStep(step - 1);
+  };
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
         <p className="mb-8">You need to be logged in to access this page.</p>
         <Button asChild>
           <Link href="/login?redirect=/organize/onboarding">Log In</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   if (success) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md">
+      <div className="md:px-12 mx-auto px-4 py-16 max-w-md">
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto bg-green-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
@@ -99,7 +106,8 @@ export default function OrganizerOnboarding() {
             </div>
             <CardTitle className="text-2xl">Onboarding Complete!</CardTitle>
             <CardDescription>
-              Your organizer profile has been set up successfully. You'll be redirected to create your first event.
+              Your organizer profile has been set up successfully. You'll be
+              redirected to create your first event.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -109,13 +117,17 @@ export default function OrganizerOnboarding() {
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-2 text-center">Organizer Onboarding</h1>
-      <p className="text-gray-600 mb-8 text-center">Complete your profile to start organizing events on Kenya Trails</p>
+    <div className="md:px-12 mx-auto px-4 py-8 max-w-2xl">
+      <h1 className="text-3xl font-bold mb-2 text-center">
+        Organizer Onboarding
+      </h1>
+      <p className="text-gray-600 mb-8 text-center">
+        Complete your profile to start organizing events on Kenya Trails
+      </p>
 
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -128,21 +140,35 @@ export default function OrganizerOnboarding() {
           <div
             className={`flex-1 h-2 ${
               step >= 1 ? "bg-green-600" : "bg-gray-200"
-            } rounded-l-full transition-colors duration-300`}
-          ></div>
+            } rounded-l-full transition-colors duration-300`}></div>
           <div
-            className={`flex-1 h-2 ${step >= 2 ? "bg-green-600" : "bg-gray-200"} transition-colors duration-300`}
-          ></div>
+            className={`flex-1 h-2 ${
+              step >= 2 ? "bg-green-600" : "bg-gray-200"
+            } transition-colors duration-300`}></div>
           <div
             className={`flex-1 h-2 ${
               step >= 3 ? "bg-green-600" : "bg-gray-200"
-            } rounded-r-full transition-colors duration-300`}
-          ></div>
+            } rounded-r-full transition-colors duration-300`}></div>
         </div>
         <div className="flex justify-between mt-2 text-sm">
-          <span className={step >= 1 ? "text-green-600 font-medium" : "text-gray-500"}>Basic Info</span>
-          <span className={step >= 2 ? "text-green-600 font-medium" : "text-gray-500"}>Experience</span>
-          <span className={step >= 3 ? "text-green-600 font-medium" : "text-gray-500"}>Finish</span>
+          <span
+            className={
+              step >= 1 ? "text-green-600 font-medium" : "text-gray-500"
+            }>
+            Basic Info
+          </span>
+          <span
+            className={
+              step >= 2 ? "text-green-600 font-medium" : "text-gray-500"
+            }>
+            Experience
+          </span>
+          <span
+            className={
+              step >= 3 ? "text-green-600 font-medium" : "text-gray-500"
+            }>
+            Finish
+          </span>
         </div>
       </div>
 
@@ -154,8 +180,10 @@ export default function OrganizerOnboarding() {
             {step === 3 && "Review & Submit"}
           </CardTitle>
           <CardDescription>
-            {step === 1 && "Tell us about yourself and how travelers can contact you"}
-            {step === 2 && "Share your experience and qualifications as an event organizer"}
+            {step === 1 &&
+              "Tell us about yourself and how travelers can contact you"}
+            {step === 2 &&
+              "Share your experience and qualifications as an event organizer"}
             {step === 3 && "Review your information before submitting"}
           </CardDescription>
         </CardHeader>
@@ -176,7 +204,9 @@ export default function OrganizerOnboarding() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organization">Company/Organization (Optional)</Label>
+                  <Label htmlFor="organization">
+                    Company/Organization (Optional)
+                  </Label>
                   <Input
                     id="organization"
                     name="organization"
@@ -229,7 +259,9 @@ export default function OrganizerOnboarding() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="certifications">Certifications (Optional)</Label>
+                  <Label htmlFor="certifications">
+                    Certifications (Optional)
+                  </Label>
                   <Textarea
                     id="certifications"
                     name="certifications"
@@ -245,28 +277,36 @@ export default function OrganizerOnboarding() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Personal Information</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    Personal Information
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
                     <p className="mb-2">
-                      <span className="font-medium">Name:</span> {user.displayName}
+                      <span className="font-medium">Name:</span>{" "}
+                      {user.displayName}
                     </p>
                     <p className="mb-2">
                       <span className="font-medium">Email:</span> {user.email}
                     </p>
                     <p className="mb-2">
-                      <span className="font-medium">Phone:</span> {formData.phoneNumber || "Not provided"}
+                      <span className="font-medium">Phone:</span>{" "}
+                      {formData.phoneNumber || "Not provided"}
                     </p>
                     <p className="mb-2">
-                      <span className="font-medium">Organization:</span> {formData.organization || "Not provided"}
+                      <span className="font-medium">Organization:</span>{" "}
+                      {formData.organization || "Not provided"}
                     </p>
                     <p>
-                      <span className="font-medium">Website:</span> {formData.website || "Not provided"}
+                      <span className="font-medium">Website:</span>{" "}
+                      {formData.website || "Not provided"}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Experience & Qualifications</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    Experience & Qualifications
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
                     <div className="mb-4">
                       <p className="font-medium mb-1">Bio:</p>
@@ -278,7 +318,9 @@ export default function OrganizerOnboarding() {
                     </div>
                     <div>
                       <p className="font-medium mb-1">Certifications:</p>
-                      <p className="text-gray-700">{formData.certifications || "None provided"}</p>
+                      <p className="text-gray-700">
+                        {formData.certifications || "None provided"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -296,16 +338,23 @@ export default function OrganizerOnboarding() {
           )}
 
           {step < 3 ? (
-            <Button type="button" className="bg-green-600 hover:bg-green-700" onClick={nextStep}>
+            <Button
+              type="button"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={nextStep}>
               Continue
             </Button>
           ) : (
-            <Button type="submit" className="bg-green-600 hover:bg-green-700" onClick={handleSubmit} disabled={loading}>
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleSubmit}
+              disabled={loading}>
               {loading ? "Submitting..." : "Complete Setup"}
             </Button>
           )}
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

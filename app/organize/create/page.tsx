@@ -228,7 +228,7 @@ export default function CreateEventPage() {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
         <p className="mb-8">You need to be logged in to create events.</p>
         <Button asChild>
@@ -240,7 +240,7 @@ export default function CreateEventPage() {
 
   if (success) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="md:px-12 mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-green-600 mb-4">
           Event Created Successfully!
         </h1>
@@ -278,7 +278,7 @@ export default function CreateEventPage() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="md:px-12 mx-auto px-4 py-8">
       <h1 className="md:text-3xl text-lg px-1 font-bold mb-8">
         Create a New Event
       </h1>

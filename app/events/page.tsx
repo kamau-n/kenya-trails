@@ -113,7 +113,7 @@ export default function EventsPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="md:px-12 mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <h1 className="md:text-3xl text-2xl font-bold">Explore Adventures</h1>
 
