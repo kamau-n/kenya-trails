@@ -868,7 +868,7 @@ export default function DashboardPage() {
                     {displayPayments.map((payment) => (
                       <div
                         key={payment.id}
-                        className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors duration-200">
+                        className="flex flex-col md:flex-row justify-between items-start md:items-center md:p-4  p-2 border rounded-lg bg-white hover:bg-slate-50 transition-colors duration-200">
                         <div className="space-y-2 mb-4 md:mb-0">
                           <p className="font-medium text-slate-800">
                             {payment.eventTitle}
@@ -883,14 +883,14 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <Badge
+                          <span
                             className={
                               payment.status === "completed"
-                                ? "bg-green-600"
+                                ? "bg-green-600 p-2 rounded"
                                 : "bg-yellow-600"
                             }>
                             {payment.status}
-                          </Badge>
+                          </span>
                           <Button
                             variant="outline"
                             size="sm"
