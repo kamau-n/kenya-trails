@@ -28,374 +28,400 @@ export interface PaymentReceiptData {
 
 export class ModernReceiptGenerator {
   private doc: jsPDF;
-  private primaryColor = "#059669"; // Green-600
-  private secondaryColor = "#374151"; // Gray-700
-  private lightGray = "#F3F4F6"; // Gray-100
-  private darkGray = "#6B7280"; // Gray-500
+  // Subtle, professional color palette
+  private primaryColor = "#1f2937"; // Dark gray
+  private accentColor = "#3b82f6"; // Professional blue
+  private lightBlue = "#eff6ff"; // Very light blue
+  private borderGray = "#e5e7eb"; // Light border gray
+  private textGray = "#6b7280"; // Medium gray for secondary text
+  private successGreen = "#059669"; // For paid status
+  private warningRed = "#dc2626"; // For due amounts
 
   constructor() {
     this.doc = new jsPDF();
   }
 
-  private addHeader(title: string) {
-    // Background header
-    this.doc.setFillColor(this.primaryColor);
-    this.doc.rect(0, 0, 210, 40, "F");
+  private addMinimalHeader(title: string) {
+    // Clean header with subtle background
+    this.doc.setFillColor("#f8fafc"); // Very light gray
+    this.doc.rect(0, 0, 210, 35, "F");
 
-    // Company logo/name
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(24);
+    // Thin accent line
+    this.doc.setFillColor(this.accentColor);
+    this.doc.rect(0, 0, 210, 2, "F");
+
+    // Company name - clean typography
+    this.doc.setTextColor(this.primaryColor);
+    this.doc.setFontSize(20);
     this.doc.setFont("helvetica", "bold");
-    this.doc.text("Kenya Trails", 20, 25);
+    this.doc.text("Kenya Trails", 20, 18);
 
-    // Tagline
+    // Subtle tagline
+    this.doc.setFontSize(9);
+    this.doc.setFont("helvetica", "normal");
+    this.doc.setTextColor(this.textGray);
+    this.doc.text("Adventure & Discovery Platform", 20, 25);
+
+    // Receipt title - right aligned
+    this.doc.setFontSize(14);
+    this.doc.setFont("helvetica", "bold");
+    this.doc.setTextColor(this.primaryColor);
+    this.doc.text(title, 190, 18, { align: "right" });
+
+    // Reset colors
+    this.doc.setTextColor(0, 0, 0);
+  }
+
+  private addCompanyDetails() {
+    // Minimal company info block
+    this.doc.setFontSize(8);
+    this.doc.setTextColor(this.textGray);
+    this.doc.setFont("helvetica", "normal");
+
+    const companyInfo = [
+      "Kenya Trails Ltd. • P.O. Box 12345, Nairobi, Kenya",
+      "Tel: +254 759 155 650 • Email: info@kenyatrails.com",
+      "www.kenyatrails.com",
+    ];
+
+    let y = 45;
+    companyInfo.forEach((line) => {
+      this.doc.text(line, 20, y);
+      y += 4;
+    });
+  }
+
+  private addReceiptDetails(receiptId: string, date: Date, status?: string) {
+    // Clean info box with subtle border
+    this.doc.setDrawColor(this.borderGray);
+    this.doc.setLineWidth(0.5);
+    this.doc.rect(140, 40, 50, 25, "S");
+
+    // Receipt details
+    this.doc.setFontSize(8);
+    this.doc.setTextColor(this.textGray);
+    this.doc.setFont("helvetica", "normal");
+
+    const details = [
+      { label: "Receipt ID:", value: receiptId.substring(0, 10).toUpperCase() },
+      { label: "Date:", value: date.toLocaleDateString("en-GB") },
+      {
+        label: "Time:",
+        value: date.toLocaleTimeString("en-GB", { hour12: false }),
+      },
+    ];
+
+    if (status) {
+      details.push({ label: "Status:", value: status.toUpperCase() });
+    }
+
+    let y = 46;
+    details.forEach((detail) => {
+      this.doc.text(detail.label, 142, y);
+      this.doc.setFont("helvetica", "bold");
+      this.doc.setTextColor(this.primaryColor);
+      this.doc.text(detail.value, 142, y + 3);
+      this.doc.setFont("helvetica", "normal");
+      this.doc.setTextColor(this.textGray);
+      y += 8;
+    });
+  }
+
+  private addSection(title: string, y: number): number {
+    // Subtle section divider
+    this.doc.setDrawColor(this.borderGray);
+    this.doc.setLineWidth(0.5);
+    this.doc.line(20, y, 190, y);
+
+    // Section title
     this.doc.setFontSize(10);
-    this.doc.setFont("helvetica", "normal");
-    this.doc.text("Explore Kenya's Hidden Gems", 20, 32);
-
-    // Receipt title
-    this.doc.setFontSize(16);
+    this.doc.setTextColor(this.primaryColor);
     this.doc.setFont("helvetica", "bold");
-    this.doc.text(title, 140, 25);
+    this.doc.text(title, 20, y + 8);
 
-    // Reset text color
-    this.doc.setTextColor(0, 0, 0);
+    return y + 18;
   }
 
-  private addCompanyInfo() {
-    this.doc.setFontSize(9);
-    this.doc.setTextColor(this.darkGray);
-    this.doc.text("Kenya Trails Ltd.", 20, 50);
-    this.doc.text("P.O. Box 12345, Nairobi, Kenya", 20, 55);
-    this.doc.text("Phone: +254 759 155 650", 20, 60);
-    this.doc.text("Email: info@kenyatrails.com", 20, 65);
-    this.doc.text("Website: www.kenyatrails.com", 20, 70);
-  }
-
-  private addReceiptInfo(receiptId: string, date: Date) {
-    // Receipt info box
-    this.doc.setFillColor(this.lightGray);
-    this.doc.rect(140, 45, 50, 30, "F");
-
-    this.doc.setFontSize(9);
-    this.doc.setTextColor(this.secondaryColor);
-    this.doc.setFont("helvetica", "bold");
-    this.doc.text("Receipt #:", 145, 52);
-    this.doc.text("Date:", 145, 58);
-    this.doc.text("Status:", 145, 64);
-
-    this.doc.setFont("helvetica", "normal");
-    this.doc.text(receiptId.substring(0, 12).toUpperCase(), 145, 56);
-    this.doc.text(date.toLocaleDateString("en-GB"), 145, 62);
-    this.doc.text("PAID", 145, 68);
-  }
-
-  private addSectionTitle(title: string, y: number): number {
-    this.doc.setFillColor(this.primaryColor);
-    this.doc.rect(20, y, 170, 8, "F");
-
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(11);
-    this.doc.setFont("helvetica", "bold");
-    this.doc.text(title, 22, y + 5.5);
-
-    this.doc.setTextColor(0, 0, 0);
-    return y + 15;
-  }
-
-  private addInfoRow(
+  private addDataRow(
     label: string,
     value: string,
     y: number,
-    bold: boolean = false
+    emphasized: boolean = false
   ): number {
-    this.doc.setFontSize(10);
-    this.doc.setTextColor(this.darkGray);
+    this.doc.setFontSize(9);
+
+    // Label
+    this.doc.setTextColor(this.textGray);
     this.doc.setFont("helvetica", "normal");
     this.doc.text(label, 25, y);
 
-    this.doc.setTextColor(this.secondaryColor);
-    this.doc.setFont("helvetica", bold ? "bold" : "normal");
+    // Value
+    this.doc.setTextColor(emphasized ? this.primaryColor : this.textGray);
+    this.doc.setFont("helvetica", emphasized ? "bold" : "normal");
     this.doc.text(value, 100, y);
 
     return y + 6;
   }
 
-  private addAmountSummary(
-    amountPaid: number,
-    amountDue: number,
-    totalAmount: number,
+  private addFinancialSummary(
+    amounts: {
+      total?: number;
+      paid: number;
+      due?: number;
+    },
     y: number
   ): number {
-    // Summary box
-    this.doc.setFillColor(this.lightGray);
-    this.doc.rect(120, y, 70, 25, "F");
-    this.doc.setDrawColor(this.primaryColor);
+    // Professional financial summary box
+    this.doc.setFillColor("#f9fafb"); // Very light gray
+    this.doc.setDrawColor(this.borderGray);
     this.doc.setLineWidth(0.5);
-    this.doc.rect(120, y, 70, 25, "S");
+    this.doc.rect(110, y, 80, amounts.due !== undefined ? 30 : 20, "FD");
 
     let currentY = y + 8;
+    this.doc.setFontSize(9);
 
-    this.doc.setFontSize(10);
-    this.doc.setTextColor(this.secondaryColor);
+    if (amounts.total !== undefined) {
+      // Total amount
+      this.doc.setTextColor(this.textGray);
+      this.doc.setFont("helvetica", "normal");
+      this.doc.text("Total Amount", 115, currentY);
+      this.doc.setTextColor(this.primaryColor);
+      this.doc.setFont("helvetica", "bold");
+      this.doc.text(`KSh ${amounts.total.toLocaleString()}`, 185, currentY, {
+        align: "right",
+      });
+      currentY += 7;
+    }
 
-    // Total Amount
+    // Amount paid
+    this.doc.setTextColor(this.textGray);
     this.doc.setFont("helvetica", "normal");
-    this.doc.text("Total Amount:", 125, currentY);
-    this.doc.text(`KSh ${totalAmount.toLocaleString()}`, 160, currentY);
-    currentY += 6;
-
-    // Amount Paid
-    this.doc.text("Amount Paid:", 125, currentY);
-    this.doc.setTextColor(this.primaryColor);
+    this.doc.text("Amount Paid", 115, currentY);
+    this.doc.setTextColor(this.successGreen);
     this.doc.setFont("helvetica", "bold");
-    this.doc.text(`KSh ${amountPaid.toLocaleString()}`, 160, currentY);
-    currentY += 6;
+    this.doc.text(`KSh ${amounts.paid.toLocaleString()}`, 185, currentY, {
+      align: "right",
+    });
+    currentY += 7;
 
-    // Balance Due
-    this.doc.setTextColor(amountDue > 0 ? "#DC2626" : this.primaryColor); // Red if due, green if paid
-    this.doc.text("Balance Due:", 125, currentY);
-    this.doc.text(`KSh ${amountDue.toLocaleString()}`, 160, currentY);
+    if (amounts.due !== undefined) {
+      // Balance due
+      this.doc.setTextColor(this.textGray);
+      this.doc.setFont("helvetica", "normal");
+      this.doc.text("Balance Due", 115, currentY);
+      this.doc.setTextColor(
+        amounts.due > 0 ? this.warningRed : this.successGreen
+      );
+      this.doc.setFont("helvetica", "bold");
+      this.doc.text(`KSh ${amounts.due.toLocaleString()}`, 185, currentY, {
+        align: "right",
+      });
+    }
 
-    return y + 35;
+    return y + (amounts.due !== undefined ? 40 : 30);
   }
 
-  private addFooter() {
-    const footerY = 260;
+  private addStatusBadge(status: string, x: number, y: number) {
+    const statusUpper = status.toUpperCase();
+    const isPositive = ["PAID", "COMPLETED", "CONFIRMED"].includes(statusUpper);
 
-    // Footer line
-    this.doc.setDrawColor(this.primaryColor);
-    this.doc.setLineWidth(1);
+    // Badge background
+    this.doc.setFillColor(isPositive ? "#dcfce7" : "#fef3c7"); // Light green or yellow
+    this.doc.setDrawColor(isPositive ? this.successGreen : "#f59e0b");
+    this.doc.setLineWidth(0.5);
+    this.doc.roundedRect(x, y - 4, 25, 8, 2, 2, "FD");
+
+    // Badge text
+    this.doc.setFontSize(7);
+    this.doc.setTextColor(isPositive ? this.successGreen : "#f59e0b");
+    this.doc.setFont("helvetica", "bold");
+    this.doc.text(statusUpper, x + 12.5, y, { align: "center" });
+  }
+
+  private addMinimalFooter() {
+    const footerY = 265;
+
+    // Subtle divider line
+    this.doc.setDrawColor(this.borderGray);
+    this.doc.setLineWidth(0.5);
     this.doc.line(20, footerY, 190, footerY);
 
-    // Thank you message
-    this.doc.setFontSize(12);
+    // Professional thank you
+    this.doc.setFontSize(10);
     this.doc.setTextColor(this.primaryColor);
-    this.doc.setFont("helvetica", "bold");
-    this.doc.text("Thank you for choosing Kenya Trails!", 20, footerY + 10);
-
-    // Footer info
-    this.doc.setFontSize(8);
-    this.doc.setTextColor(this.darkGray);
     this.doc.setFont("helvetica", "normal");
+    this.doc.text("Thank you for choosing Kenya Trails", 20, footerY + 8);
+
+    // Legal notice
+    this.doc.setFontSize(7);
+    this.doc.setTextColor(this.textGray);
     this.doc.text(
-      "This is a computer-generated receipt. No signature required.",
+      "This is a digitally generated receipt. No physical signature required.",
       20,
-      footerY + 18
+      footerY + 15
     );
     this.doc.text(
-      "For inquiries, contact us at support@kenyatrails.com or +254 700 123 456",
+      "For support: support@kenyatrails.com | +254 700 123 456",
       20,
-      footerY + 24
+      footerY + 20
     );
-  }
-
-  private addWatermark() {
-    // Add subtle watermark
-    this.doc.setTextColor(240, 240, 240);
-    this.doc.setFontSize(40);
-    this.doc.setFont("helvetica", "bold");
-
-    // Save current state
-    this.doc.saveGraphicsState();
-
-    // Rotate and add watermark
-    // this.doc.setGState({
-    //   opacity: 0.1,
-    // });
-
-    // Center the watermark
-    const pageWidth = this.doc.internal.pageSize.width;
-    const pageHeight = this.doc.internal.pageSize.height;
-
-    this.doc.text("KENYA TRAILS", pageWidth / 2, pageHeight / 2, {
-      angle: 45,
-      align: "center",
-    });
-
-    // Restore state
-    this.doc.restoreGraphicsState();
   }
 
   generateBookingReceipt(booking: BookingReceiptData): void {
-    console.log(booking);
     this.doc = new jsPDF();
 
-    // Add watermark first (behind content)
-    this.addWatermark();
-
     // Header
-    this.addHeader("BOOKING RECEIPT");
+    this.addMinimalHeader("BOOKING RECEIPT");
+    this.addCompanyDetails();
+    this.addReceiptDetails(
+      booking.id,
+      booking.bookingDate,
+      booking.paymentStatus
+    );
 
-    // Company info and receipt info
-    this.addCompanyInfo();
-    this.addReceiptInfo(booking.id, booking.bookingDate);
+    let currentY = 75;
 
-    let currentY = 85;
-
-    // Customer Information Section
-    currentY = this.addSectionTitle("CUSTOMER INFORMATION", currentY);
-    currentY = this.addInfoRow(
-      "Name:",
-      booking.userName || "Not provided",
+    // Customer Information
+    currentY = this.addSection("CUSTOMER DETAILS", currentY);
+    currentY = this.addDataRow(
+      "Customer Name",
+      booking.userName || "Not specified",
       currentY
     );
-    currentY = this.addInfoRow("Email:", booking.userEmail, currentY);
-    currentY = this.addInfoRow(
-      "Booking ID:",
+    currentY = this.addDataRow("Email Address", booking.userEmail, currentY);
+    currentY = this.addDataRow(
+      "Booking Reference",
       booking.id.substring(0, 12).toUpperCase(),
-      currentY
-    );
-    currentY = this.addInfoRow(
-      "Booking Date:",
-      booking.bookingDate.toLocaleDateString("en-GB"),
-      currentY
-    );
-
-    currentY += 10;
-
-    // Event Information Section
-    currentY = this.addSectionTitle("EVENT INFORMATION", currentY);
-    currentY = this.addInfoRow("Event:", booking.eventTitle, currentY, true);
-    currentY = this.addInfoRow(
-      "Event ID:",
-      booking.eventId.substring(0, 12).toUpperCase(),
-      currentY
-    );
-    currentY = this.addInfoRow(
-      "Number of People:",
-      booking.numberOfPeople.toString(),
-      currentY
-    );
-    currentY = this.addInfoRow(
-      "Payment Status:",
-      booking.paymentStatus.toUpperCase(),
       currentY,
       true
     );
 
-    currentY += 10;
+    currentY += 5;
 
-    // Payment Summary Section
-    currentY = this.addSectionTitle("PAYMENT SUMMARY", currentY);
-    currentY = this.addAmountSummary(
-      booking.amountPaid,
-      booking.amountDue,
-      booking.totalAmount,
+    // Event Information
+    currentY = this.addSection("BOOKING DETAILS", currentY);
+    currentY = this.addDataRow("Event", booking.eventTitle, currentY, true);
+    currentY = this.addDataRow(
+      "Event ID",
+      booking.eventId.substring(0, 12).toUpperCase(),
+      currentY
+    );
+    currentY = this.addDataRow(
+      "Participants",
+      booking.numberOfPeople.toString(),
+      currentY
+    );
+    currentY = this.addDataRow(
+      "Booking Date",
+      booking.bookingDate.toLocaleDateString("en-GB"),
       currentY
     );
 
-    // QR Code placeholder (you can integrate a QR code library)
+    // Status badge
+    this.addStatusBadge(booking.paymentStatus, 160, currentY - 2);
+
     currentY += 10;
-    this.doc.setFontSize(8);
-    this.doc.setTextColor(this.darkGray);
-    this.doc.text("Scan QR code for booking verification:", 25, currentY);
 
-    // QR Code placeholder box
-    this.doc.setDrawColor(this.darkGray);
-    this.doc.rect(25, currentY + 5, 30, 30, "S");
-    this.doc.setFontSize(6);
-    this.doc.text("QR CODE", 35, currentY + 22);
+    // Financial Summary
+    currentY = this.addSection("PAYMENT SUMMARY", currentY);
+    currentY = this.addFinancialSummary(
+      {
+        total: booking.totalAmount,
+        paid: booking.amountPaid,
+        due: booking.amountDue,
+      },
+      currentY
+    );
 
-    // Footer
-    this.addFooter();
+    // Terms notice
+    currentY += 10;
+    this.doc.setFontSize(7);
+    this.doc.setTextColor(this.textGray);
+    this.doc.text(
+      "Terms: Full payment required 48 hours before event date. Cancellation policy applies.",
+      20,
+      currentY
+    );
+
+    this.addMinimalFooter();
   }
 
   generatePaymentReceipt(payment: PaymentReceiptData): void {
     this.doc = new jsPDF();
 
-    // Add watermark first (behind content)
-    this.addWatermark();
-
     // Header
-    this.addHeader("PAYMENT RECEIPT");
+    this.addMinimalHeader("PAYMENT RECEIPT");
+    this.addCompanyDetails();
+    this.addReceiptDetails(payment.id, payment.createdAt, payment.status);
 
-    // Company info and receipt info
-    this.addCompanyInfo();
-    this.addReceiptInfo(payment.id, payment.createdAt);
+    let currentY = 75;
 
-    let currentY = 85;
-
-    // Customer Information Section
-    currentY = this.addSectionTitle("CUSTOMER INFORMATION", currentY);
-    currentY = this.addInfoRow(
-      "Name:",
-      payment.userName || "Not provided",
+    // Customer Information
+    currentY = this.addSection("CUSTOMER DETAILS", currentY);
+    currentY = this.addDataRow(
+      "Customer Name",
+      payment.userName || "Not specified",
       currentY
     );
-    currentY = this.addInfoRow("Email:", payment.userEmail, currentY);
+    currentY = this.addDataRow("Email Address", payment.userEmail, currentY);
 
-    currentY += 10;
+    currentY += 5;
 
-    // Payment Information Section
-    currentY = this.addSectionTitle("PAYMENT INFORMATION", currentY);
-    currentY = this.addInfoRow("Service:", payment?.paymentFor, currentY, true);
-    // currentY = this.addInfoRow(
-    //   "Event:",
-    //   payment.eventTitle || "Event",
-    //   currentY,
-    //   true
-    // );
-    currentY = this.addInfoRow(
-      "Payment Reference:",
-      payment.reference,
-      currentY
-    );
-    currentY = this.addInfoRow(
-      "Payment Date:",
-      payment.createdAt.toLocaleDateString("en-GB"),
-      currentY
-    );
-    currentY = this.addInfoRow(
-      "Payment Status:",
-      payment.status.toUpperCase(),
+    // Payment Information
+    currentY = this.addSection("PAYMENT DETAILS", currentY);
+    currentY = this.addDataRow(
+      "Service",
+      payment.paymentFor || "Event Promotion",
       currentY,
       true
     );
+    currentY = this.addDataRow(
+      "Transaction Reference",
+      payment.reference,
+      currentY,
+      true
+    );
+    currentY = this.addDataRow(
+      "Payment Date",
+      payment.createdAt.toLocaleDateString("en-GB"),
+      currentY
+    );
+    currentY = this.addDataRow(
+      "Payment Time",
+      payment.createdAt.toLocaleTimeString("en-GB", { hour12: false }),
+      currentY
+    );
+
+    // Status badge
+    this.addStatusBadge(payment.status, 160, currentY - 2);
 
     currentY += 10;
 
-    // Amount Section
-    currentY = this.addSectionTitle("AMOUNT DETAILS", currentY);
+    // Amount Details
+    currentY = this.addSection("AMOUNT PAID", currentY);
+    currentY = this.addFinancialSummary({ paid: payment.amount }, currentY);
 
-    // Amount box
-    this.doc.setFillColor(this.lightGray);
-    this.doc.rect(120, currentY, 70, 15, "F");
-    this.doc.setDrawColor(this.primaryColor);
-    this.doc.setLineWidth(1);
-    this.doc.rect(120, currentY, 70, 15, "S");
-
-    this.doc.setFontSize(12);
-    this.doc.setTextColor(this.primaryColor);
-    this.doc.setFont("helvetica", "bold");
-    this.doc.text("Total Paid:", 125, currentY + 8);
-    this.doc.text(`KSh ${payment.amount.toLocaleString()}`, 155, currentY + 8);
-
-    currentY += 25;
-
-    // Terms and conditions
+    // Service terms
     currentY += 10;
     this.doc.setFontSize(8);
-    this.doc.setTextColor(this.darkGray);
-    this.doc.setFont("helvetica", "normal");
-    this.doc.text("TERMS & CONDITIONS:", 25, currentY);
-    currentY += 5;
-    this.doc.text(
-      "• This payment is for event promotion services on Kenya Trails platform",
-      25,
-      currentY
-    );
-    currentY += 4;
-    this.doc.text(
-      "• Promotion duration and terms as agreed upon booking",
-      25,
-      currentY
-    );
-    currentY += 4;
-    this.doc.text("• Refunds are subject to our refund policy", 25, currentY);
+    this.doc.setTextColor(this.textGray);
+    this.doc.setFont("helvetica", "bold");
+    this.doc.text("Service Terms:", 20, currentY);
 
-    // Footer
-    this.addFooter();
+    currentY += 5;
+    this.doc.setFont("helvetica", "normal");
+    const terms = [
+      "• Payment covers event promotion services on Kenya Trails platform",
+      "• Service delivery as per agreed promotion package",
+      "• Refunds subject to terms and conditions",
+    ];
+
+    terms.forEach((term) => {
+      this.doc.text(term, 20, currentY);
+      currentY += 4;
+    });
+
+    this.addMinimalFooter();
   }
 
   save(filename: string): void {
@@ -411,7 +437,6 @@ export const downloadBookingReceipt = (booking: BookingReceiptData): void => {
 };
 
 export const downloadPaymentReceipt = (payment: PaymentReceiptData): void => {
-  console.log(payment);
   const generator = new ModernReceiptGenerator();
   generator.generatePaymentReceipt(payment);
   generator.save(`payment-receipt-${payment.id.substring(0, 8)}.pdf`);

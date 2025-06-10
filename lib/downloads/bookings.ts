@@ -13,7 +13,7 @@ export const downloadAllBookings = async (bookings: any, event: any) => {
 
     // Modern color palette
     const colors = {
-      primary: [31, 41, 55], // Dark gray-blue
+      primary: [21, 21, 21], // Dark gray-blue
       secondary: [107, 114, 128], // Medium gray
       accent: [59, 130, 246], // Blue accent
       background: [249, 250, 251], // Light gray background
@@ -84,10 +84,10 @@ export const downloadAllBookings = async (bookings: any, event: any) => {
       doc.text("CUSTOMER", 25, yPosition);
       doc.text("DATE", 55, yPosition);
       doc.text("TOTAL", 85, yPosition);
-      doc.text("PEOPLE", 105, yPosition);
-      doc.text("PAID", 135, yPosition);
-      doc.text("DUE", 160, yPosition);
-      doc.text("STATUS", 180, yPosition);
+      doc.text("PEOPLE", 100, yPosition);
+      doc.text("PAID", 130, yPosition);
+      doc.text("DUE", 155, yPosition);
+      doc.text("STATUS", 175, yPosition);
 
       yPosition += 18;
     };
