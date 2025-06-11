@@ -254,11 +254,11 @@ const UserActionsCell = ({ user }: { user: User }) => {
               </div>
               <div>
                 <Label className="text-sm font-medium">Member Since</Label>
-                <p className="text-sm text-muted-foreground mt-1">
+                {/* <p className="text-sm text-muted-foreground mt-1">
                   {user.createdAt
-                    ? new Date(user.createdAt.toDate()).toLocaleDateString()
+                    ? new Date(user?.createdAt?.toDate())?.toLocaleDateString()
                     : "N/A"}
-                </p>
+                </p> */}
               </div>
             </div>
 

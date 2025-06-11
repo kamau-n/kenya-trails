@@ -61,8 +61,11 @@ export default function Navbar() {
   const navItems = [
     { href: "/events", label: "Explore Events" },
     { href: "/organize", label: "Organize" },
-    { href: "/about", label: "About Us" },
+    // { href: "/about", label: "About Us" },
     ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(user?.userType === "organizer"
+      ? [{ href: "/dashboard/eventplanner", label: "Organizer Dashboard" }]
+      : []),
   ];
 
   return (

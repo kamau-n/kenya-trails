@@ -57,6 +57,7 @@ export default function UsersPage() {
           ...doc.data(),
         }));
 
+        console.log("this is the users data", usersData);
         setUsers(usersData);
         setFilteredUsers(usersData);
 
@@ -128,7 +129,9 @@ export default function UsersPage() {
         user.role || "",
         user.userType || "user",
         user.status || "",
-        user.createdAt ? new Date(user.createdAt.toDate()).toISOString() : "",
+        user?.createdAt
+          ? new Date(user?.createdAt?.toDate()).toISOString()
+          : "",
       ]),
     ];
 
