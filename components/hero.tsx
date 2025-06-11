@@ -112,8 +112,8 @@ export default function EnhancedMobileHero() {
           {/* Premium Badge */}
           <div className="flex justify-center sm:justify-start">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-violet-500 rounded-full blur-lg opacity-60 animate-pulse" />
-              <div className="relative bg-gradient-to-r from-pink-600 to-violet-600 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-700 rounded-full blur-lg opacity-60 animate-pulse" />
+              <div className="relative bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 backdrop-blur-sm">
                 <Star className="w-3 h-3 fill-current" />
                 PREMIUM ADVENTURES
               </div>
@@ -147,7 +147,7 @@ export default function EnhancedMobileHero() {
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-[0.9] tracking-tight">
               Discover
               <br />
-              <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
+              <span className="bg-gradient-to-r from-pink-400 via-green-400 to-green-600 bg-clip-text text-transparent animate-pulse">
                 Wild Kenya
               </span>
             </h1>
@@ -167,8 +167,8 @@ export default function EnhancedMobileHero() {
 
           {/* CTA Buttons - Mobile Optimized */}
           <div className="space-y-4 px-4">
-            <button className="group relative w-full sm:w-auto sm:px-12 py-4 bg-gradient-to-r from-pink-600 via-purple-600 to-violet-600 rounded-2xl text-white font-bold text-lg overflow-hidden transform transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/25">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <button className="group relative w-full sm:w-auto sm:px-12 py-4 bg-gradient-to-r from-green-400 via-green-600 to-green-700 rounded-2xl text-white font-bold text-lg overflow-hidden transform transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/25">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-green-700 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative flex items-center justify-center gap-3">
                 <Play className="w-5 h-5" />
                 Start Your Adventure
