@@ -285,4 +285,163 @@
         </div>
     </div>
 </div>
-);
+); const renderProfile = () => (
+<div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold">Profile Information</h2>
+        {!isEditingProfile ? (
+        <button onClick={()=> setIsEditingProfile(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <Edit className="h-4 w-4" />
+            Edit Profile
+          </button> ) : (
+        <div className="flex gap-2">
+            <button onClick={handleProfileSave} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              <Save className="h-4 w-4" />
+              Save
+            </button>
+            <button onClick={handleProfileCancel} className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+              <X className="h-4 w-4" />
+              Cancel
+            </button>
+        </div>
+        )}
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Display Name
+          </label> {isEditingProfile ? (
+            <input type="text" value={user.displayName} onChange={(e)=> setUser((prev) => ({ ...prev, displayName: e.target.value })) } className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            /> ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">{user?.displayName}</p>
+            )}
+        </div>
+
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+            <p className="p-3 bg-gray-50 rounded-lg">{user?.email}</p>
+        </div>
+
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Organization
+          </label> {isEditingProfile ? (
+            <input type="text" value={editedProfile.organization} onChange={(e)=> setEditedProfile((prev) => ({ ...prev, organization: e.target.value, })) } className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            /> ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">
+                {user?.organizer.organization}
+            </p>
+            )}
+        </div>
+
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Phone Number
+          </label> {isEditingProfile ? (
+            <input type="text" value={editedProfile.phoneNumber} onChange={(e)=> setEditedProfile((prev) => ({ ...prev, phoneNumber: e.target.value, })) } className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            /> ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">
+                {user?.organizer.phoneNumber}
+            </p>
+            )}
+        </div>
+
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Website
+          </label> {isEditingProfile ? (
+            <input type="url" value={editedProfile.website} onChange={(e)=> setEditedProfile((prev) => ({ ...prev, website: e.target.value, })) } className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            /> ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">
+                {user?.organizer.website}
+            </p>
+            )}
+        </div>
+
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Experience
+          </label> {isEditingProfile ? (
+            <input type="text" value={editedProfile.experience} onChange={(e)=> setEditedProfile((prev) => ({ ...prev, experience: e.target.value, })) } className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            /> ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">
+                {user?.organizer.experience}
+            </p>
+            )}
+        </div>
+
+        <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+            Bio
+          </label> {isEditingProfile ? (
+            <textarea value={editedProfile.bio} onChange={(e)=>
+                setEditedProfile((prev) => ({ ...prev, bio: e.target.value }))
+              }
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+            />
+          ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">{user?.organizer.bio}</p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Certifications
+          </label>
+          {isEditingProfile ? (
+            <textarea
+              value={editedProfile.certifications}
+              onChange={(e) =>
+                setEditedProfile((prev) => ({
+                  ...prev,
+                  certifications: e.target.value,
+                }))
+              }
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+            />
+          ) : (
+            <p className="p-3 bg-gray-50 rounded-lg">
+              {user?.organizer.certifications}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 pt-6 border-t">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Member Since
+            </label>
+            <p className="p-3 bg-gray-50 rounded-lg">
+              {formatDate(user?.createdAt)}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Onboarding Completed
+            </label>
+            <p className="p-3 bg-gray-50 rounded-lg">
+              {user?.organizer.onboardingCompleted ? (
+                <span className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  Completed
+                </span>
+              ) : (
+                <span className="flex items-center gap-2 text-red-600">
+                  <XCircle className="h-4 w-4" />
+                  Pending
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
