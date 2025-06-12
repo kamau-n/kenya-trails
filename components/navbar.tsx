@@ -63,9 +63,9 @@ export default function Navbar() {
     { href: "/organize", label: "Organize" },
     // { href: "/about", label: "About Us" },
     ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
-    ...(user?.userType === "organizer"
-      ? [{ href: "/dashboard/eventplanner", label: "Organizer Dashboard" }]
-      : []),
+    // ...(user?.userType === "organizer"
+    //   ? [{ href: "/dashboard/eventplanner", label: "Organizer Dashboard" }]
+    //   : []),
   ];
 
   return (
