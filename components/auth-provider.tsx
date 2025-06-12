@@ -10,6 +10,10 @@ import {
   signInWithPopup,
   sendEmailVerification,
   sendPasswordResetEmail,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
+  PhoneAuthProvider,
+  signInWithCredential,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured, googleProvider } from "@/lib/firebase";
@@ -185,6 +189,34 @@ export function AuthProvider({ children }) {
       // navigate to login page
       router.push("/login");
     } catch (error) {
+      throw error;
+    }
+  };
+
+  const signInWithPhone = async (
+    phoneNumber: string,
+    recaptchaVerifier: RecaptchaVerifier
+  ) => {
+    try {
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        recaptchaVerifier
+      );
+      return confirmationResult;
+    } catch (error) {
+      console.error("Error in signInWithPhone:", error);
+      throw error;
+    }
+  };
+
+  const verifyPhoneCode = async (verificationId: string, code: string) => {
+    try {
+      const credential = PhoneAuthProvider.credential(verificationId, code);
+      const userCredential = await signInWithCredential(auth, credential);
+      return { user: userCredential.user };
+    } catch (error) {
+      console.error("Error in verifyPhoneCode:", error);
       throw error;
     }
   };
