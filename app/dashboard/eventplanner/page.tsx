@@ -21,6 +21,17 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Plus,
+  Search,
+  MoreHorizontal,
+  MapPin,
+  ArrowLeft,
+  Building,
+  Phone,
+  Award,
+  Shield,
+  Globe,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { booking, events, FirebaseUser } from "@/app/types/dashboardtypes";
@@ -36,6 +47,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { event } from "@/app/types/types";
 
 const samplePayments = [
   {
@@ -104,6 +116,12 @@ const OrganizerDashboard = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [selectedEvent, setSelectedEvent] = useState<event>(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+
   const auth = useAuth();
   const user: FirebaseUser = auth?.user;
   const authLoading = auth?.loading || false;
@@ -139,58 +157,83 @@ const OrganizerDashboard = () => {
     const fetchUserData = async () => {
       try {
         console.log("Am fetching user data");
-        // Fetch user's bookings
-        // const bookingsQuery = query(
-        //   collection(db, "bookings"),
-        //   where("userId", "==", user?.uid),
-        //   orderBy("bookingDate", "desc")
-        // );
 
-        // const bookingsSnapshot = await getDocs(bookingsQuery);
-        // const bookingsData = bookingsSnapshot.docs.map((doc) => ({
-        //   id: doc.id,
-        //   ...doc.data(),
-        //   bookingDate: doc.data().bookingDate?.toDate() || new Date(),
-        // }));
+        if (user.userType === "organizer") {
+          // 1. Fetch events organized by the user
+          const eventsQuery = query(
+            collection(db, "events"),
+            where("organizerId", "==", user.uid),
+            orderBy("date", "desc")
+          );
 
-        // console.log("this is the booking data", bookingsData);
+          const eventsSnapshot = await getDocs(eventsQuery);
+          const eventsData = eventsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            date: doc.data().date?.toDate() || new Date(),
+          }));
 
-        // setBookings(bookingsData);
+          setEvents(eventsData);
 
-        // If user is an organizer, fetch their events and payments
+          // 2. Extract event IDs
+          const eventIds = eventsData.map((event) => event.id);
 
-        const eventsQuery = query(
-          collection(db, "events"),
-          where("organizerId", "==", user.uid),
-          orderBy("date", "desc")
-        );
+          // 3. Fetch bookings for those event IDs
+          let bookingsData = [];
+          const bookingChunks = [];
 
-        const eventsSnapshot = await getDocs(eventsQuery);
-        const eventsData = eventsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date?.toDate() || new Date(),
-        }));
+          for (let i = 0; i < eventIds.length; i += 10) {
+            bookingChunks.push(eventIds.slice(i, i + 10));
+          }
 
-        console.log(eventsData);
+          for (const chunk of bookingChunks) {
+            const bookingsQuery = query(
+              collection(db, "bookings"),
+              where("eventId", "in", chunk),
+              orderBy("bookingDate", "desc")
+            );
 
-        setEvents(eventsData);
+            const bookingsSnapshot = await getDocs(bookingsQuery);
+            const chunkData = bookingsSnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              bookingDate: doc.data().bookingDate?.toDate() || new Date(),
+            }));
 
-        // Fetch payments for promoted events
-        const paymentsQuery = query(
-          collection(db, "payments"),
-          where("organizerId", "==", user.uid)
-          // where("status", "==", "completed")
-        );
+            bookingsData = [...bookingsData, ...chunkData];
+          }
 
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        const paymentsData = paymentsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
+          setBookings(bookingsData);
 
-        setPayments(paymentsData);
+          // 4. Fetch payments for only the fetched bookings
+          const bookingIds = bookingsData.map((booking) => booking.id);
+          let paymentsData = [];
+          const paymentChunks = [];
+
+          for (let i = 0; i < bookingIds.length; i += 10) {
+            paymentChunks.push(bookingIds.slice(i, i + 10));
+          }
+
+          for (const chunk of paymentChunks) {
+            const paymentsQuery = query(
+              collection(db, "payments"),
+              where("bookingId", "in", chunk),
+              orderBy("createdAt", "desc")
+            );
+
+            const paymentsSnapshot = await getDocs(paymentsQuery);
+            const chunkData = paymentsSnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              createdAt: doc.data().createdAt?.toDate() || new Date(),
+            }));
+
+            paymentsData = [...paymentsData, ...chunkData];
+          }
+
+          console.log("these are the fetched payments", paymentsData);
+          setPayments(paymentsData);
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -208,6 +251,23 @@ const OrganizerDashboard = () => {
       return new Date(timestamp.seconds * 1000).toLocaleDateString();
     }
     return new Date(timestamp).toLocaleDateString();
+  };
+
+  const getStatusIcon = (status: any) => {
+    switch (status) {
+      case "completed":
+      case "confirmed":
+      case "published":
+        return <CheckCircle className="h-4 w-4" />;
+      case "pending":
+      case "draft":
+        return <Clock className="h-4 w-4" />;
+      case "failed":
+      case "cancelled":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <AlertTriangle className="h-4 w-4" />;
+    }
   };
 
   const formatCurrency = (amount: any) => {
@@ -254,580 +314,1160 @@ const OrganizerDashboard = () => {
   // Calculate overview stats
   const totalRevenue = payments
     .filter((p) => p.status === "completed")
-    .reduce((sum, p) => sum + p.amount, 0);
-  const totalBookings = bookings?.length || 0;
-  const totalEvents = events?.length || 0;
-  const pendingPayments = payments.filter((p) => p.status === "pending").length;
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalBookings = bookings?.length;
+  const totalEvents = events?.length;
+  const pendingPayments = payments?.filter(
+    (p) => p.status === "pending"
+  ).length;
 
   const renderOverview = () => (
     <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(totalRevenue)}
               </p>
             </div>
-            <DollarSign className="h-8 w-8 text-green-600" />
+            <div className="p-3 bg-green-100 rounded-full">
+              <DollarSign className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+            <span className="text-green-500">+12.5%</span>
+            <span className="text-gray-500 ml-1">from last month</span>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Bookings</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-gray-600">Total Events</p>
+              <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <Calendar className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <TrendingUp className="h-4 w-4 text-blue-500 mr-1" />
+            <span className="text-blue-500">+3</span>
+            <span className="text-gray-500 ml-1">new this month</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Total Bookings
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
                 {totalBookings}
               </p>
             </div>
-            <Users className="h-8 w-8 text-blue-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Events</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {totalEvents}
-              </p>
+            <div className="p-3 bg-purple-100 rounded-full">
+              <Users className="h-6 w-6 text-purple-600" />
             </div>
-            <Calendar className="h-8 w-8 text-purple-600" />
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <TrendingUp className="h-4 w-4 text-purple-500 mr-1" />
+            <span className="text-purple-500">+8.2%</span>
+            <span className="text-gray-500 ml-1">from last week</span>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Pending Payments</p>
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-sm font-medium text-gray-600">
+                Pending Payments
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
                 {pendingPayments}
               </p>
             </div>
-            <Clock className="h-8 w-8 text-orange-600" />
+            <div className="p-3 bg-orange-100 rounded-full">
+              <Clock className="h-6 w-6 text-orange-600" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <AlertTriangle className="h-4 w-4 text-orange-500 mr-1" />
+            <span className="text-orange-500">Requires attention</span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Recent Events</h3>
-          <div className="space-y-3">
-            {events?.slice(0, 3).map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded">
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Recent Activity
+        </h3>
+        <div className="space-y-4">
+          {bookings?.slice(0, 5).map((booking) => (
+            <div
+              key={booking.id}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Users className="h-4 w-4 text-blue-600" />
+                </div>
                 <div>
-                  <p className="font-medium">{event.title}</p>
-                  <p className="text-sm text-gray-600">
-                    {/* {event?.date}  */}• {event?.location}
+                  <p className="font-medium text-gray-900">
+                    {booking.userName}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    booked {booking.eventTitle}
                   </p>
                 </div>
-                {/* <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                    event?.status
-                  )}`}>
-                  {event?.status}
-                </span> */}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Recent Bookings</h3>
-          <div className="space-y-3">
-            {bookings?.slice(0, 3).map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <div>
-                  <p className="font-medium">{booking.userName}</p>
-                  <p className="text-sm text-gray-600">{booking.eventTitle}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">
-                    {formatCurrency(booking.totalAmount)}
-                  </p>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                      booking.status
-                    )}`}>
-                    {booking.status}
-                  </span>
-                </div>
+              <div className="text-right">
+                <p className="font-medium text-gray-900">
+                  {formatCurrency(booking.totalAmount)}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {booking.bookingDate.toLocaleDateString()}
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 
   const renderProfile = () => (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Profile Information</h2>
-        {!isEditingProfile ? (
-          <button
-            onClick={() => setIsEditingProfile(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={handleProfileSave}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              <Save className="h-4 w-4" />
-              Save
-            </button>
-            <button
-              onClick={handleProfileCancel}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-              <X className="h-4 w-4" />
-              Cancel
-            </button>
+    <div className=" mx-auto p-6">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl font-bold">
+                {user?.displayName?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">{user?.displayName}</h1>
+              <p className="text-blue-100 mt-1">{user?.email}</p>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Display Name
-          </label>
-          {isEditingProfile ? (
-            <input
-              type="text"
-              value={user.displayName}
-              onChange={(e) =>
-                setUser((prev) => ({ ...prev, displayName: e.target.value }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {!isEditingProfile ? (
+            <button
+              onClick={() => setIsEditingProfile(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all duration-200 border border-white/30">
+              <Edit className="h-5 w-5" />
+              Edit Profile
+            </button>
           ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">{user?.displayName}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <p className="p-3 bg-gray-50 rounded-lg">{user?.email}</p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Organization
-          </label>
-          {isEditingProfile ? (
-            <input
-              type="text"
-              value={editedProfile.organization}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({
-                  ...prev,
-                  organization: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.organization}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number
-          </label>
-          {isEditingProfile ? (
-            <input
-              type="text"
-              value={editedProfile.phoneNumber}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({
-                  ...prev,
-                  phoneNumber: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.phoneNumber}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Website
-          </label>
-          {isEditingProfile ? (
-            <input
-              type="url"
-              value={editedProfile.website}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({
-                  ...prev,
-                  website: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.website}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Experience
-          </label>
-          {isEditingProfile ? (
-            <input
-              type="text"
-              value={editedProfile.experience}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({
-                  ...prev,
-                  experience: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.experience}
-            </p>
-          )}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Bio
-          </label>
-          {isEditingProfile ? (
-            <textarea
-              value={editedProfile.bio}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({ ...prev, bio: e.target.value }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={4}
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">{user?.organizer.bio}</p>
-          )}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Certifications
-          </label>
-          {isEditingProfile ? (
-            <textarea
-              value={editedProfile.certifications}
-              onChange={(e) =>
-                setEditedProfile((prev) => ({
-                  ...prev,
-                  certifications: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
-            />
-          ) : (
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.certifications}
-            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleProfileSave}
+                className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-lg">
+                <Save className="h-5 w-5" />
+                Save Changes
+              </button>
+              <button
+                onClick={handleProfileCancel}
+                className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all duration-200 border border-white/30">
+                <X className="h-5 w-5" />
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Member Since
-            </label>
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {formatDate(user?.createdAt)}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Onboarding Completed
-            </label>
-            <p className="p-3 bg-gray-50 rounded-lg">
-              {user?.organizer.onboardingCompleted ? (
-                <span className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-4 w-4" />
-                  Completed
-                </span>
+      {/* Main Content */}
+      <div className="bg-white rounded-b-xl shadow-xl border border-gray-100">
+        {/* Profile Information Section */}
+        <div className="p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-8 flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <User className="h-5 w-5 text-blue-600" />
+            </div>
+            Profile Information
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Display Name */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Display Name
+              </label>
+              {isEditingProfile ? (
+                <input
+                  type="text"
+                  value={user.displayName}
+                  onChange={(e) =>
+                    setUser((prev) => ({
+                      ...prev,
+                      displayName: e.target.value,
+                    }))
+                  }
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your display name"
+                />
               ) : (
-                <span className="flex items-center gap-2 text-red-600">
-                  <XCircle className="h-4 w-4" />
-                  Pending
-                </span>
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-gray-800 font-medium">
+                    {user?.displayName}
+                  </p>
+                </div>
               )}
-            </p>
+            </div>
+
+            {/* Email (Read-only) */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Email Address
+              </label>
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                <p className="text-gray-800 font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
+            {/* Organization */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Organization
+              </label>
+              {isEditingProfile ? (
+                <input
+                  type="text"
+                  value={editedProfile.organization}
+                  onChange={(e) =>
+                    setEditedProfile((prev) => ({
+                      ...prev,
+                      organization: e.target.value,
+                    }))
+                  }
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your organization"
+                />
+              ) : (
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-gray-800 font-medium flex items-center gap-2">
+                    <Building className="h-4 w-4 text-gray-600" />
+                    {user?.organizer.organization}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Phone Number */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Phone Number
+              </label>
+              {isEditingProfile ? (
+                <input
+                  type="tel"
+                  value={editedProfile.phoneNumber}
+                  onChange={(e) =>
+                    setEditedProfile((prev) => ({
+                      ...prev,
+                      phoneNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your phone number"
+                />
+              ) : (
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-gray-800 font-medium flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-600" />
+                    {user?.organizer.phoneNumber}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Website */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Website
+              </label>
+              {isEditingProfile ? (
+                <input
+                  type="url"
+                  value={editedProfile.website}
+                  onChange={(e) =>
+                    setEditedProfile((prev) => ({
+                      ...prev,
+                      website: e.target.value,
+                    }))
+                  }
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="https://your-website.com"
+                />
+              ) : (
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-gray-800 font-medium flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-gray-600" />
+                    {user?.organizer.website ? (
+                      <a
+                        href={user.organizer.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 hover:underline">
+                        {user.organizer.website}
+                      </a>
+                    ) : (
+                      <span className="text-gray-500">No website provided</span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Experience */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Experience Level
+              </label>
+              {isEditingProfile ? (
+                <select
+                  value={editedProfile.experience}
+                  onChange={(e) =>
+                    setEditedProfile((prev) => ({
+                      ...prev,
+                      experience: e.target.value,
+                    }))
+                  }
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white">
+                  <option value="">Select experience level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Expert">Expert</option>
+                </select>
+              ) : (
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-gray-800 font-medium flex items-center gap-2">
+                    <Award className="h-4 w-4 text-gray-600" />
+                    {user?.organizer.experience}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bio Section */}
+          <div className="mt-8 space-y-3">
+            <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Bio
+            </label>
+            {isEditingProfile ? (
+              <textarea
+                value={editedProfile.bio}
+                onChange={(e) =>
+                  setEditedProfile((prev) => ({ ...prev, bio: e.target.value }))
+                }
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                rows={4}
+                placeholder="Tell us about yourself..."
+              />
+            ) : (
+              <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                <p className="text-gray-800 leading-relaxed">
+                  {user?.organizer.bio || "No bio provided yet."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Certifications Section */}
+          <div className="mt-8 space-y-3">
+            <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Certifications
+            </label>
+            {isEditingProfile ? (
+              <textarea
+                value={editedProfile.certifications}
+                onChange={(e) =>
+                  setEditedProfile((prev) => ({
+                    ...prev,
+                    certifications: e.target.value,
+                  }))
+                }
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                rows={3}
+                placeholder="List your certifications..."
+              />
+            ) : (
+              <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                <p className="text-gray-800 leading-relaxed">
+                  {user?.organizer.certifications ||
+                    "No certifications listed."}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Account Status Section */}
+        <div className="border-t border-gray-200 bg-gray-50 p-8 rounded-b-xl">
+          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <Shield className="h-5 w-5 text-green-600" />
+            </div>
+            Account Status
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Member Since
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {formatDate(user?.createdAt)}
+                  </p>
+                  <p className="text-sm text-gray-500">Registration date</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Onboarding Status
+              </label>
+              <div className="flex items-center gap-3">
+                {user?.organizer.onboardingCompleted ? (
+                  <>
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-green-600">
+                        Completed
+                      </p>
+                      <p className="text-sm text-gray-500">All set up!</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <XCircle className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-orange-600">
+                        Pending
+                      </p>
+                      <p className="text-sm text-gray-500">Setup required</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 
-  const renderEvents = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Events</h2>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Create Event
-        </button>
-      </div>
+  const renderEvents = () => {
+    if (selectedEvent) {
+      return renderEventDetails(selectedEvent);
+    }
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Event
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Capacity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Registered
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {events?.map((event) => (
-                <tr key={event.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">
-                      {event.title}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(event.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+    const filteredEvents = events?.filter((event) => {
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        filterStatus === "all" || event.status === filterStatus;
+      return matchesSearch && matchesFilter;
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">Events</h2>
+          <button
+            onClick={() => router.push("/organize/create")}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <Plus className="h-4 w-4" />
+            Create Event
+          </button>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="all">All Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        {/* Events Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEvents?.map((event) => (
+            <div
+              key={event.id}
+              className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
+              <div className="h-48 bg-gray-200 relative">
+                <img
+                  src={event.imageUrl}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-4 right-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      event?.status
+                    )}`}>
+                    {event?.status}
+                  </span>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                    {event.title}
+                  </h3>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  {event?.description}
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {event.date.toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2" />
                     {event.location}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {event.totaSpaces}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {event.availableSpaces}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        event.status
-                      )}`}>
-                      {event.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Users className="h-4 w-4 mr-2" />
+                    {event.totalSpaces - event.availableSpaces}/
+                    {event.totalSpaces} registered
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-bold text-gray-900">
                     {formatCurrency(event.price)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-800">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                  <button
+                    onClick={() => setSelectedEvent(event)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const renderBookings = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Bookings</h2>
+  const renderEventDetails = (event: any) => {
+    const eventBookings = bookings?.filter(
+      (booking) => booking.eventId === event.id
+    );
+    const eventRevenue = eventBookings
+      ?.filter((booking) => booking.paymentStatus === "completed")
+      .reduce((sum, booking) => sum + booking.totalAmount, 0);
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Event
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Booking Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tickets
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bookings?.map((booking) => (
-                <tr key={booking.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {booking.userName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {booking.userName}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.eventTitle}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(booking.bookingDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.numberOfPeople}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(booking.totalAmount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        booking?.status
-                      )}`}>
-                      {booking?.status}
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedEvent(null)}
+            className="p-2 hover:bg-gray-100 rounded-lg">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900">{event.title}</h2>
+        </div>
+
+        {/* Event Overview */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <img
+                src={event.imageUrl}
+                alt={event.title}
+                className="w-full h-64 object-cover rounded-lg mb-4"
+              />
+              <p className="text-gray-600 mb-4">{event.description}</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center text-sm text-gray-600">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>{event.date.toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span>{event.location}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  <span>{formatCurrency(event.price)}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span>{event.totalSpaces} total capacity</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">
+                  Event Statistics
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">
+                      Total Bookings
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-800">
-                        <Download className="h-4 w-4" />
-                      </button>
+                    <span className="font-medium">{eventBookings?.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Revenue</span>
+                    <span className="font-medium">
+                      {formatCurrency(eventRevenue)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Registered</span>
+                    <span className="font-medium">
+                      {event.totalSpaces - event.availableSpaces}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Available</span>
+                    <span className="font-medium">{event.availableSpaces}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    selectedEvent.paymentManagement === "platform"
+                      ? router.push(
+                          `/organize/events/${selectedEvent?.id}/payments`
+                        )
+                      : router.push(
+                          `/organize/events/${selectedEvent?.id}/bookings`
+                        );
+                  }}
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-blue-700">
+                  Manage Payments
+                </button>
+                <button
+                  onClick={() => {
+                    router.push(`/events/${selectedEvent?.id}/edit`);
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Edit Event
+                </button>
+                <button
+                  onClick={() => {
+                    router.push(`/events/${selectedEvent?.id}`);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                  View Public Page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Event Bookings */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Event Bookings ({eventBookings?.length})
+          </h3>
+
+          {eventBookings?.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No bookings yet for this event</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {eventBookings?.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setSelectedBooking(booking)}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <User className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {booking.userName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {booking?.userEmail}
+                        </p>
+                      </div>
                     </div>
-                  </td>
-                </tr>
+
+                    <div className="flex items-center space-x-6">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Tickets</p>
+                        <p className="font-medium">{booking.numberOfPeople}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Amount</p>
+                        <p className="font-medium">
+                          {formatCurrency(booking.totalAmount)}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Status</p>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            booking.status
+                          )}`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Payment</p>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            booking.paymentStatus
+                          )}`}>
+                          {booking.paymentStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderBookings = () => {
+    if (selectedBooking) {
+      return renderBookingDetails(selectedBooking);
+    }
+
+    const filteredBookings = bookings?.filter((booking) => {
+      const matchesSearch =
+        booking.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.eventTitle.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        filterStatus === "all" || booking.status === filterStatus;
+      return matchesSearch && matchesFilter;
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">All Bookings</h2>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search bookings..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="all">All Status</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        {/* Bookings Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredBookings?.map((booking) => (
+            <div
+              key={booking.id}
+              className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setSelectedBooking(booking)}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {booking.userName}
+                  </h3>
+                  <p className="text-sm text-gray-500">{booking.userEmail}</p>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                    booking.status
+                  )}`}>
+                  {booking.status}
+                </span>
+              </div>
+
+              <div className="mb-4">
+                <p className="font-medium text-gray-900">
+                  {booking.eventTitle}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Booked on {booking.bookingDate.toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">Tickets</p>
+                  <p className="font-semibold text-gray-900">
+                    {booking.numberOfPeople}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">Amount</p>
+                  <p className="font-semibold text-gray-900">
+                    {formatCurrency(booking.totalAmount)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">Payment</p>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      booking.paymentStatus
+                    )}`}>
+                    {booking.paymentStatus}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderBookingDetails = (booking: any) => {
+    const bookingPayments = payments.filter(
+      (payment) => payment.bookingId === booking.id
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedBooking(null)}
+            className="p-2 hover:bg-gray-100 rounded-lg">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
+        </div>
+
+        {/* Booking Overview */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Customer Information
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Name
+                  </label>
+                  <p className="text-gray-900">{booking.userName}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Email
+                  </label>
+                  <p className="text-gray-900">{booking.userEmail}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Booking Date
+                  </label>
+                  <p className="text-gray-900">
+                    {booking.bookingDate.toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Booking Details
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Event
+                  </label>
+                  <p className="text-gray-900">{booking.eventTitle}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Ticket Type
+                  </label>
+                  <p className="text-gray-900">{booking.ticketType}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Number of Tickets
+                  </label>
+                  <p className="text-gray-900">{booking.numberOfPeople}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Total Amount
+                  </label>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatCurrency(booking.totalAmount)}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Status
+                  </label>
+                  <span
+                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      booking.status
+                    )}`}>
+                    {booking.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Payment Information
+          </h3>
+
+          {bookingPayments.length === 0 ? (
+            <div className="text-center py-8">
+              <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No payment records found</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bookingPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Transaction ID
+                      </label>
+                      <p className="text-sm font-mono text-gray-900">
+                        {payment.reference}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Amount
+                      </label>
+                      <p className="font-semibold text-gray-900">
+                        {formatCurrency(payment.amount)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Method
+                      </label>
+                      <p className="text-gray-900 capitalize">
+                        {payment.channel}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Status
+                      </label>
+                      <span
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          payment.status
+                        )}`}>
+                        {getStatusIcon(payment.status)}
+                        <span className="ml-1">{payment.status}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Payment Date:</span>
+                      <span className="text-gray-900">{payment.date}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Processing Fee:</span>
+                      <span className="text-gray-900">
+                        {formatCurrency(payment.platformFee)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderPayments = () => (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Payments</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Payments</h2>
+      </div>
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Transaction ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Method
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {payments.map((payment) => (
-                <tr key={payment.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                    {payment.transactionId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(payment.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+      {/* Payment Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(totalRevenue)}
+              </p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-full">
+              <DollarSign className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Pending Payments
+              </p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {pendingPayments}
+              </p>
+            </div>
+            <div className="p-3 bg-yellow-100 rounded-full">
+              <Clock className="h-6 w-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Processing Fees
+              </p>
+              <p className="text-2xl font-bold text-gray-600">
+                {formatCurrency(
+                  payments.reduce((sum, p) => sum + p.processingFee, 0)
+                )}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-full">
+              <CreditCard className="h-6 w-6 text-gray-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payments List */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Recent Payments
+        </h3>
+        <div className="space-y-4">
+          {payments.map((payment) => (
+            <div
+              key={payment.id}
+              className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div
+                    className={`p-2 rounded-full ${
+                      payment.status === "completed"
+                        ? "bg-green-100"
+                        : payment.status === "pending"
+                        ? "bg-yellow-100"
+                        : "bg-red-100"
+                    }`}>
+                    {getStatusIcon(payment.status)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {payment.customerName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {payment.eventTitle}
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      {payment.transactionId}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900">
                     {formatCurrency(payment.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                    {payment.method}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        payment.status
-                      )}`}>
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-800">
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </p>
+                  <p className="text-sm text-gray-500">{payment.date}</p>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      payment.status
+                    )}`}>
+                    {payment.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

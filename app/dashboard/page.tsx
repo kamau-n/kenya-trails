@@ -700,7 +700,7 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        {/* {user.userType === "organizer" && (
+        {user.userType === "organizer" && (
           <>
             <TabsContent value="events">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -809,11 +809,11 @@ export default function DashboardPage() {
                             </Button>
                           )}
 
-                           <Button asChild variant="outline">
+                          <Button asChild variant="outline">
                             <Link href={`/organize/events/${event.id}/refunds`}>
                               Create Refunds
                             </Link>
-                          </Button> 
+                          </Button>
 
                           <Button
                             asChild
@@ -838,7 +838,7 @@ export default function DashboardPage() {
               </div>
             </TabsContent>
           </>
-        )} */}
+        )}
 
         <TabsContent value="payments">
           <div className="space-y-6">
