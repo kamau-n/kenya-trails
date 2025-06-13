@@ -19,8 +19,8 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Main Content */}
-        <div className="px-12 text-cn">
-          <main className="p-4">{children}</main>
+        <div className="w-full p-4">
+          <main className="p-4 overflow-auto">{children}</main>
         </div>
         {/* <div className="md:px-12 mx-auto px-4 py-8">{children}</div> */}
       </div>

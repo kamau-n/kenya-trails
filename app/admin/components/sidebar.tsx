@@ -5,6 +5,7 @@ import {
   BarChart2,
   Building2,
   Clock,
+  Clock10,
   CreditCard,
   Folder,
   HelpCircle,
@@ -159,16 +160,16 @@ export default function Sidebar() {
                   </NavItem>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Advanced
-              </div>
-              <div className="space-y-1">
-                <NavItem href="/admin/jobs" icon={Clock}>
-                  Jobs
-                </NavItem>
+              <div>
+                <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Advanced
+                </div>
+                <div className="space-y-1">
+                  <NavItem href="/admin/jobs" icon={Clock10}>
+                    Jobs
+                  </NavItem>
+                </div>
               </div>
             </div>
           </div>

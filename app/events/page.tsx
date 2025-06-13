@@ -103,6 +103,8 @@ export default function EventsPage() {
     { value: "Beach", label: "Beach" },
     { value: "Camping", label: "Camping" },
     { value: "Cycling", label: "Cycling" },
+    { value: "Gaming", label: "Gaming" },
+    { value: "Nature", label: "Nature" },
   ];
 
   const sortOptions = [

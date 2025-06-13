@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronRight,
@@ -10,15 +9,16 @@ import {
   Play,
   Award,
   Globe,
+  MapPin,
+  Camera,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 export default function EnhancedHero() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const heroRef = useRef(null);
-
-  const router = useRouter();
 
   const images = [
     {
@@ -41,6 +41,25 @@ export default function EnhancedHero() {
     },
   ];
 
+  const stats = [
+    { icon: Users, value: "2,500+", label: "Happy Travelers" },
+    { icon: Award, value: "98%", label: "Satisfaction Rate" },
+    { icon: Globe, value: "15+", label: "Destinations" },
+  ];
+
+  // Check if mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    setIsLoaded(true);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Enhanced image carousel with smoother transitions
   useEffect(() => {
     const interval = setInterval(() => {
@@ -50,14 +69,14 @@ export default function EnhancedHero() {
     return () => clearInterval(interval);
   }, []);
 
-  // Mouse parallax effect
+  // Mouse parallax effect (disabled on mobile for better performance)
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (heroRef.current) {
+      if (heroRef.current && !isMobile) {
         const rect = heroRef.current.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
-        setMousePosition({ x: x - 0.5, y: y - 0.5 });
+        setMousePosition({ x: (x - 0.5) * 0.5, y: (y - 0.5) * 0.5 });
       }
     };
 
@@ -67,18 +86,20 @@ export default function EnhancedHero() {
       return () =>
         heroElement.removeEventListener("mousemove", handleMouseMove);
     }
-  }, []);
+  }, [isMobile]);
 
-  const stats = [
-    { icon: Users, value: "2,500+", label: "Happy Travelers" },
-    { icon: Award, value: "98%", label: "Satisfaction Rate" },
-    { icon: Globe, value: "15+", label: "Destinations" },
-  ];
+  const handleExploreClick = () => {
+    console.log("Navigate to events");
+  };
+
+  const handleCreateClick = () => {
+    console.log("Navigate to organize");
+  };
 
   return (
     <div
       ref={heroRef}
-      className="relative mt-2 md:mt-8 py-3  flex items-center rounded overflow-hidden bg-black">
+      className="relative mt-2   flex items-center rounded-2xl overflow-hidden bg-black shadow-2xl">
       {/* Dynamic Background with Parallax */}
       <div className="absolute inset-0 z-0">
         {images.map((image, index) => (
@@ -90,23 +111,29 @@ export default function EnhancedHero() {
                 : "opacity-0 scale-105"
             }`}
             style={{
-              transform: `translate(${mousePosition.x * 10}px, ${
-                mousePosition.y * 10
-              }px)`,
+              transform: isMobile
+                ? "none"
+                : `translate(${mousePosition.x * 10}px, ${
+                    mousePosition.y * 10
+                  }px)`,
             }}>
             <img
               src={image.url}
               alt={image.location}
               className="w-full h-full object-cover"
+              loading={index === 0 ? "eager" : "lazy"}
             />
             <div
-              className={`absolute inset-0 bg-gradient-to-r ${image.gradient}`}></div>
+              className={`absolute inset-0 bg-gradient-to-br ${image.gradient}`}></div>
           </div>
         ))}
 
-        {/* Animated overlay particles */}
-        <div className="absolute inset-0 opacity-20">
-          {[...Array(20)].map((_, i) => (
+        {/* Enhanced overlay with better mobile optimization */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+
+        {/* Animated particles (fewer on mobile) */}
+        <div className="absolute inset-0 opacity-30">
+          {[...Array(isMobile ? 8 : 20)].map((_, i) => (
             <div
               key={i}
               className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
@@ -122,167 +149,166 @@ export default function EnhancedHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 md:px-12 px-6  w-full lg:px-8">
-        <div className="flex flex-col md:flex-row md:justify-between ">
-          <div className="space-y-8 ">
-            {/* Badge with glow effect */}
-            <div className="flex  gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-50 animate-pulse"></div>
-                {/* <div className="relative bg-emerald-600 text-white px-6 py-2 rounded-full md:text-sm text-xs font-semibold flex items-center gap-2">
+      <div className="relative z-10 px-4 sm:px-6 md:px-8 lg:px-12 w-full">
+        <div className="w-7/8 mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left Column - Main Content */}
+            <div
+              className={`space-y-6 md:space-y-8 text-center lg:text-left transition-all duration-1000 ${
+                isLoaded
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-8 opacity-0"
+              }`}>
+              {/* Floating Badge */}
+              <div className="flex justify-center p-2 lg:justify-start">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 rounded-full text-emerald-300 text-sm font-medium">
                   <Star className="w-4 h-4 fill-current" />
-                  Limited Adventure Spots
-                </div> */}
+                  <span>Kenya's #1 Adventure Platform</span>
+                </div>
+              </div>
+
+              {/* Main Headline */}
+              <div className="space-y-4">
+                <h1 className="text-3xl sm:text-5xl md:text-5xl lg:text-6xl font-black text-white leading-[0.9]">
+                  Discover
+                  <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent animate-pulse">
+                    Wild Kenya
+                  </span>
+                </h1>
+
+                {/* Dynamic location display */}
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start text-emerald-300 text-lg md:text-xl font-medium gap-2">
+                  <div className="flex items-center">
+                    <MapPin className="w-5 h-5 mr-2 animate-bounce" />
+                    <span className="transition-all duration-500">
+                      {images[currentImageIndex].location}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="mx-3 text-gray-400 hidden sm:inline">
+                      •
+                    </span>
+                    <span className="text-gray-300 text-base md:text-lg">
+                      {images[currentImageIndex].description}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Description */}
+              <p className="text-lg md:text-xl text-gray-200 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                Join our guided group adventures to Kenya's most breathtaking
+                destinations. Connect with fellow travelers, experience
+                authentic wildlife encounters, and create{" "}
+                <span className="text-emerald-400 font-semibold">
+                  unforgettable memories
+                </span>
+                .
+              </p>
+
+              {/* CTA Buttons - Improved Mobile Layout */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <button
+                  onClick={handleExploreClick}
+                  className="group relative px-6 md:px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 active:scale-95 touch-manipulation">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative flex items-center justify-center gap-2">
+                    <Play className="w-5 h-5" />
+                    Explore Adventures
+                    <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleCreateClick}
+                  className="px-6 md:px-8 py-4 border-2 border-white/30 backdrop-blur-sm rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:bg-white/10 hover:border-emerald-400 active:scale-95 touch-manipulation">
+                  <div className="flex items-center justify-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Create Your Event
+                  </div>
+                </button>
+              </div>
+
+              {/* Stats Section - Better Mobile Layout */}
+              <div className="grid grid-cols-3 gap-4 pt-8 border-t border-white/20">
+                {stats.map((stat, index) => (
+                  <div
+                    key={index}
+                    className={`text-center transition-all duration-700 ${
+                      isLoaded
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                    }`}
+                    style={{ transitionDelay: `${index * 200}ms` }}>
+                    <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-500/20 rounded-full mb-2">
+                      <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" />
+                    </div>
+                    <div className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
+                      {stat.value}
+                    </div>
+                    <div className="text-xs md:text-sm text-gray-400">
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Main Headline with Text Animation */}
-            <div className="space-y-4 ">
-              <h1 className="md:text-5xl text-3xl lg:text-6xl font-black text-white leading-tight">
-                Discover
-                <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent animate-pulse">
-                  Wild Kenya
-                </span>
-              </h1>
-
-              {/* Dynamic location display */}
-              <div className="flex items-center text-emerald-300 md:text-xl text-sm font-medium">
-                <Map className="w-5 h-5 mr-2" />
-                <span className="transition-all duration-500">
-                  {images[currentImageIndex].location}
-                </span>
-                <span className="mx-3 text-gray-400">•</span>
-                <span className="text-gray-300">
-                  {images[currentImageIndex].description}
-                </span>
-              </div>
-            </div>
-
-            {/* Enhanced Description */}
-            <p className="md:text-xl text-sm text-gray-200 leading-relaxed max-w-xl">
-              Join our guided group adventures to Kenya's most breathtaking
-              destinations. Connect with fellow travelers, experience authentic
-              wildlife encounters, and create{" "}
-              <span className="text-emerald-400 font-semibold">
-                unforgettable memories
-              </span>
-              .
-            </p>
-
-            {/* CTA Buttons with Hover Effects */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => router.push("/events")}
-                className="group relative md:px-8 px-4 md:py-4 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white font-semibold md:text-lg text-sm overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative flex items-center justify-center gap-2">
-                  <Play className="w-5 h-5" />
-                  Explore Adventures
-                  <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </div>
-              </button>
-
-              <button
-                onClick={() => router.push("/organize")}
-                className="group md:px-8 px-4 py-4 border-2 border-white/30 backdrop-blur-sm rounded-xl text-white font-semibold text-sm md:text-lg transition-all duration-300 hover:bg-white/10 hover:border-emerald-400">
-                <div className="flex items-center justify-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Create Your Event
-                </div>
-              </button>
-            </div>
-
-            {/* Stats with Animation */}
-            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/20">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center group cursor-pointer">
-                  <div className="mb-2">
-                    <stat.icon className="w-6 h-6 text-emerald-400 mx-auto group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="md:text-2xl text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-400">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Side - Interactive Feature Cards */}
-          <div className="hidden md:block space-y-6 md:py-8 w-1/2 ">
-            <div className="space-y-4">
-              {[
-                {
-                  icon: Calendar,
-                  title: "Weekly Scheduled Tours",
-                  desc: "Consistent adventures every week",
-                  color: "from-blue-500 to-purple-600",
-                },
-                {
-                  icon: Map,
-                  title: "Expert Local Guides",
-                  desc: "Authentic cultural experiences",
-                  color: "from-emerald-500 to-teal-600",
-                },
-                {
-                  icon: Users,
-                  title: "Small Group Experiences",
-                  desc: "Intimate and personalized journeys",
-                  color: "from-orange-500 to-red-600",
-                },
-              ].map((feature, index) => (
+            {/* Right Column - Feature Cards (Hidden on small screens) */}
+            <div className="hidden lg:flex flex-col space-y-6">
+              {images.map((image, index) => (
                 <div
                   key={index}
-                  className="group md:block hidden relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-500 hover:scale-105 cursor-pointer"
-                  style={{
-                    transform: `translateY(${
-                      mousePosition.y * 5 * (index + 1)
-                    }px)`,
-                  }}>
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`p-3 rounded-xl bg-gradient-to-br ${feature.color} group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className="w-6 h-6 text-white" />
+                  className={`relative p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 transition-all duration-500 cursor-pointer ${
+                    index === currentImageIndex
+                      ? "scale-105 bg-white/20 border-emerald-400/50"
+                      : "hover:bg-white/15"
+                  }`}
+                  onClick={() => setCurrentImageIndex(index)}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden">
+                      <img
+                        src={image.url}
+                        alt={image.location}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div>
-                      <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-emerald-300 transition-colors">
-                        {feature.title}
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg">
+                        {image.location}
                       </h3>
-                      <p className="text-gray-300 text-sm">{feature.desc}</p>
+                      <p className="text-gray-300 text-sm">
+                        {image.description}
+                      </p>
                     </div>
+                    <Camera className="w-5 h-5 text-emerald-400" />
                   </div>
 
-                  {/* Subtle glow effect on hover */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/5 group-hover:via-emerald-500/10 group-hover:to-emerald-500/5 transition-all duration-500"></div>
+                  {index === currentImageIndex && (
+                    <div className="absolute inset-0 bg-emerald-400/10 rounded-2xl animate-pulse"></div>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            {/* Image carousel indicators */}
-            <div className="flex justify-center gap-3 pt-6">
-              {images.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    index === currentImageIndex
-                      ? "bg-emerald-400 w-8"
-                      : "bg-white/30 hover:bg-white/50"
-                  }`}
-                />
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Subtle scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-            <div className="w-1 h-2 bg-white/60 rounded-full mt-2 animate-pulse"></div>
-          </div>
-          <span className="text-xs">Scroll to explore</span>
+      {/* Image Navigation Dots */}
+      <div className="absolute bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex space-x-2">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 touch-manipulation ${
+                index === currentImageIndex
+                  ? "bg-emerald-400 scale-125"
+                  : "bg-white/50 hover:bg-white/75"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
     </div>

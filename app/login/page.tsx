@@ -454,6 +454,8 @@ export default function Login() {
           </p>
         </CardFooter>
       </Card>
+
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

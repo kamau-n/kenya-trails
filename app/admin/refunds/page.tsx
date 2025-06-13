@@ -336,7 +336,7 @@ export default function AdminRefundsPage() {
   }
 
   return (
-    <div className="md:px-12 mx-auto px-4 py-8 max-w-7xl">
+    <div className="md:px-12 mx-auto px-4 py-8 ">
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

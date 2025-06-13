@@ -65,7 +65,11 @@ export default function EventsPage() {
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
       try {
         await deleteDoc(doc(db, "events", eventId));
         fetchEvents();
@@ -112,15 +116,15 @@ export default function EventsPage() {
   };
 
   const filteredEvents = events.filter((event) => {
-    const matchesSearch = 
+    const matchesSearch =
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.location?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
+
+    const matchesFilter =
       filterStatus === "all" ||
       (filterStatus === "upcoming" && new Date(event.date) > new Date()) ||
       (filterStatus === "past" && new Date(event.date) <= new Date());
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -135,13 +139,18 @@ export default function EventsPage() {
   const getEventStatus = (date) => {
     const now = new Date();
     const eventDate = new Date(date);
-    
+
     if (eventDate > now) {
       const diffTime = eventDate - now;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) return { text: "Tomorrow", color: "bg-orange-100 text-orange-800" };
-      if (diffDays <= 7) return { text: `In ${diffDays} days`, color: "bg-blue-100 text-blue-800" };
+
+      if (diffDays === 1)
+        return { text: "Tomorrow", color: "bg-orange-100 text-orange-800" };
+      if (diffDays <= 7)
+        return {
+          text: `In ${diffDays} days`,
+          color: "bg-blue-100 text-blue-800",
+        };
       return { text: "Upcoming", color: "bg-green-100 text-green-800" };
     }
     return { text: "Past", color: "bg-gray-100 text-gray-800" };
@@ -157,9 +166,13 @@ export default function EventsPage() {
   // Statistics
   const stats = {
     total: events.length,
-    upcoming: events.filter(event => new Date(event.date) > new Date()).length,
-    past: events.filter(event => new Date(event.date) <= new Date()).length,
-    totalSpaces: events.reduce((sum, event) => sum + (event.totalSpaces || 0), 0),
+    upcoming: events.filter((event) => new Date(event.date) > new Date())
+      .length,
+    past: events.filter((event) => new Date(event.date) <= new Date()).length,
+    totalSpaces: events.reduce(
+      (sum, event) => sum + (event.totalSpaces || 0),
+      0
+    ),
   };
 
   if (loading) {
@@ -171,11 +184,13 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full  p-2 m-2">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Events Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Events Management
+          </h1>
           <p className="text-gray-600 mt-1">Manage and track all your events</p>
         </div>
         <Button
@@ -192,26 +207,32 @@ export default function EventsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Events</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Events
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Upcoming</p>
-                <p className="text-2xl font-bold text-green-600">{stats.upcoming}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.upcoming}
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -223,13 +244,17 @@ export default function EventsPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Capacity</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.totalSpaces}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Capacity
+                </p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {stats.totalSpaces}
+                </p>
               </div>
               <Users className="h-8 w-8 text-purple-600" />
             </div>
@@ -253,7 +278,7 @@ export default function EventsPage() {
                   className="pl-10"
                 />
               </div>
-              
+
               {/* Filter */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -274,7 +299,7 @@ export default function EventsPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               {/* Export */}
               <Button
                 onClick={downloadEvents}
@@ -286,15 +311,17 @@ export default function EventsPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No events found
+              </h3>
               <p className="text-gray-600 mb-6">
-                {searchTerm || filterStatus !== "all" 
-                  ? "Try adjusting your search or filter criteria" 
+                {searchTerm || filterStatus !== "all"
+                  ? "Try adjusting your search or filter criteria"
                   : "Get started by creating your first event"}
               </p>
               {!searchTerm && filterStatus === "all" && (
@@ -311,12 +338,18 @@ export default function EventsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold">Event Details</TableHead>
-                    <TableHead className="font-semibold">Date & Location</TableHead>
+                    <TableHead className="font-semibold">
+                      Event Details
+                    </TableHead>
+                    <TableHead className="font-semibold">
+                      Date & Location
+                    </TableHead>
                     <TableHead className="font-semibold">Pricing</TableHead>
                     <TableHead className="font-semibold">Capacity</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                    <TableHead className="text-right font-semibold">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -326,7 +359,9 @@ export default function EventsPage() {
                       <TableRow key={event.id} className="hover:bg-gray-50">
                         <TableCell>
                           <div>
-                            <div className="font-semibold text-gray-900">{event.title}</div>
+                            <div className="font-semibold text-gray-900">
+                              {event.title}
+                            </div>
                             {event.description && (
                               <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
                                 {event.description}
@@ -334,7 +369,7 @@ export default function EventsPage() {
                             )}
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center text-sm text-gray-900">
@@ -347,13 +382,13 @@ export default function EventsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           <div className="font-semibold text-gray-900">
                             KSh {event.price?.toLocaleString() || 0}
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium text-gray-900">
@@ -364,17 +399,21 @@ export default function EventsPage() {
                                 event.availableSpaces,
                                 event.totalSpaces
                               )}`}>
-                              {Math.round((event.availableSpaces / event.totalSpaces) * 100)}% available
+                              {Math.round(
+                                (event.availableSpaces / event.totalSpaces) *
+                                  100
+                              )}
+                              % available
                             </Badge>
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           <Badge className={`${status.color} font-medium`}>
                             {status.text}
                           </Badge>
                         </TableCell>
-                        
+
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -384,12 +423,16 @@ export default function EventsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => router.push(`/admin/events/${event.id}`)}>
+                                onClick={() =>
+                                  router.push(`/admin/events/${event.id}`)
+                                }>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
+                                onClick={() =>
+                                  router.push(`/admin/events/${event.id}/edit`)
+                                }>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Event
                               </DropdownMenuItem>

@@ -36,6 +36,25 @@ function SuspendedRedirect({
   return null;
 }
 
+const getUserDisplayInfo = () => {
+  if (!user) return { name: "", method: "" };
+
+  const name = user.displayName || user.email || user.phoneNumber || "User";
+  let method = "email";
+
+  if (user.phoneNumber && !user.email) {
+    method = "phone";
+  } else if (
+    user.providerData?.some((provider) => provider.providerId === "google.com")
+  ) {
+    method = "Google";
+  }
+
+  return { name, method };
+};
+
+const { name, method } = getUserDisplayInfo();
+
 export default function AcceptTerms() {
   const [userType, setUserType] = useState("traveler");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -132,10 +151,14 @@ export default function AcceptTerms() {
             <FileText className="h-8 w-8 text-green-600" />
           </div>
           <CardTitle className="text-2xl text-green-800">
-            Welcome to Kenya Trails!
+            Welcome to Kenya Trails, {name.split(" ")[0] || "there"}!
           </CardTitle>
           <CardDescription>
-            We need a few more details to complete your account setup
+            {method === "Google"
+              ? "Thanks for signing in with Google. We need a few more details to complete your account setup."
+              : method === "phone"
+              ? "Thanks for verifying your phone number. We need a few more details to complete your account setup."
+              : "We need a few more details to complete your account setup."}
           </CardDescription>
         </CardHeader>
         <CardContent>
