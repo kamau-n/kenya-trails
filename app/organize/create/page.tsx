@@ -904,18 +904,18 @@ export default function CreateEventPage() {
               paymentManagement: value,
             }))
           }>
-          <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <div className="bg-white p-4 sm:p-6 rounded-lg flex-row    border border-gray-200">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="md:text-2xl text-xl font-bold text-gray-900 mb-2">
                 Choose Your Payment Management
               </h2>
-              <p className="text-gray-600">
+              <p className="md:text-base text-sm text-gray-600">
                 Let us handle the complexity while you focus on creating amazing
                 experiences
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex-row grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Platform Management Option */}
               <div
                 className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
@@ -931,7 +931,7 @@ export default function CreateEventPage() {
                 // }
               >
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md">
+                  <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold mb:px-4 px-2  py-1 rounded-full shadow-md">
                     ⭐ RECOMMENDED
                   </span>
                 </div>
@@ -959,7 +959,7 @@ export default function CreateEventPage() {
                           />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className="md:text-lg text-base font-bold text-gray-900">
                         Full Payment Management
                       </h3>
                     </div>
