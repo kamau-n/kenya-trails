@@ -118,10 +118,10 @@ const TermsOfServicePage = () => {
         <div className="md:px-12 mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FileText className="w-10 h-10 text-green-600" />
+              <div className="md:w-20 w-12 h-12 md:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FileText className="md:w-10 w-7 h-7 md:h-10 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <h1 className="md:text-3xl text-xl font-bold text-gray-900 mb-4">
                 Terms of Service
               </h1>
               <p className="text-gray-600 text-lg">

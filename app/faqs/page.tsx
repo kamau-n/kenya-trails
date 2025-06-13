@@ -44,10 +44,10 @@ export default function Faqs() {
               <span className="text-white font-bold text-xl">?</span>
             </div>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4">
+          <h1 className="md:text-4xl text-xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4">
             Frequently Asked Questions
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="md:text-lg text-base text-gray-600 max-w-2xl mx-auto">
             Find answers to common questions and get the help you need
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function Faqs() {
 
               <button
                 onClick={() => setOpenId(openId === faq.id ? null : faq.id)}
-                className="w-full px-8 py-6 flex justify-between items-center text-left transition-all duration-200 group-hover:bg-green-50/50">
+                className="w-full px-6 py-4 flex justify-between items-center text-left transition-all duration-200 group-hover:bg-green-50/50">
                 <span className="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition-colors pr-4">
                   {faq.question}
                 </span>

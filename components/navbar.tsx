@@ -83,11 +83,11 @@ export default function Navbar() {
               <div className="relative">
                 <div className="absolute -inset-2 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500"></div>
                 <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-xl shadow-lg shadow-emerald-500/25 group-hover:shadow-emerald-500/40 transition-all duration-300 group-hover:scale-110">
-                  <Map className="md:h-6 md:w-6 h-4 w-4 text-white" />
+                  <Map className="md:h-6 md:w-6 h-3 w-3 text-white" />
                 </div>
               </div>
               <div className="ml-3">
-                <span className="md:text-2xl text-lg font-bold bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-poppins tracking-tight">
+                <span className="md:text-2xl  font-bold bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-poppins tracking-tight">
                   Kenya Trails
                 </span>
                 <div className="h-0.5 w-0 bg-gradient-to-r from-emerald-400 to-teal-500 group-hover:w-full transition-all duration-500 rounded-full"></div>

@@ -42,7 +42,7 @@ export default function EnhancedHero() {
   ];
 
   const stats = [
-    { icon: Users, value: "2,500+", label: "Happy Travelers" },
+    { icon: Users, value: "2,50+", label: "Happy Travelers" },
     { icon: Award, value: "98%", label: "Satisfaction Rate" },
     { icon: Globe, value: "15+", label: "Destinations" },
   ];
@@ -99,7 +99,7 @@ export default function EnhancedHero() {
   return (
     <div
       ref={heroRef}
-      className="relative mt-2   flex items-center rounded-2xl overflow-hidden bg-black shadow-2xl">
+      className="relative md:mt-2   flex items-center rounded-2xl overflow-hidden bg-black shadow-2xl">
       {/* Dynamic Background with Parallax */}
       <div className="absolute inset-0 z-0">
         {images.map((image, index) => (
@@ -149,7 +149,7 @@ export default function EnhancedHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 px-4 sm:px-6 md:px-8 lg:px-12 w-full">
+      <div className="relative z-10 px-2 md:px-4 sm:px-6  lg:px-12 w-full">
         <div className="w-7/8 mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Column - Main Content */}
@@ -161,8 +161,8 @@ export default function EnhancedHero() {
               }`}>
               {/* Floating Badge */}
               <div className="flex justify-center p-2 lg:justify-start">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 rounded-full text-emerald-300 text-sm font-medium">
-                  <Star className="w-4 h-4 fill-current" />
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 rounded-full text-emerald-300 md:text-sm text-xs font-medium">
+                  <Star className="md:w-4 w-3 md:h-4 h-3 fill-current" />
                   <span>Kenya's #1 Adventure Platform</span>
                 </div>
               </div>
@@ -210,20 +210,20 @@ export default function EnhancedHero() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   onClick={handleExploreClick}
-                  className="group relative px-6 md:px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 active:scale-95 touch-manipulation">
+                  className="group relative px-6 md:px-8 md:py-4  py-3 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white font-semibold md:text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 active:scale-95 touch-manipulation">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="relative flex items-center justify-center gap-2">
-                    <Play className="w-5 h-5" />
+                    <Play className="md:w-5 w-4 h-4 md:h-5" />
                     Explore Adventures
-                    <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                    <ChevronRight className="md:w-5 w-4 h-4 md:h-5 transition-transform group-hover:translate-x-1" />
                   </div>
                 </button>
 
                 <button
                   onClick={handleCreateClick}
-                  className="px-6 md:px-8 py-4 border-2 border-white/30 backdrop-blur-sm rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:bg-white/10 hover:border-emerald-400 active:scale-95 touch-manipulation">
+                  className="px-4 md:px-8 py-4 border-2 border-white/30 backdrop-blur-sm rounded-xl text-white font-semibold md:text-lg transition-all duration-300 hover:bg-white/10 hover:border-emerald-400 active:scale-95 touch-manipulation">
                   <div className="flex items-center justify-center gap-2">
-                    <Calendar className="w-5 h-5" />
+                    <Calendar className="md:w-5 w-4 h-4 md:h-5" />
                     Create Your Event
                   </div>
                 </button>
@@ -243,7 +243,7 @@ export default function EnhancedHero() {
                     <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-500/20 rounded-full mb-2">
                       <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" />
                     </div>
-                    <div className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
+                    <div className="text-sm md:text-2xl lg:text-3xl font-bold text-white">
                       {stat.value}
                     </div>
                     <div className="text-xs md:text-sm text-gray-400">

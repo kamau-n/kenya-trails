@@ -33,9 +33,9 @@ export default function Contact() {
   };
 
   return (
-    <div className="relative py-16 md:py-28 overflow-hidden rounded-3xl my-12">
+    <div className="relative p-4  overflow-hidden rounded-3xl m-4">
       {/* Gradient Background */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900">
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-green-400 via-green-700 to-green-900">
         {/* Overlay pattern */}
         <div
           className="absolute inset-0 opacity-30"
@@ -92,7 +92,7 @@ export default function Contact() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl border border-white border-opacity-20 space-y-6">
+            className="bg-white bg-opacity-10 backdrop-blur-lg md:p-8  p-4 rounded-2xl border border-white border-opacity-20 space-y-6">
             <div>
               <label
                 htmlFor="name"
@@ -179,7 +179,7 @@ export default function Contact() {
               <Mail className="w-5 h-5 text-blue-300" />
             </div>
             <h3 className="text-lg font-semibold mb-1">Email Us</h3>
-            <p className="text-blue-100">hello@adventure.com</p>
+            <p className="text-blue-100">info@kenyatrails.co.ke</p>
           </div>
 
           <div className="bg-white bg-opacity-10 backdrop-blur-lg p-4 rounded-xl border border-white border-opacity-20 text-center">
@@ -197,7 +197,7 @@ export default function Contact() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-1">Call Us</h3>
-            <p className="text-blue-100">(123) 456-7890</p>
+            <p className="text-blue-100">0759 155 650</p>
           </div>
 
           <div className="bg-white bg-opacity-10 backdrop-blur-lg p-4 rounded-xl border border-white border-opacity-20 text-center">
@@ -216,7 +216,7 @@ export default function Contact() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-1">Visit Us</h3>
-            <p className="text-blue-100">123 Adventure St, Explorer City</p>
+            <p className="text-blue-100">Greensport Towers,Ruiru</p>
           </div>
         </div>
       </div>

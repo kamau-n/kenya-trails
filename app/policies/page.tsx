@@ -41,14 +41,14 @@ export default function PrivacyPolicy() {
         {/* Header Section */}
         <div className="text-center mb-16">
           <div className="inline-block p-4 bg-green-100 rounded-3xl mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
-              <Shield className="w-8 h-8 text-white" />
+            <div className="md:w-16 w-12 h-12 md:h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
+              <Shield className="md:w-8 w-6 h-6 md:h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-6">
+          <h1 className="md:text-4xl text-xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-6">
             Privacy Policy
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+          <p className="md:text-lg text-sm text-gray-600 max-w-3xl mx-auto mb-8">
             We are committed to protecting your privacy and ensuring the
             security of your personal information
           </p>
@@ -60,10 +60,10 @@ export default function PrivacyPolicy() {
                 <Calendar className="w-4 h-4 text-green-600" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-gray-800">
+                <p className="md:text-sm text-xs font-medium text-gray-800">
                   Last Updated
                 </p>
-                <p className="text-sm text-green-600 font-semibold">
+                <p className="md:text-sm text-xs text-green-600 font-semibold">
                   {policies[0]?.lastUpdated}
                 </p>
               </div>
@@ -87,11 +87,11 @@ export default function PrivacyPolicy() {
               {/* Content */}
               <div className="p-8 lg:p-10">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <FileText className="w-6 h-6 text-green-600" />
+                  <div className="flex-shrink-0 md:w-12 w-8 h-8 md:h-12 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <FileText className="md:w-6 w-4 h-4 md:h-6 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2 group-hover:text-green-700 transition-colors">
+                    <h2 className="md:text-2xl text-xl font-bold text-gray-800 mb-2 group-hover:text-green-700 transition-colors">
                       {policy.title}
                     </h2>
                     <div className="w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
@@ -100,7 +100,7 @@ export default function PrivacyPolicy() {
 
                 <div className="prose prose-lg max-w-none">
                   <div className="bg-gradient-to-r from-green-50/50 to-emerald-50/50 rounded-2xl p-6 border border-green-100">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">
+                    <p className="text-gray-700  text-sm leading-relaxed whitespace-pre-wrap md:text-base">
                       {policy.content}
                     </p>
                   </div>
@@ -140,6 +140,7 @@ export default function PrivacyPolicy() {
             <p className="text-gray-600 max-w-2xl mx-auto">
               If you have any questions about this Privacy Policy or our data
               practices, please don't hesitate to contact our support team.
+              support@kenyatrails.co.ke
             </p>
           </div>
         </div>
