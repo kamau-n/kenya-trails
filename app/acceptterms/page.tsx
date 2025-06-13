@@ -36,25 +36,6 @@ function SuspendedRedirect({
   return null;
 }
 
-const getUserDisplayInfo = () => {
-  if (!user) return { name: "", method: "" };
-
-  const name = user.displayName || user.email || user.phoneNumber || "User";
-  let method = "email";
-
-  if (user.phoneNumber && !user.email) {
-    method = "phone";
-  } else if (
-    user.providerData?.some((provider) => provider.providerId === "google.com")
-  ) {
-    method = "Google";
-  }
-
-  return { name, method };
-};
-
-const { name, method } = getUserDisplayInfo();
-
 export default function AcceptTerms() {
   const [userType, setUserType] = useState("traveler");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -75,6 +56,27 @@ export default function AcceptTerms() {
     }
     setUser(currentUser);
   }, [auth?.user, router]);
+
+  const getUserDisplayInfo = () => {
+    if (!user) return { name: "", method: "" };
+
+    const name = user.displayName || user.email || user.phoneNumber || "User";
+    let method = "email";
+
+    if (user.phoneNumber && !user.email) {
+      method = "phone";
+    } else if (
+      user.providerData?.some(
+        (provider) => provider.providerId === "google.com"
+      )
+    ) {
+      method = "Google";
+    }
+
+    return { name, method };
+  };
+
+  const { name, method } = getUserDisplayInfo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
