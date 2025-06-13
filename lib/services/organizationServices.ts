@@ -44,7 +44,7 @@ export const firestoreService = {
   },
 
   // Read all documents
-  async getAll(collectionName, orderField = "createdAt") {
+  async getAll(collectionName:string, orderField = "createdAt") {
     try {
       const q = query(
         collection(db, collectionName),

@@ -887,134 +887,420 @@ export default function CreateEventPage() {
           )}
         </div>
 
-        {/* Payment Management Section */}
+        {/* Payment Management Section
         <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
           <h2 className="text-lg sm:text-xl font-semibold mb-4">
             Payment Management
           </h2>
 
-          <div className="space-y-4">
-            <Label>How would you like to manage payments?</Label>
-            <RadioGroup
-              value={formData.paymentManagement}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, paymentManagement: value }))
-              }
-              className="space-y-2">
-              <div className="flex items-start space-x-2">
-                <RadioGroupItem value="manual" id="manual" className="mt-1" />
-                <Label htmlFor="manual" className="text-sm leading-relaxed">
-                  I'll manage payments myself (Bookings will be paid directly to
-                  me but I can still track and update them from here)
-                </Label>
+         
+        </div> */}
+
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Choose Your Payment Management
+            </h2>
+            <p className="text-gray-600">
+              Let us handle the complexity while you focus on creating amazing
+              experiences
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Platform Management Option */}
+            <div
+              className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                formData.paymentManagement === "platform"
+                  ? "border-green-500 bg-green-50 shadow-lg transform scale-105"
+                  : "border-gray-200 hover:border-green-300 hover:shadow-md"
+              }`}
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  paymentManagement: "platform",
+                }))
+              }>
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md">
+                  ⭐ RECOMMENDED
+                </span>
               </div>
-              <div className="flex items-start space-x-2">
+
+              <div className="flex items-start space-x-3">
                 <RadioGroupItem
                   value="platform"
-                  id="platform"
+                  id="platform-radio"
                   className="mt-1"
                 />
-                <Label htmlFor="platform" className="text-sm leading-relaxed">
-                  Let the platform manage payments (6% fee) (Let us manage all
-                  booking payments, track all payments and balances)
-                </Label>
-              </div>
-            </RadioGroup>
+                <div className="flex-1">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Full Payment Management
+                    </h3>
+                  </div>
 
-            {formData.paymentManagement === "platform" && (
-              <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium">Collection Account Details</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <select
-                      id="bankName"
-                      className="w-full p-2 border rounded"
-                      value={formData.accountDetails.bankName}
-                      onChange={(e) => {
-                        const selectedBank = banks.find(
-                          (bank) => bank.name === e.target.value
-                        );
-                        if (selectedBank) {
-                          setSelectedCode(selectedBank.code);
-                          formData.accountDetails.accountCode =
-                            selectedBank.code;
-                          console.log(
-                            "am setting the account code",
-                            selectedBank
-                          );
-                        }
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                    We handle everything payment-related so you can focus on
+                    what you do best - creating unforgettable experiences.
+                  </p>
 
-                        setFormData((prev) => ({
-                          ...prev,
-                          accountDetails: {
-                            ...prev.accountDetails,
-                            bankName: e.target.value,
-                          },
-                        }));
-                      }}
-                      required>
-                      <option value="">Select a bank</option>
-                      {banks.map((bank) => (
-                        <option key={bank.code} value={bank.name}>
-                          {bank.name}
-                        </option>
-                      ))}
-                    </select>
-                    {loadingBanks && (
-                      <p className="text-sm text-gray-500">Loading banks...</p>
-                    )}
+                  {/* Benefits List */}
+                  <div className="space-y-2 mb-4">
+                    {[
+                      "🔒 Secure payment processing with fraud protection",
+                      "💳 Accept all major payment methods (M-Pesa, Cards, Bank)",
+                      "📊 Real-time payment tracking and analytics",
+                      "🤖 Automated payment reminders and follow-ups",
+                      "💰 Instant settlement to your account",
+                      "📱 Mobile-optimized checkout experience",
+                      "⚡ Automatic receipt generation and delivery",
+                      "🛡️ Full refund and dispute management",
+                      "📈 Detailed financial reporting and insights",
+                    ].map((benefit, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start text-sm text-gray-700">
+                        <span className="mr-2 mt-0.5">
+                          {benefit.split(" ")[0]}
+                        </span>
+                        <span>
+                          {benefit.substring(benefit.indexOf(" ") + 1)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input
-                      id="accountNumber"
-                      value={formData.accountDetails.accountNumber}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          accountDetails: {
-                            ...prev.accountDetails,
-                            accountNumber: e.target.value,
-                          },
-                        }))
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="accountCode">Account Code</Label>
-                    <Input
-                      id="accountCode"
-                      value={formData.accountDetails.accountCode}
-                      required
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="accountName">Account Name</Label>
-                    <Input
-                      id="accountName"
-                      value={formData.accountDetails.accountName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          accountDetails: {
-                            ...prev.accountDetails,
-                            accountName: e.target.value,
-                          },
-                        }))
-                      }
-                      required
-                    />
+
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-green-800">
+                        Platform Fee:
+                      </span>
+                      <span className="text-lg font-bold text-green-600">
+                        Only 6%
+                      </span>
+                    </div>
+                    <p className="text-xs text-green-700">
+                      That's just KSh 900 on a KSh 15,000 booking - a small
+                      price for complete peace of mind!
+                    </p>
                   </div>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  Platform fee: 6% of each booking payment
+              </div>
+            </div>
+
+            <div
+              className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                formData.paymentManagement === "manual"
+                  ? "border-blue-500 bg-blue-50 shadow-lg"
+                  : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+              }`}
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  paymentManagement: "manual",
+                }))
+              }>
+              <div className="flex items-start space-x-3">
+                <RadioGroupItem
+                  value="manual"
+                  id="manual-radio"
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Self-Managed Payments
+                    </h3>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                    Handle payments directly through your preferred methods
+                    while still using our platform for bookings.
+                  </p>
+
+                  <div className="space-y-2 mb-4">
+                    {[
+                      "📋 Booking management and participant tracking",
+                      "📧 Automated booking confirmations",
+                      "📱 Basic participant communication tools",
+                      "📊 Simple booking analytics",
+                    ].map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start text-sm text-gray-700">
+                        <span className="mr-2 mt-0.5">
+                          {feature.split(" ")[0]}
+                        </span>
+                        <span>
+                          {feature.substring(feature.indexOf(" ") + 1)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* What you'll need to handle */}
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    <h4 className="text-sm font-medium text-amber-800 mb-2">
+                      You'll handle:
+                    </h4>
+                    <div className="space-y-1">
+                      {[
+                        "Payment collection and tracking",
+                        "Receipt generation and delivery",
+                        "Refund processing",
+                        "Payment disputes and issues",
+                        "Financial record keeping",
+                      ].map((task, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center text-xs text-amber-700">
+                          <span className="w-1.5 h-1.5 bg-amber-400 rounded-full mr-2"></span>
+                          {task}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-100 p-3 rounded-lg mt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-800">
+                        Platform Fee:
+                      </span>
+                      <span className="text-lg font-bold text-gray-600">
+                        Free
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional compelling content */}
+          <div className="mt-8 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-medium text-green-800 mb-1">
+                  Why 95% of organizers choose our payment management:
+                </h4>
+                <p className="text-sm text-green-700 leading-relaxed">
+                  "Since switching to platform payment management, I've saved
+                  10+ hours per event and increased my bookings by 40%. The
+                  automated reminders alone have reduced no-shows by 60%!" -
+                  Sarah K., Adventure Organizer
                 </p>
               </div>
-            )}
+            </div>
           </div>
+
+          {/* Account Details Section - Only shows when platform is selected */}
+          {formData.paymentManagement === "platform" && (
+            <div className="space-y-4 mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Setup Your Payout Account
+                </h3>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                We'll transfer your earnings directly to this account within 2-3
+                business days after each event.
+              </p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <Label
+                    htmlFor="bankName"
+                    className="text-sm font-medium text-gray-700">
+                    Bank Name *
+                  </Label>
+                  <select
+                    id="bankName"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    value={formData.accountDetails.bankName}
+                    onChange={(e) => {
+                      const selectedBank = banks.find(
+                        (bank) => bank.name === e.target.value
+                      );
+                      if (selectedBank) {
+                        setSelectedCode(selectedBank.code);
+                        formData.accountDetails.accountCode = selectedBank.code;
+                      }
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        accountDetails: {
+                          ...prev.accountDetails,
+                          bankName: e.target.value,
+                        },
+                      }));
+                    }}
+                    required>
+                    <option value="">Select your bank</option>
+                    {banks.map((bank) => (
+                      <option key={bank.code} value={bank.name}>
+                        {bank.name}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingBanks && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Loading banks...
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="accountNumber"
+                    className="text-sm font-medium text-gray-700">
+                    Account Number *
+                  </Label>
+                  <Input
+                    id="accountNumber"
+                    className="p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    value={formData.accountDetails.accountNumber}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        accountDetails: {
+                          ...prev.accountDetails,
+                          accountNumber: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Enter your account number"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="accountName"
+                    className="text-sm font-medium text-gray-700">
+                    Account Name *
+                  </Label>
+                  <Input
+                    id="accountName"
+                    className="p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    value={formData.accountDetails.accountName}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        accountDetails: {
+                          ...prev.accountDetails,
+                          accountName: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Account holder name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="accountCode"
+                    className="text-sm font-medium text-gray-700">
+                    Bank Code
+                  </Label>
+                  <Input
+                    id="accountCode"
+                    className="p-3 bg-gray-100 text-gray-600"
+                    value={formData.accountDetails.accountCode}
+                    disabled
+                    placeholder="Auto-filled"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-green-100 p-4 rounded-lg mt-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-800 mb-1">
+                      Secure & Fast Payouts
+                    </h4>
+                    <p className="text-sm text-green-700">
+                      Your account details are encrypted and secure. Payouts are
+                      processed automatically 2-3 business days after each event
+                      completion.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-4">
