@@ -206,7 +206,7 @@ const OperationsDashboard = () => {
         ))}
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className=" mx-auto">
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">
